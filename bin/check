@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+#
+# Usage: check
+#
+
+set -euo pipefail
+
+# Check scripts
+
+if ! check-scripts &>/dev/null; then
+  check-scripts
+fi
+
+# Build prototype
+
+if ! build-prototype &>/dev/null; then
+  build-prototype
+fi

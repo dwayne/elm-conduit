@@ -1,0 +1,16 @@
+{
+  "packages": {
+    "caddy": {
+      "version": "latest",
+      "disable_plugin": true
+    },
+    "dart-sass": "latest",
+    "shellcheck": "latest",
+    "xdg-utils": "latest"
+  },
+  "env": {
+    "project": "$PWD",
+    "build": "$PWD/.build",
+    "PATH": "$PWD/bin:$PATH"
+  }
+}

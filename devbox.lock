@@ -1,0 +1,85 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "caddy@latest": {
+      "last_modified": "2024-01-14T03:55:27Z",
+      "resolved": "github:NixOS/nixpkgs/dd5621df6dcb90122b50da5ec31c411a0de3e538#caddy",
+      "source": "devbox-search",
+      "version": "2.7.6",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/ga0yp1ki5fmk0p6b4kn2z9qq7ddpbyyw-caddy-2.7.6"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/jn3wbc0cgblkgd6phygq1wgk6j65w2aa-caddy-2.7.6"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/np97d9737d386qkj4brj10b0s2468n8a-caddy-2.7.6"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/7aiga3m93g0j4anmvv6svk2kfvxyl6cd-caddy-2.7.6"
+        }
+      }
+    },
+    "dart-sass@latest": {
+      "last_modified": "2024-01-22T00:24:37Z",
+      "resolved": "github:NixOS/nixpkgs/5f5210aa20e343b7e35f40c033000db0ef80d7b9#dart-sass",
+      "source": "devbox-search",
+      "version": "1.70.0",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/z2z0vfhvkh1gwa2rqxib7kx6czkfc215-dart-sass-1.70.0"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/j6gxz7mzlggkmz425xv8cz7j37b4ya3x-dart-sass-1.70.0"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/vm6lrv5mbp5wbz1hz2rrl1h26y37bfz5-dart-sass-1.70.0"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/pl06vzvidgs2fq3nlc3mcww4rk7hxzj7-dart-sass-1.70.0"
+        }
+      }
+    },
+    "shellcheck@latest": {
+      "last_modified": "2024-01-14T03:55:27Z",
+      "resolved": "github:NixOS/nixpkgs/dd5621df6dcb90122b50da5ec31c411a0de3e538#shellcheck",
+      "source": "devbox-search",
+      "version": "0.9.0",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/xjm5y4q4zaj0gyf6k2z57yarsp5w8z59-shellcheck-0.9.0-bin"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/bx6lmqqpnzi2xbxvfr7h82znmz7ac22x-shellcheck-0.9.0-bin"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/j671frzdqmh6yrdc4s08hlk8qn7kzyn7-shellcheck-0.9.0-bin"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/jqs1qy9i4yl32bcyp278spwqv297ni7l-shellcheck-0.9.0-bin"
+        }
+      }
+    },
+    "xdg-utils@latest": {
+      "last_modified": "2024-01-14T03:55:27Z",
+      "resolved": "github:NixOS/nixpkgs/dd5621df6dcb90122b50da5ec31c411a0de3e538#xdg-utils",
+      "source": "devbox-search",
+      "version": "2022-11-06",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/rr0d4jz50z74y2ivvcfi9pzf0wam1pk1-xdg-utils-unstable-2022-11-06"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/mr5v35ygclb81wpn9mmjpssl4jgqz1k4-xdg-utils-unstable-2022-11-06"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/ff422i0b4in5ljnm5j15a96awqgcn991-xdg-utils-unstable-2022-11-06"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/51jay5z2f95972gyidah3zc4wpzsn957-xdg-utils-unstable-2022-11-06"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+#
+# Usage: build-prototype
+#
+
+set -euo pipefail
+
+src="${project:?}"
+out="${build:?}/prototype"
+
+clean () {
+  rm -rf "$out"
+}
+
+prepare () {
+  mkdir -p "$out"
+}
+
+build_html () {
+  cp "$src/prototype/"*.html "$out"
+}
+
+build_css () {
+  sass --embed-sources "$src/sass/index.scss" "$out/index.css"
+}
+
+clean && prepare && build_html && build_css
