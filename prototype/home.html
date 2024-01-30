@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=1" />
+
+    <title>Home — Conduit</title>
+
+    <link rel="icon" href="./images/favicon.ico" />
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic" />
+    <link rel="stylesheet" href="https://demo.productionready.io/main.css" />
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <h1>Home</h1>
+
+    <p>The home page includes up to three tabs:</p>
+
+    <ul>
+      <li>a default <strong>Global Feed</strong> tab</li>
+      <li>an optional <strong>tag name</strong> tab, appears after clicking one of the popular tags</li>
+      <li>an optional <strong>Your Feed</strong> tab, appears after logging in</li>
+    </ul>
+
+    <div class="home-page">
+      <div class="banner">
+        <div class="container">
+          <h1 class="logo-font">conduit</h1>
+          <p>A place to share your knowledge.</p>
+        </div>
+      </div>
+
+      <div class="container page">
+        <div class="row">
+          <div class="col-md-9">
+            <div class="feed-toggle">
+              <ul class="nav nav-pills outline-active">
+                <li class="nav-item">
+                  <a class="nav-link" href="">Your Feed</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link active" href="">Global Feed</a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="article-preview">
+              <div class="article-meta">
+                <a href="./profile.html"><img src="http://i.imgur.com/Qr71crq.jpg" /></a>
+                <div class="info">
+                  <a class="author" href="./profile.html">Eric Simons</a>
+                  <span class="date">January 20th</span>
+                </div>
+                <button class="btn btn-outline-primary btn-sm pull-xs-right">
+                  <i class="ion-heart"></i> 29
+                </button>
+              </div>
+              <a class="preview-link" href="./article.html">
+                <h1>How to build webapps that scale</h1>
+                <p>This is the description for the post.</p>
+                <span>Read more...</span>
+                <ul class="tag-list">
+                  <li class="tag-default tag-pill tag-outline">realworld</li>
+                  <li class="tag-default tag-pill tag-outline">implementations</li>
+                </ul>
+              </a>
+            </div>
+
+            <div class="article-preview">
+              <div class="article-meta">
+                <a href="./profile.html"><img src="http://i.imgur.com/N4VcUeJ.jpg" /></a>
+                <div class="info">
+                  <a class="author" href="./profile.html">Albert Pai</a>
+                  <span class="date">January 20th</span>
+                </div>
+                <button class="btn btn-outline-primary btn-sm pull-xs-right">
+                  <i class="ion-heart"></i> 32
+                </button>
+              </div>
+              <a class="preview-link" href="./article.html">
+                <h1>The song you won't ever stop singing. No matter how hard you try.</h1>
+                <p>This is the description for the post.</p>
+                <span>Read more...</span>
+                <ul class="tag-list">
+                  <li class="tag-default tag-pill tag-outline">realworld</li>
+                  <li class="tag-default tag-pill tag-outline">implementations</li>
+                </ul>
+              </a>
+            </div>
+
+            <ul class="pagination">
+              <li class="page-item active">
+                <a class="page-link" href="">1</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="">2</a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-md-3">
+            <div class="sidebar">
+              <p>Popular Tags</p>
+
+              <div class="tag-list">
+                <a class="tag-pill tag-default" href="">programming</a>
+                <a class="tag-pill tag-default" href="">javascript</a>
+                <a class="tag-pill tag-default" href="">elm</a>
+                <a class="tag-pill tag-default" href="">emberjs</a>
+                <a class="tag-pill tag-default" href="">angularjs</a>
+                <a class="tag-pill tag-default" href="">react</a>
+                <a class="tag-pill tag-default" href="">node</a>
+                <a class="tag-pill tag-default" href="">django</a>
+                <a class="tag-pill tag-default" href="">rails</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

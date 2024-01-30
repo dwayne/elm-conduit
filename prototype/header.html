@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=1" />
+
+    <title>Home — Conduit</title>
+
+    <link rel="icon" href="./images/favicon.ico" />
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic" />
+    <link rel="stylesheet" href="https://demo.productionready.io/main.css" />
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <h1>Header</h1>
+
+    <h2>Unauthenticated user</h2>
+
+    <p>If no user is logged in, then the header should include links to:</p>
+
+    <ul>
+      <li>the home page</li>
+      <li>the login page</li>
+      <li>the register page</li>
+    </ul>
+
+    <p>The link of the active page should use the <code>active</code> CSS class.</p>
+
+    <hr />
+
+    <nav class="navbar navbar-light">
+      <div class="container">
+        <a class="navbar-brand" href="./home.html">conduit</a>
+        <ul class="nav navbar-nav pull-xs-right">
+          <li class="nav-item">
+            <!-- Add "active" class when you're on that page. -->
+            <a class="nav-link active" href="./home.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./login.html">Sign in</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./register.html">Sign up</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <hr />
+
+    <h2>Authenticated user</h2>
+
+    <p>If a user is logged in, then the header should include links to:</p>
+
+    <ul>
+      <li>the home page</li>
+      <li>the new article page</li>
+      <li>the settings page</li>
+      <li>the profile page</li>
+    </ul>
+
+    <p>The link of the active page should use the <code>active</code> CSS class.</p>
+
+    <hr />
+
+    <nav class="navbar navbar-light">
+      <div class="container">
+        <a class="navbar-brand" href="./home.html">conduit</a>
+        <ul class="nav navbar-nav pull-xs-right">
+          <li class="nav-item">
+            <!-- Add "active" class when you're on that page. -->
+            <a class="nav-link active" href="./home.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./editor.html"><i class="ion-compose"></i>&nbsp;New Article</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./settings.html"><i class="ion-gear-a"></i>&nbsp;Settings</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./profile.html">
+              <img class="user-pic" src="./images/smiley-cyrus.jpeg" alt="Eric Simons" />
+              Eric Simons
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <hr />
+  </body>
+</html>

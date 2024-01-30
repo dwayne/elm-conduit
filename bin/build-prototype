@@ -17,6 +17,10 @@ prepare () {
   mkdir -p "$out"
 }
 
+build_images () {
+  cp -r "$src/images" "$out"
+}
+
 build_html () {
   cp "$src/prototype/"*.html "$out"
 }
@@ -25,4 +29,4 @@ build_css () {
   sass --embed-sources "$src/sass/index.scss" "$out/index.css"
 }
 
-clean && prepare && build_html && build_css
+clean && prepare && build_images && build_html && build_css
