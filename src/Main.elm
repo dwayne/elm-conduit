@@ -1,8 +1,9 @@
 module Main exposing (main)
 
 import Html as H
+import View.Footer as Footer
 
 
 main : H.Html msg
 main =
-    H.text "Hello, world!"
+    Footer.view
