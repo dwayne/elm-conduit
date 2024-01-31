@@ -5,6 +5,8 @@
       "disable_plugin": true
     },
     "dart-sass": "latest",
+    "elmPackages.elm": "latest",
+    "elmPackages.elm-format": "latest",
     "shellcheck": "latest",
     "xdg-utils": "latest"
   },

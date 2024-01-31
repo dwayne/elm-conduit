@@ -6,14 +6,31 @@
 
 set -euo pipefail
 
+fail () {
+  echo "$1" >&2
+  exit 1
+}
+
 # Check scripts
 
 if ! check-scripts &>/dev/null; then
   check-scripts
 fi
 
+# Format
+
+if ! format --validate &>/dev/null; then
+  fail "Your code needs to be formatted. Run: format"
+fi
+
 # Build prototype
 
 if ! build-prototype &>/dev/null; then
   build-prototype
+fi
+
+# Build
+
+if ! build &>/dev/null; then
+  build
 fi
