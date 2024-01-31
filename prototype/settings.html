@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=1" />
+
+    <title>Settings — Conduit</title>
+
+    <link rel="icon" href="./images/favicon.ico" />
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic" />
+    <link rel="stylesheet" href="https://demo.productionready.io/main.css" />
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <div class="settings-page">
+      <div class="container page">
+        <div class="row">
+          <div class="col-md-6 offset-md-3 col-xs-12">
+            <h1 class="text-xs-center">Your Settings</h1>
+
+            <ul class="error-messages">
+              <li>That name is required.</li>
+            </ul>
+
+            <form>
+              <fieldset>
+                <fieldset class="form-group">
+                  <input class="form-control" type="text" placeholder="URL of profile picture" />
+                </fieldset>
+                <fieldset class="form-group">
+                  <input class="form-control form-control-lg" type="text" placeholder="Your Name" />
+                </fieldset>
+                <fieldset class="form-group">
+                  <textarea class="form-control form-control-lg" rows="8" placeholder="Short bio about you"></textarea>
+                </fieldset>
+                <fieldset class="form-group">
+                  <input class="form-control form-control-lg" type="text" placeholder="Email" />
+                </fieldset>
+                <fieldset class="form-group">
+                  <input class="form-control form-control-lg" type="password" placeholder="New Password" />
+                </fieldset>
+                <button class="btn btn-lg btn-primary pull-xs-right">Update Settings</button>
+              </fieldset>
+            </form>
+            <hr />
+            <button class="btn btn-outline-danger" type="button">Or click here to logout.</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

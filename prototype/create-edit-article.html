@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=1" />
+
+    <title>New Article — Conduit</title>
+    <!-- <title>Edit Article — Conduit</title> -->
+
+    <link rel="icon" href="./images/favicon.ico" />
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic" />
+    <link rel="stylesheet" href="https://demo.productionready.io/main.css" />
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <div class="editor-page">
+      <div class="container page">
+        <div class="row">
+          <div class="col-md-10 offset-md-1 col-xs-12">
+            <ul class="error-messages">
+              <li>That title is required.</li>
+            </ul>
+
+            <form>
+              <fieldset>
+                <fieldset class="form-group">
+                  <input type="text" class="form-control form-control-lg" placeholder="Article Title" />
+                </fieldset>
+                <fieldset class="form-group">
+                  <input type="text" class="form-control" placeholder="What's this article about?" />
+                </fieldset>
+                <fieldset class="form-group">
+                  <textarea class="form-control" rows="8" placeholder="Write your article (in markdown)"></textarea>
+                </fieldset>
+                <fieldset class="form-group">
+                  <input type="text" class="form-control" placeholder="Enter tags" />
+                  <div class="tag-list">
+                    <span class="tag-default tag-pill"> <i class="ion-close-round"></i> tag</span>
+                  </div>
+                </fieldset>
+                <button class="btn btn-lg pull-xs-right btn-primary" type="button">
+                  Publish Article
+                </button>
+              </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
