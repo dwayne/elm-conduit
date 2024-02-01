@@ -1,6 +1,8 @@
 module Main exposing (main)
 
 import Html as H
+import Html.Attributes as HA
+import View.Banner as Banner
 import View.Footer as Footer
 import View.Header as Header
 
@@ -9,6 +11,7 @@ main : H.Html msg
 main =
     H.div []
         [ viewHeader
+        , viewHomePage
         , viewFooter
         ]
 
@@ -34,6 +37,17 @@ viewHeader =
         , Header.view (Header.Authenticated "Eric Simons" <| Just Header.Settings)
         , H.hr [] []
         , Header.view (Header.Authenticated "Eric Simons" <| Just Header.Profile)
+        ]
+
+
+viewHomePage : H.Html msg
+viewHomePage =
+    H.div []
+        [ H.h2 [] [ H.text "Home" ]
+        , H.div
+            [ HA.class "home-page" ]
+            [ Banner.view
+            ]
         ]
 
 
