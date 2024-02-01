@@ -8,6 +8,7 @@ import View.Banner as Banner
 import View.FeedToggle as FeedToggle
 import View.Footer as Footer
 import View.Header as Header
+import View.Pagination as Pagination
 
 
 main : Program () Model Msg
@@ -32,6 +33,7 @@ type alias HomePageModel =
     { tagName : String
     , active : FeedToggle.Feed
     , isFavourite : Bool
+    , currentPage : Int
     }
 
 
@@ -41,6 +43,7 @@ init =
         { tagName = "elm"
         , active = FeedToggle.Global
         , isFavourite = False
+        , currentPage = 1
         }
     }
 
@@ -53,6 +56,7 @@ type Msg
     = NoOp
     | ClickedFeedToggle FeedToggle.Feed
     | ClickedFavourite Bool
+    | ClickedPagination Int
 
 
 update : Msg -> Model -> Model
@@ -78,6 +82,16 @@ update msg model =
 
                 newHomePageModel =
                     { homePageModel | isFavourite = isFavourite }
+            in
+            { model | homePageModel = newHomePageModel }
+
+        ClickedPagination page ->
+            let
+                homePageModel =
+                    model.homePageModel
+
+                newHomePageModel =
+                    { homePageModel | currentPage = page }
             in
             { model | homePageModel = newHomePageModel }
 
@@ -120,7 +134,7 @@ viewHeader =
 
 
 viewHomePage : HomePageModel -> H.Html Msg
-viewHomePage { tagName, active, isFavourite } =
+viewHomePage { tagName, active, isFavourite, currentPage } =
     H.div []
         [ H.h2 [] [ H.text "Home" ]
         , H.div
@@ -176,6 +190,11 @@ viewHomePage { tagName, active, isFavourite } =
                                 , "implementations"
                                 ]
                             , onClick = always NoOp
+                            }
+                        , Pagination.view
+                            { pages = 5
+                            , current = currentPage
+                            , onClick = ClickedPagination
                             }
                         ]
                     ]
