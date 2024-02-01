@@ -9,6 +9,7 @@ import View.FeedToggle as FeedToggle
 import View.Footer as Footer
 import View.Header as Header
 import View.Pagination as Pagination
+import View.Sidebar as Sidebar
 
 
 main : Program () Model Msg
@@ -30,7 +31,7 @@ type alias Model =
 
 
 type alias HomePageModel =
-    { tagName : String
+    { tag : String
     , active : FeedToggle.Feed
     , isFavourite : Bool
     , currentPage : Int
@@ -40,7 +41,7 @@ type alias HomePageModel =
 init : Model
 init =
     { homePageModel =
-        { tagName = "elm"
+        { tag = ""
         , active = FeedToggle.Global
         , isFavourite = False
         , currentPage = 1
@@ -57,6 +58,7 @@ type Msg
     | ClickedFeedToggle FeedToggle.Feed
     | ClickedFavourite Bool
     | ClickedPagination Int
+    | ClickedSidebar String
 
 
 update : Msg -> Model -> Model
@@ -92,6 +94,19 @@ update msg model =
 
                 newHomePageModel =
                     { homePageModel | currentPage = page }
+            in
+            { model | homePageModel = newHomePageModel }
+
+        ClickedSidebar tag ->
+            let
+                homePageModel =
+                    model.homePageModel
+
+                newHomePageModel =
+                    { homePageModel
+                        | tag = tag
+                        , active = FeedToggle.Tag tag
+                    }
             in
             { model | homePageModel = newHomePageModel }
 
@@ -134,7 +149,7 @@ viewHeader =
 
 
 viewHomePage : HomePageModel -> H.Html Msg
-viewHomePage { tagName, active, isFavourite, currentPage } =
+viewHomePage { tag, active, isFavourite, currentPage } =
     H.div []
         [ H.h2 [] [ H.text "Home" ]
         , H.div
@@ -148,7 +163,7 @@ viewHomePage { tagName, active, isFavourite, currentPage } =
                         [ HA.class "col-md-9" ]
                         [ FeedToggle.view
                             { hasPersonal = True
-                            , tagName = tagName
+                            , tag = tag
                             , active = active
                             , onClick = ClickedFeedToggle
                             }
@@ -196,6 +211,25 @@ viewHomePage { tagName, active, isFavourite, currentPage } =
                             , current = currentPage
                             , onClick = ClickedPagination
                             }
+                        ]
+                    , H.div
+                        [ HA.class "col-md-3" ]
+                        [ Sidebar.view <|
+                            Sidebar.Tags
+                                { tags =
+                                    [ "programming"
+                                    , "javascript"
+                                    , "elm"
+                                    , "emberjs"
+                                    , "angularjs"
+                                    , "react"
+                                    , "node"
+                                    , "django"
+                                    , "rails"
+                                    ]
+                                , activeTag = tag
+                                , onClick = ClickedSidebar
+                                }
                         ]
                     ]
                 ]

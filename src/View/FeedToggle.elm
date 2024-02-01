@@ -6,7 +6,7 @@ import View.Toggle as Toggle
 
 type alias FeedToggle msg =
     { hasPersonal : Bool
-    , tagName : String
+    , tag : String
     , active : Feed
     , onClick : Feed -> msg
     }
@@ -19,7 +19,7 @@ type Feed
 
 
 view : FeedToggle msg -> H.Html msg
-view { hasPersonal, tagName, active, onClick } =
+view { hasPersonal, tag, active, onClick } =
     let
         tabs =
             List.filterMap identity <|
@@ -35,13 +35,13 @@ view { hasPersonal, tagName, active, onClick } =
                     { id = Global
                     , title = "Global Feed"
                     }
-                , if String.isEmpty tagName then
+                , if String.isEmpty tag then
                     Nothing
 
                   else
                     Just
-                        { id = Tag tagName
-                        , title = "#" ++ tagName
+                        { id = Tag tag
+                        , title = "#" ++ tag
                         }
                 ]
     in
