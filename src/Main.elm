@@ -1,13 +1,23 @@
 module Main exposing (main)
 
 import Html as H
+import View.Footer as Footer
 import View.Header as Header
 
 
 main : H.Html msg
 main =
     H.div []
-        [ Header.view (Header.Unauthenticated Nothing)
+        [ viewHeader
+        , viewFooter
+        ]
+
+
+viewHeader : H.Html msg
+viewHeader =
+    H.div []
+        [ H.h2 [] [ H.text "Header" ]
+        , Header.view (Header.Unauthenticated Nothing)
         , H.hr [] []
         , Header.view (Header.Unauthenticated <| Just Header.GuestHome)
         , H.hr [] []
@@ -25,3 +35,8 @@ main =
         , H.hr [] []
         , Header.view (Header.Authenticated "Eric Simons" <| Just Header.Profile)
         ]
+
+
+viewFooter : H.Html msg
+viewFooter =
+    Footer.view
