@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Html as H
 import Html.Attributes as HA
+import View.ArticlePreview as ArticlePreview
 import View.Banner as Banner
 import View.FeedToggle as FeedToggle
 import View.Footer as Footer
@@ -30,6 +31,7 @@ type alias Model =
 type alias HomePageModel =
     { tagName : String
     , active : FeedToggle.Feed
+    , isFavourite : Bool
     }
 
 
@@ -38,6 +40,7 @@ init =
     { homePageModel =
         { tagName = "elm"
         , active = FeedToggle.Global
+        , isFavourite = False
         }
     }
 
@@ -47,12 +50,17 @@ init =
 
 
 type Msg
-    = ClickedFeedToggle FeedToggle.Feed
+    = NoOp
+    | ClickedFeedToggle FeedToggle.Feed
+    | ClickedFavourite Bool
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
+        NoOp ->
+            model
+
         ClickedFeedToggle feed ->
             let
                 homePageModel =
@@ -60,6 +68,16 @@ update msg model =
 
                 newHomePageModel =
                     { homePageModel | active = feed }
+            in
+            { model | homePageModel = newHomePageModel }
+
+        ClickedFavourite isFavourite ->
+            let
+                homePageModel =
+                    model.homePageModel
+
+                newHomePageModel =
+                    { homePageModel | isFavourite = isFavourite }
             in
             { model | homePageModel = newHomePageModel }
 
@@ -102,19 +120,66 @@ viewHeader =
 
 
 viewHomePage : HomePageModel -> H.Html Msg
-viewHomePage { tagName, active } =
+viewHomePage { tagName, active, isFavourite } =
     H.div []
         [ H.h2 [] [ H.text "Home" ]
         , H.div
             [ HA.class "home-page" ]
             [ Banner.view
-            , H.h3 [] [ H.text "Feed Toggle" ]
-            , FeedToggle.view
-                { hasPersonal = True
-                , tagName = tagName
-                , active = active
-                , onClick = ClickedFeedToggle
-                }
+            , H.div
+                [ HA.class "container page" ]
+                [ H.div
+                    [ HA.class "row" ]
+                    [ H.div
+                        [ HA.class "col-md-9" ]
+                        [ FeedToggle.view
+                            { hasPersonal = True
+                            , tagName = tagName
+                            , active = active
+                            , onClick = ClickedFeedToggle
+                            }
+                        , ArticlePreview.view
+                            { author =
+                                { username = "Eric Simons"
+                                , imageSrc = "http://i.imgur.com/Qr71crq.jpg"
+                                }
+                            , date = "January 20th"
+                            , favourites =
+                                if isFavourite then
+                                    30
+
+                                else
+                                    29
+                            , isFavourite = isFavourite
+                            , slug = "how-to-build-webapps-that-scale"
+                            , title = "How to build webapps that scale"
+                            , description = "This is the description for the post."
+                            , tags =
+                                [ "realworld"
+                                , "implementations"
+                                ]
+                            , onClick = ClickedFavourite
+                            }
+                        , ArticlePreview.view
+                            { author =
+                                { username = "Albert Pai"
+                                , imageSrc = "http://i.imgur.com/N4VcUeJ.jpg"
+                                }
+                            , date = "January 20th"
+                            , favourites = 32
+                            , isFavourite = False
+                            , slug = "the-song-you-wont-ever-stop-singing"
+                            , title = "The song you won't ever stop singing. No matter how hard you try."
+                            , description = "This is the description for the post."
+                            , tags =
+                                [ "realworld"
+                                , "implementations"
+                                ]
+                            , onClick = always NoOp
+                            }
+                        ]
+                    ]
+                ]
             ]
         ]
 
