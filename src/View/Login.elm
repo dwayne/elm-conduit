@@ -2,6 +2,7 @@ module View.Login exposing (Login, view)
 
 import Html as H
 import Html.Attributes as HA
+import View.AuthErrors as AuthErrors
 import View.LoginForm as LoginForm exposing (LoginForm)
 
 
@@ -24,15 +25,6 @@ view classNames { loginForm, errorMessages } =
                 [ HA.href "./register.html" ]
                 [ H.text "Need an account?" ]
             ]
-        , if List.isEmpty errorMessages then
-            H.text ""
-
-          else
-            H.ul [ HA.class "error-messages" ] <|
-                List.map
-                    (\errorMessage ->
-                        H.li [] [ H.text errorMessage ]
-                    )
-                    errorMessages
+        , AuthErrors.view errorMessages
         , LoginForm.view loginForm
         ]
