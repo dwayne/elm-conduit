@@ -8,6 +8,8 @@ import View.Banner as Banner
 import View.FeedToggle as FeedToggle
 import View.Footer as Footer
 import View.Header as Header
+import View.Login as Login
+import View.LoginForm as LoginForm
 import View.Pagination as Pagination
 import View.Sidebar as Sidebar
 
@@ -120,6 +122,7 @@ view { homePageModel } =
     H.div []
         [ viewHeader
         , viewHomePage homePageModel
+        , viewLoginPage
         , viewFooter
         ]
 
@@ -231,6 +234,36 @@ viewHomePage { tag, active, isFavourite, currentPage } =
                                 , onClick = ClickedSidebar
                                 }
                         ]
+                    ]
+                ]
+            ]
+        ]
+
+
+viewLoginPage : H.Html Msg
+viewLoginPage =
+    H.div []
+        [ H.h2 [] [ H.text "Login" ]
+        , H.div
+            [ HA.class "auth-page" ]
+            [ H.div
+                [ HA.class "container page" ]
+                [ H.div
+                    [ HA.class "row" ]
+                    [ Login.view
+                        "col-md-6 offset-md-3 col-xs-12"
+                        { loginForm =
+                            { email = ""
+                            , password = ""
+                            , status = LoginForm.Invalid
+                            , onInputEmail = always NoOp
+                            , onInputPassword = always NoOp
+                            , onSubmit = NoOp
+                            }
+                        , errorMessages =
+                            [ "That email is already taken."
+                            ]
+                        }
                     ]
                 ]
             ]
