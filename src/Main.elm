@@ -11,6 +11,8 @@ import View.Header as Header
 import View.Login as Login
 import View.LoginForm as LoginForm
 import View.Pagination as Pagination
+import View.Register as Register
+import View.RegisterForm as RegisterForm
 import View.Sidebar as Sidebar
 
 
@@ -123,6 +125,7 @@ view { homePageModel } =
         [ viewHeader
         , viewHomePage homePageModel
         , viewLoginPage
+        , viewRegisterPage
         , viewFooter
         ]
 
@@ -256,6 +259,38 @@ viewLoginPage =
                             { email = ""
                             , password = ""
                             , status = LoginForm.Invalid
+                            , onInputEmail = always NoOp
+                            , onInputPassword = always NoOp
+                            , onSubmit = NoOp
+                            }
+                        , errorMessages =
+                            [ "That email is already taken."
+                            ]
+                        }
+                    ]
+                ]
+            ]
+        ]
+
+
+viewRegisterPage : H.Html Msg
+viewRegisterPage =
+    H.div []
+        [ H.h2 [] [ H.text "Register" ]
+        , H.div
+            [ HA.class "auth-page" ]
+            [ H.div
+                [ HA.class "container page" ]
+                [ H.div
+                    [ HA.class "row" ]
+                    [ Register.view
+                        "col-md-6 offset-md-3 col-xs-12"
+                        { registerForm =
+                            { username = ""
+                            , email = ""
+                            , password = ""
+                            , status = RegisterForm.Invalid
+                            , onInputUsername = always NoOp
                             , onInputEmail = always NoOp
                             , onInputPassword = always NoOp
                             , onSubmit = NoOp
