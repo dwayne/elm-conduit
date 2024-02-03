@@ -5,6 +5,8 @@ import Html as H
 import Html.Attributes as HA
 import View.ArticlePreview as ArticlePreview
 import View.Banner as Banner
+import View.Editor as Editor
+import View.EditorForm as EditorForm
 import View.FeedToggle as FeedToggle
 import View.Footer as Footer
 import View.Header as Header
@@ -33,6 +35,7 @@ main =
 
 type alias Model =
     { homePageModel : HomePageModel
+    , editorPageModel : EditorPageModel
     }
 
 
@@ -44,6 +47,12 @@ type alias HomePageModel =
     }
 
 
+type alias EditorPageModel =
+    { tag : String
+    , tags : List String
+    }
+
+
 init : Model
 init =
     { homePageModel =
@@ -51,6 +60,12 @@ init =
         , active = FeedToggle.Global
         , isFavourite = False
         , currentPage = 1
+        }
+    , editorPageModel =
+        { tag = ""
+        , tags =
+            [ "elm"
+            ]
         }
     }
 
@@ -65,6 +80,9 @@ type Msg
     | ClickedFavourite Bool
     | ClickedPagination Int
     | ClickedSidebar String
+    | InputTag String
+    | EnterTag String
+    | RemoveTag String
 
 
 update : Msg -> Model -> Model
@@ -116,19 +134,65 @@ update msg model =
             in
             { model | homePageModel = newHomePageModel }
 
+        InputTag tag ->
+            let
+                editorPageModel =
+                    model.editorPageModel
+
+                newEditorPageModel =
+                    { editorPageModel | tag = tag }
+            in
+            { model | editorPageModel = newEditorPageModel }
+
+        EnterTag tag ->
+            let
+                cleanedTag =
+                    String.trim tag
+
+                editorPageModel =
+                    model.editorPageModel
+
+                newEditorPageModel =
+                    if String.isEmpty cleanedTag then
+                        editorPageModel
+
+                    else
+                        { editorPageModel
+                            | tag = ""
+                            , tags = editorPageModel.tags ++ [ cleanedTag ]
+                        }
+            in
+            { model | editorPageModel = newEditorPageModel }
+
+        RemoveTag tag ->
+            let
+                editorPageModel =
+                    model.editorPageModel
+
+                newEditorPageModel =
+                    { editorPageModel
+                        | tags =
+                            List.filter
+                                ((/=) tag)
+                                editorPageModel.tags
+                    }
+            in
+            { model | editorPageModel = newEditorPageModel }
+
 
 
 -- VIEW
 
 
 view : Model -> H.Html Msg
-view { homePageModel } =
+view { homePageModel, editorPageModel } =
     H.div []
         [ viewHeader
         , viewHomePage homePageModel
         , viewLoginPage
         , viewRegisterPage
         , viewSettingsPage
+        , viewEditorPage editorPageModel
         , viewFooter
         ]
 
@@ -338,6 +402,43 @@ viewSettingsPage =
                             [ "That name is required."
                             ]
                         , onLogout = NoOp
+                        }
+                    ]
+                ]
+            ]
+        ]
+
+
+viewEditorPage : EditorPageModel -> H.Html Msg
+viewEditorPage { tag, tags } =
+    H.div []
+        [ H.h2 [] [ H.text "Editor" ]
+        , H.div
+            [ HA.class "editor-page" ]
+            [ H.div
+                [ HA.class "container page" ]
+                [ H.div
+                    [ HA.class "row" ]
+                    [ Editor.view
+                        "col-md-10 offset-md-1 col-xs-12"
+                        { editorForm =
+                            { title = ""
+                            , description = ""
+                            , body = ""
+                            , tag = tag
+                            , tags = tags
+                            , status = EditorForm.Invalid
+                            , onInputTitle = always NoOp
+                            , onInputDescription = always NoOp
+                            , onInputBody = always NoOp
+                            , onInputTag = InputTag
+                            , onEnterTag = EnterTag
+                            , onRemoveTag = RemoveTag
+                            , onSubmit = NoOp
+                            }
+                        , errorMessages =
+                            [ "That title is required."
+                            ]
                         }
                     ]
                 ]
