@@ -1,11 +1,11 @@
-module View.Field exposing (Field, view)
+module View.Input exposing (Input, view)
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 
 
-type alias Field msg =
+type alias Input msg =
     { name : String
     , type_ : String
     , placeholder : String
@@ -15,7 +15,7 @@ type alias Field msg =
     }
 
 
-view : Field msg -> H.Html msg
+view : Input msg -> H.Html msg
 view { name, type_, placeholder, value, isDisabled, onInput } =
     H.fieldset
         [ HA.class "form-group" ]

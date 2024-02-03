@@ -3,7 +3,7 @@ module View.LoginForm exposing (LoginForm, Status(..), view)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
-import View.Field as Field
+import View.Input as Input
 
 
 type alias LoginForm msg =
@@ -39,7 +39,7 @@ view { email, password, status, onInputEmail, onInputPassword, onSubmit } =
                 [ HE.onSubmit onSubmit ]
     in
     H.form attrs
-        [ Field.view
+        [ Input.view
             { name = "email"
             , type_ = "text"
             , placeholder = "Email"
@@ -47,7 +47,7 @@ view { email, password, status, onInputEmail, onInputPassword, onSubmit } =
             , isDisabled = isFieldDisabled
             , onInput = onInputEmail
             }
-        , Field.view
+        , Input.view
             { name = "password"
             , type_ = "password"
             , placeholder = "Password"

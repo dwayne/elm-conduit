@@ -3,7 +3,7 @@ module View.SettingsForm exposing (SettingsForm, Status(..), view)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
-import View.Field as Field
+import View.Input as Input
 import View.Textarea as Textarea
 
 
@@ -47,7 +47,7 @@ view { profilePicUrl, username, bio, email, newPassword, status, onInputProfileP
     in
     H.form attrs
         [ H.fieldset []
-            [ Field.view
+            [ Input.view
                 { name = "profilePicUrl"
                 , type_ = "text"
                 , placeholder = "URL of profile picture"
@@ -55,7 +55,7 @@ view { profilePicUrl, username, bio, email, newPassword, status, onInputProfileP
                 , isDisabled = isFieldDisabled
                 , onInput = onInputProfilePicUrl
                 }
-            , Field.view
+            , Input.view
                 { name = "username"
                 , type_ = "text"
                 , placeholder = "Your Name"
@@ -71,7 +71,7 @@ view { profilePicUrl, username, bio, email, newPassword, status, onInputProfileP
                 , isDisabled = isFieldDisabled
                 , onInput = onInputBio
                 }
-            , Field.view
+            , Input.view
                 { name = "email"
                 , type_ = "text"
                 , placeholder = "Email"
@@ -79,7 +79,7 @@ view { profilePicUrl, username, bio, email, newPassword, status, onInputProfileP
                 , isDisabled = isFieldDisabled
                 , onInput = onInputEmail
                 }
-            , Field.view
+            , Input.view
                 { name = "newPassword"
                 , type_ = "password"
                 , placeholder = "New Password"

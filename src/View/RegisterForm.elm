@@ -3,7 +3,7 @@ module View.RegisterForm exposing (RegisterForm, Status(..), view)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
-import View.Field as Field
+import View.Input as Input
 
 
 type alias RegisterForm msg =
@@ -41,7 +41,7 @@ view { username, email, password, status, onInputUsername, onInputEmail, onInput
                 [ HE.onSubmit onSubmit ]
     in
     H.form attrs
-        [ Field.view
+        [ Input.view
             { name = "username"
             , type_ = "text"
             , placeholder = "Username"
@@ -49,7 +49,7 @@ view { username, email, password, status, onInputUsername, onInputEmail, onInput
             , isDisabled = isFieldDisabled
             , onInput = onInputUsername
             }
-        , Field.view
+        , Input.view
             { name = "email"
             , type_ = "text"
             , placeholder = "Email"
@@ -57,7 +57,7 @@ view { username, email, password, status, onInputUsername, onInputEmail, onInput
             , isDisabled = isFieldDisabled
             , onInput = onInputEmail
             }
-        , Field.view
+        , Input.view
             { name = "password"
             , type_ = "password"
             , placeholder = "Password"
