@@ -13,6 +13,8 @@ import View.LoginForm as LoginForm
 import View.Pagination as Pagination
 import View.Register as Register
 import View.RegisterForm as RegisterForm
+import View.Settings as Settings
+import View.SettingsForm as SettingsForm
 import View.Sidebar as Sidebar
 
 
@@ -126,6 +128,7 @@ view { homePageModel } =
         , viewHomePage homePageModel
         , viewLoginPage
         , viewRegisterPage
+        , viewSettingsPage
         , viewFooter
         ]
 
@@ -298,6 +301,43 @@ viewRegisterPage =
                         , errorMessages =
                             [ "That email is already taken."
                             ]
+                        }
+                    ]
+                ]
+            ]
+        ]
+
+
+viewSettingsPage : H.Html Msg
+viewSettingsPage =
+    H.div []
+        [ H.h2 [] [ H.text "Settings" ]
+        , H.div
+            [ HA.class "settings-page" ]
+            [ H.div
+                [ HA.class "container page" ]
+                [ H.div
+                    [ HA.class "row" ]
+                    [ Settings.view
+                        "col-md-6 offset-md-3 col-xs-12"
+                        { settingsForm =
+                            { profilePicUrl = ""
+                            , username = ""
+                            , bio = ""
+                            , email = ""
+                            , newPassword = ""
+                            , status = SettingsForm.Invalid
+                            , onInputProfilePicUrl = always NoOp
+                            , onInputUsername = always NoOp
+                            , onInputBio = always NoOp
+                            , onInputEmail = always NoOp
+                            , onInputNewPassword = always NoOp
+                            , onSubmit = NoOp
+                            }
+                        , errorMessages =
+                            [ "That name is required."
+                            ]
+                        , onLogout = NoOp
                         }
                     ]
                 ]
