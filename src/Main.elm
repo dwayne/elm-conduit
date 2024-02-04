@@ -4,6 +4,7 @@ import Browser
 import Html as H
 import Html.Attributes as HA
 import View.ArticlePreview as ArticlePreview
+import View.ArticlesToggle as ArticlesToggle
 import View.Banner as Banner
 import View.Editor as Editor
 import View.EditorForm as EditorForm
@@ -13,6 +14,7 @@ import View.Header as Header
 import View.Login as Login
 import View.LoginForm as LoginForm
 import View.Pagination as Pagination
+import View.ProfileHeader as ProfileHeader
 import View.Register as Register
 import View.RegisterForm as RegisterForm
 import View.Settings as Settings
@@ -36,12 +38,13 @@ main =
 type alias Model =
     { homePageModel : HomePageModel
     , editorPageModel : EditorPageModel
+    , profilePageModel : ProfilePageModel
     }
 
 
 type alias HomePageModel =
     { tag : String
-    , active : FeedToggle.Feed
+    , activeTab : FeedToggle.Tab
     , isFavourite : Bool
     , currentPage : Int
     }
@@ -53,11 +56,16 @@ type alias EditorPageModel =
     }
 
 
+type alias ProfilePageModel =
+    { activeTab : ArticlesToggle.Tab
+    }
+
+
 init : Model
 init =
     { homePageModel =
         { tag = ""
-        , active = FeedToggle.Global
+        , activeTab = FeedToggle.Global
         , isFavourite = False
         , currentPage = 1
         }
@@ -66,6 +74,9 @@ init =
         , tags =
             [ "elm"
             ]
+        }
+    , profilePageModel =
+        { activeTab = ArticlesToggle.Personal
         }
     }
 
@@ -76,13 +87,14 @@ init =
 
 type Msg
     = NoOp
-    | ClickedFeedToggle FeedToggle.Feed
+    | ClickedFeedToggle FeedToggle.Tab
     | ClickedFavourite Bool
     | ClickedPagination Int
     | ClickedSidebar String
     | InputTag String
     | EnterTag String
     | RemoveTag String
+    | ClickedArticlesToggle ArticlesToggle.Tab
 
 
 update : Msg -> Model -> Model
@@ -91,13 +103,13 @@ update msg model =
         NoOp ->
             model
 
-        ClickedFeedToggle feed ->
+        ClickedFeedToggle tab ->
             let
                 homePageModel =
                     model.homePageModel
 
                 newHomePageModel =
-                    { homePageModel | active = feed }
+                    { homePageModel | activeTab = tab }
             in
             { model | homePageModel = newHomePageModel }
 
@@ -129,7 +141,7 @@ update msg model =
                 newHomePageModel =
                     { homePageModel
                         | tag = tag
-                        , active = FeedToggle.Tag tag
+                        , activeTab = FeedToggle.Tag tag
                     }
             in
             { model | homePageModel = newHomePageModel }
@@ -179,13 +191,23 @@ update msg model =
             in
             { model | editorPageModel = newEditorPageModel }
 
+        ClickedArticlesToggle tab ->
+            let
+                profilePageModel =
+                    model.profilePageModel
+
+                newProfilePageModel =
+                    { profilePageModel | activeTab = tab }
+            in
+            { model | profilePageModel = newProfilePageModel }
+
 
 
 -- VIEW
 
 
 view : Model -> H.Html Msg
-view { homePageModel, editorPageModel } =
+view { homePageModel, editorPageModel, profilePageModel } =
     H.div []
         [ viewHeader
         , viewHomePage homePageModel
@@ -193,6 +215,7 @@ view { homePageModel, editorPageModel } =
         , viewRegisterPage
         , viewSettingsPage
         , viewEditorPage editorPageModel
+        , viewProfilePage profilePageModel
         , viewFooter
         ]
 
@@ -222,7 +245,7 @@ viewHeader =
 
 
 viewHomePage : HomePageModel -> H.Html Msg
-viewHomePage { tag, active, isFavourite, currentPage } =
+viewHomePage { tag, activeTab, isFavourite, currentPage } =
     H.div []
         [ H.h2 [] [ H.text "Home" ]
         , H.div
@@ -237,7 +260,7 @@ viewHomePage { tag, active, isFavourite, currentPage } =
                         [ FeedToggle.view
                             { hasPersonal = True
                             , tag = tag
-                            , active = active
+                            , active = activeTab
                             , onClick = ClickedFeedToggle
                             }
                         , ArticlePreview.view
@@ -440,6 +463,128 @@ viewEditorPage { tag, tags } =
                             [ "That title is required."
                             ]
                         }
+                    ]
+                ]
+            ]
+        ]
+
+
+viewProfilePage : ProfilePageModel -> H.Html Msg
+viewProfilePage { activeTab } =
+    let
+        username =
+            "Eric Simons"
+
+        imageSrc =
+            "http://i.imgur.com/Qr71crq.jpg"
+
+        bio =
+            "Cofounder @GoThinkster, lived in Aol's HQ for a few months, kinda looks like Peeta from the Hunger Games"
+    in
+    H.div []
+        [ H.h2 [] [ H.text "Profile" ]
+        , H.div
+            [ HA.class "profile-page" ]
+            [ ProfileHeader.view
+                { username = username
+                , imageSrc = imageSrc
+                , bio = bio
+                , role =
+                    ProfileHeader.Guest <|
+                        ProfileHeader.Follow
+                            { isDisabled = False
+                            , onFollow = always NoOp
+                            }
+                }
+            , ProfileHeader.view
+                { username = username
+                , imageSrc = imageSrc
+                , bio = bio
+                , role =
+                    ProfileHeader.Guest <|
+                        ProfileHeader.Follow
+                            { isDisabled = True
+                            , onFollow = always NoOp
+                            }
+                }
+            , ProfileHeader.view
+                { username = username
+                , imageSrc = imageSrc
+                , bio = bio
+                , role =
+                    ProfileHeader.Guest <|
+                        ProfileHeader.Unfollow
+                            { isDisabled = False
+                            , onUnfollow = always NoOp
+                            }
+                }
+            , ProfileHeader.view
+                { username = username
+                , imageSrc = imageSrc
+                , bio = bio
+                , role =
+                    ProfileHeader.Guest <|
+                        ProfileHeader.Unfollow
+                            { isDisabled = True
+                            , onUnfollow = always NoOp
+                            }
+                }
+            , ProfileHeader.view
+                { username = username
+                , imageSrc = imageSrc
+                , bio = bio
+                , role = ProfileHeader.Owner
+                }
+            , H.div
+                [ HA.class "container" ]
+                [ H.div
+                    [ HA.class "row" ]
+                    [ H.div
+                        [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
+                        [ ArticlesToggle.view
+                            { active = activeTab
+                            , onClick = ClickedArticlesToggle
+                            }
+                        , ArticlePreview.view
+                            { author =
+                                { username = "Eric Simons"
+                                , imageSrc = "http://i.imgur.com/Qr71crq.jpg"
+                                }
+                            , date = "January 20th"
+                            , favourites = 30
+                            , isFavourite = True
+                            , slug = "how-to-build-webapps-that-scale"
+                            , title = "How to build webapps that scale"
+                            , description = "This is the description for the post."
+                            , tags =
+                                [ "realworld"
+                                , "implementations"
+                                ]
+                            , onClick = always NoOp
+                            }
+                        , ArticlePreview.view
+                            { author =
+                                { username = "Albert Pai"
+                                , imageSrc = "http://i.imgur.com/N4VcUeJ.jpg"
+                                }
+                            , date = "January 20th"
+                            , favourites = 32
+                            , isFavourite = False
+                            , slug = "the-song-you-wont-ever-stop-singing"
+                            , title = "The song you won't ever stop singing. No matter how hard you try."
+                            , description = "This is the description for the post."
+                            , tags =
+                                [ "realworld"
+                                , "implementations"
+                                ]
+                            , onClick = always NoOp
+                            }
+                        , Pagination.view
+                            { pages = 2
+                            , current = 1
+                            , onClick = always NoOp
+                            }
+                        ]
                     ]
                 ]
             ]

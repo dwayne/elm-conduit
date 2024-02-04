@@ -1,4 +1,4 @@
-module View.FeedToggle exposing (Feed(..), FeedToggle, view)
+module View.FeedToggle exposing (FeedToggle, Tab(..), view)
 
 import Html as H
 import View.Toggle as Toggle
@@ -7,12 +7,12 @@ import View.Toggle as Toggle
 type alias FeedToggle msg =
     { hasPersonal : Bool
     , tag : String
-    , active : Feed
-    , onClick : Feed -> msg
+    , active : Tab
+    , onClick : Tab -> msg
     }
 
 
-type Feed
+type Tab
     = Personal
     | Global
     | Tag String
