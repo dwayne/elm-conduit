@@ -1,15 +1,13 @@
 module View.ProfileHeader exposing
-    ( FollowButton(..)
-    , FollowOptions
-    , ProfileHeader
+    ( ProfileHeader
     , Role(..)
-    , UnfollowOptions
     , view
     )
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import View.FollowButton as FollowButton exposing (FollowButton)
 
 
 type alias ProfileHeader msg =
@@ -44,7 +42,7 @@ view { username, imageSrc, bio, role } =
                     , H.p [] [ H.text bio ]
                     , case role of
                         Guest followButton ->
-                            viewFollowButton username followButton
+                            FollowButton.view username followButton
 
                         Owner ->
                             H.a
@@ -60,54 +58,3 @@ view { username, imageSrc, bio, role } =
                 ]
             ]
         ]
-
-
-type FollowButton msg
-    = Follow (FollowOptions msg)
-    | Unfollow (UnfollowOptions msg)
-
-
-type alias FollowOptions msg =
-    { isDisabled : Bool
-    , onFollow : String -> msg
-    }
-
-
-type alias UnfollowOptions msg =
-    { isDisabled : Bool
-    , onUnfollow : String -> msg
-    }
-
-
-viewFollowButton : String -> FollowButton msg -> H.Html msg
-viewFollowButton username followButton =
-    case followButton of
-        Follow { isDisabled, onFollow } ->
-            H.button
-                [ HA.class "btn btn-sm action-btn btn-outline-secondary"
-                , if isDisabled then
-                    HA.disabled True
-
-                  else
-                    HE.onClick (onFollow username)
-                ]
-                [ H.i
-                    [ HA.class "ion-plus-round" ]
-                    []
-                , H.text <| "\u{00A0} Follow " ++ username
-                ]
-
-        Unfollow { isDisabled, onUnfollow } ->
-            H.button
-                [ HA.class "btn btn-sm action-btn btn-secondary"
-                , if isDisabled then
-                    HA.disabled True
-
-                  else
-                    HE.onClick (onUnfollow username)
-                ]
-                [ H.i
-                    [ HA.class "ion-minus-round" ]
-                    []
-                , H.text <| "\u{00A0} Unfollow " ++ username
-                ]

@@ -9,6 +9,7 @@ import View.Banner as Banner
 import View.Editor as Editor
 import View.EditorForm as EditorForm
 import View.FeedToggle as FeedToggle
+import View.FollowButton as FollowButton
 import View.Footer as Footer
 import View.Header as Header
 import View.Login as Login
@@ -491,7 +492,7 @@ viewProfilePage { activeTab } =
                 , bio = bio
                 , role =
                     ProfileHeader.Guest <|
-                        ProfileHeader.Follow
+                        FollowButton.Follow
                             { isDisabled = False
                             , onFollow = always NoOp
                             }
@@ -502,7 +503,7 @@ viewProfilePage { activeTab } =
                 , bio = bio
                 , role =
                     ProfileHeader.Guest <|
-                        ProfileHeader.Follow
+                        FollowButton.Follow
                             { isDisabled = True
                             , onFollow = always NoOp
                             }
@@ -513,7 +514,7 @@ viewProfilePage { activeTab } =
                 , bio = bio
                 , role =
                     ProfileHeader.Guest <|
-                        ProfileHeader.Unfollow
+                        FollowButton.Unfollow
                             { isDisabled = False
                             , onUnfollow = always NoOp
                             }
@@ -524,7 +525,7 @@ viewProfilePage { activeTab } =
                 , bio = bio
                 , role =
                     ProfileHeader.Guest <|
-                        ProfileHeader.Unfollow
+                        FollowButton.Unfollow
                             { isDisabled = True
                             , onUnfollow = always NoOp
                             }
