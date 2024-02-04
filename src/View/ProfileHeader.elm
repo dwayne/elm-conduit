@@ -1,5 +1,6 @@
 module View.ProfileHeader exposing
-    ( ProfileHeader
+    ( GuestOptions
+    , ProfileHeader
     , Role(..)
     , view
     )
@@ -11,20 +12,28 @@ import View.FollowButton as FollowButton exposing (FollowButton)
 
 
 type alias ProfileHeader msg =
-    { username : String
-    , imageSrc : String
+    { name : String
+    , imageUrl : String
     , bio : String
     , role : Role msg
     }
 
 
 type Role msg
-    = Guest (FollowButton msg)
+    = Guest (GuestOptions msg)
     | Owner
 
 
+type alias GuestOptions msg =
+    { isFollowed : Bool
+    , isDisabled : Bool
+    , onFollow : msg
+    , onUnfollow : msg
+    }
+
+
 view : ProfileHeader msg -> H.Html msg
-view { username, imageSrc, bio, role } =
+view { name, imageUrl, bio, role } =
     H.div
         [ HA.class "user-info" ]
         [ H.div
@@ -35,14 +44,21 @@ view { username, imageSrc, bio, role } =
                     [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
                     [ H.img
                         [ HA.class "user-img"
-                        , HA.src imageSrc
+                        , HA.src imageUrl
                         ]
                         []
-                    , H.h4 [] [ H.text username ]
+                    , H.h4 [] [ H.text name ]
                     , H.p [] [ H.text bio ]
                     , case role of
-                        Guest followButton ->
-                            FollowButton.view username followButton
+                        Guest { isFollowed, isDisabled, onFollow, onUnfollow } ->
+                            FollowButton.view
+                                { name = name
+                                , isFollowed = isFollowed
+                                , maybeTotalFollowers = Nothing
+                                , isDisabled = isDisabled
+                                , onFollow = onFollow
+                                , onUnfollow = onUnfollow
+                                }
 
                         Owner ->
                             H.a

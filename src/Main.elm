@@ -473,10 +473,10 @@ viewEditorPage { tag, tags } =
 viewProfilePage : ProfilePageModel -> H.Html Msg
 viewProfilePage { activeTab } =
     let
-        username =
+        name =
             "Eric Simons"
 
-        imageSrc =
+        imageUrl =
             "http://i.imgur.com/Qr71crq.jpg"
 
         bio =
@@ -487,52 +487,56 @@ viewProfilePage { activeTab } =
         , H.div
             [ HA.class "profile-page" ]
             [ ProfileHeader.view
-                { username = username
-                , imageSrc = imageSrc
+                { name = name
+                , imageUrl = imageUrl
                 , bio = bio
                 , role =
-                    ProfileHeader.Guest <|
-                        FollowButton.Follow
-                            { isDisabled = False
-                            , onFollow = always NoOp
-                            }
+                    ProfileHeader.Guest
+                        { isFollowed = False
+                        , isDisabled = False
+                        , onFollow = NoOp
+                        , onUnfollow = NoOp
+                        }
                 }
             , ProfileHeader.view
-                { username = username
-                , imageSrc = imageSrc
+                { name = name
+                , imageUrl = imageUrl
                 , bio = bio
                 , role =
-                    ProfileHeader.Guest <|
-                        FollowButton.Follow
-                            { isDisabled = True
-                            , onFollow = always NoOp
-                            }
+                    ProfileHeader.Guest
+                        { isFollowed = False
+                        , isDisabled = True
+                        , onFollow = NoOp
+                        , onUnfollow = NoOp
+                        }
                 }
             , ProfileHeader.view
-                { username = username
-                , imageSrc = imageSrc
+                { name = name
+                , imageUrl = imageUrl
                 , bio = bio
                 , role =
-                    ProfileHeader.Guest <|
-                        FollowButton.Unfollow
-                            { isDisabled = False
-                            , onUnfollow = always NoOp
-                            }
+                    ProfileHeader.Guest
+                        { isFollowed = True
+                        , isDisabled = False
+                        , onFollow = NoOp
+                        , onUnfollow = NoOp
+                        }
                 }
             , ProfileHeader.view
-                { username = username
-                , imageSrc = imageSrc
+                { name = name
+                , imageUrl = imageUrl
                 , bio = bio
                 , role =
-                    ProfileHeader.Guest <|
-                        FollowButton.Unfollow
-                            { isDisabled = True
-                            , onUnfollow = always NoOp
-                            }
+                    ProfileHeader.Guest
+                        { isFollowed = True
+                        , isDisabled = True
+                        , onFollow = NoOp
+                        , onUnfollow = NoOp
+                        }
                 }
             , ProfileHeader.view
-                { username = username
-                , imageSrc = imageSrc
+                { name = name
+                , imageUrl = imageUrl
                 , bio = bio
                 , role = ProfileHeader.Owner
                 }
