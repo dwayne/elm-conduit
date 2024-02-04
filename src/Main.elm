@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Html as H
 import Html.Attributes as HA
+import View.ArticleHeader as ArticleHeader
 import View.ArticlePreview as ArticlePreview
 import View.ArticlesToggle as ArticlesToggle
 import View.Banner as Banner
@@ -217,6 +218,7 @@ view { homePageModel, editorPageModel, profilePageModel } =
         , viewSettingsPage
         , viewEditorPage editorPageModel
         , viewProfilePage profilePageModel
+        , viewArticle
         , viewFooter
         ]
 
@@ -592,6 +594,111 @@ viewProfilePage { activeTab } =
                         ]
                     ]
                 ]
+            ]
+        ]
+
+
+viewArticle : H.Html Msg
+viewArticle =
+    let
+        title =
+            "How to build webapps that scale"
+
+        name =
+            "Eric Simons"
+
+        imageUrl =
+            "http://i.imgur.com/Qr71crq.jpg"
+
+        date =
+            "January 20th"
+
+        totalFollowers =
+            10
+
+        totalFavourites =
+            29
+    in
+    H.div []
+        [ H.h2 [] [ H.text "Article" ]
+        , H.div
+            [ HA.class "article-page" ]
+            [ ArticleHeader.view
+                { title = title
+                , name = name
+                , imageUrl = imageUrl
+                , date = date
+                , role =
+                    ArticleHeader.Guest
+                        { isDisabled = False
+                        , isFollowed = False
+                        , totalFollowers = totalFollowers
+                        , onFollow = NoOp
+                        , onUnfollow = NoOp
+                        , isFavourite = True
+                        , totalFavourites = totalFavourites
+                        , onFavourite = NoOp
+                        , onUnfavourite = NoOp
+                        }
+                }
+            , ArticleHeader.view
+                { title = title
+                , name = name
+                , imageUrl = imageUrl
+                , date = date
+                , role =
+                    ArticleHeader.Guest
+                        { isDisabled = False
+                        , isFollowed = True
+                        , totalFollowers = totalFollowers
+                        , onFollow = NoOp
+                        , onUnfollow = NoOp
+                        , isFavourite = False
+                        , totalFavourites = totalFavourites
+                        , onFavourite = NoOp
+                        , onUnfavourite = NoOp
+                        }
+                }
+            , ArticleHeader.view
+                { title = title
+                , name = name
+                , imageUrl = imageUrl
+                , date = date
+                , role =
+                    ArticleHeader.Guest
+                        { isDisabled = True
+                        , isFollowed = False
+                        , totalFollowers = totalFollowers
+                        , onFollow = NoOp
+                        , onUnfollow = NoOp
+                        , isFavourite = False
+                        , totalFavourites = totalFavourites
+                        , onFavourite = NoOp
+                        , onUnfavourite = NoOp
+                        }
+                }
+            , ArticleHeader.view
+                { title = title
+                , name = name
+                , imageUrl = imageUrl
+                , date = date
+                , role =
+                    ArticleHeader.Owner
+                        { isDisabled = False
+                        , onDelete = NoOp
+                        }
+                }
+            , ArticleHeader.view
+                { title = title
+                , name = name
+                , imageUrl = imageUrl
+                , date = date
+                , role =
+                    ArticleHeader.Owner
+                        { isDisabled = True
+                        , onDelete = NoOp
+                        }
+                }
             ]
         ]
 
