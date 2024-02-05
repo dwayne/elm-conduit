@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Html as H
 import Html.Attributes as HA
+import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticlePreview as ArticlePreview
 import View.ArticlesToggle as ArticlesToggle
@@ -699,8 +700,29 @@ viewArticle =
                         , onDelete = NoOp
                         }
                 }
+            , H.div
+                [ HA.class "container page" ]
+                [ ArticleContent.view
+                    { description = "Web development technologies have evolved at an incredible clip over the past few years."
+                    , body = exampleArticleContentBody
+                    , tags =
+                        [ "realworld"
+                        , "implementations"
+                        ]
+                    }
+                ]
+            , H.hr [] []
             ]
         ]
+
+
+exampleArticleContentBody : String
+exampleArticleContentBody =
+    """
+## Introducing RealWorld.
+
+It's a great solution for learning how other frameworks work.
+    """
 
 
 viewFooter : H.Html msg
