@@ -3,6 +3,7 @@ module View.EditorForm exposing (EditorForm, Status(..), view)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Lib.OrderedSet exposing (OrderedSet)
 import View.Input as Input
 import View.TagInput as TagInput
 import View.Textarea as Textarea
@@ -13,16 +14,7 @@ type alias EditorForm msg =
     , description : String
     , body : String
     , tag : String
-
-    --
-    -- N.B. This can be better modeled as an ordered set.
-    --
-    -- Why?
-    --
-    -- 1. The order of the tags matter.
-    -- 2. The tags should be unique.
-    --
-    , tags : List String
+    , tags : OrderedSet String
     , status : Status
     , onInputTitle : String -> msg
     , onInputDescription : String -> msg

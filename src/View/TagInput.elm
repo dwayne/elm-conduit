@@ -5,13 +5,14 @@ import Html.Attributes as HA
 import Html.Events as HE
 import Json.Decode as JD
 import Lib.Html.Attributes as HA
+import Lib.OrderedSet as OrderedSet exposing (OrderedSet)
 
 
 type alias TagInput msg =
     { name : String
     , placeholder : String
     , tag : String
-    , tags : List String
+    , tags : OrderedSet String
     , isDisabled : Bool
     , onInput : String -> msg
     , onEnter : String -> msg
@@ -41,7 +42,7 @@ view { name, placeholder, tag, tags, isDisabled, onInput, onEnter, onRemove } =
     H.fieldset
         [ HA.class "form-group" ]
         [ H.input inputAttrs []
-        , viewTags isEnabled onRemove tags
+        , viewTags isEnabled onRemove (OrderedSet.toList tags)
         ]
 
 

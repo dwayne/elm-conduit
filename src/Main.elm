@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Html as H
 import Html.Attributes as HA
+import Lib.OrderedSet as OrderedSet exposing (OrderedSet)
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
@@ -58,7 +59,7 @@ type alias HomePageModel =
 
 type alias EditorPageModel =
     { tag : String
-    , tags : List String
+    , tags : OrderedSet String
     }
 
 
@@ -78,8 +79,12 @@ init =
     , editorPageModel =
         { tag = ""
         , tags =
-            [ "elm"
-            ]
+            OrderedSet.fromList
+                [ "elm"
+                , "javascript"
+                , "python"
+                , "haskell"
+                ]
         }
     , profilePageModel =
         { activeTab = ArticleTabs.Personal
@@ -177,7 +182,7 @@ update msg model =
                     else
                         { editorPageModel
                             | tag = ""
-                            , tags = editorPageModel.tags ++ [ cleanedTag ]
+                            , tags = OrderedSet.add cleanedTag editorPageModel.tags
                         }
             in
             { model | editorPageModel = newEditorPageModel }
@@ -189,10 +194,7 @@ update msg model =
 
                 newEditorPageModel =
                     { editorPageModel
-                        | tags =
-                            List.filter
-                                ((/=) tag)
-                                editorPageModel.tags
+                        | tags = OrderedSet.remove tag editorPageModel.tags
                     }
             in
             { model | editorPageModel = newEditorPageModel }
