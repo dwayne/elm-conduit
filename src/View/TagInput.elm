@@ -4,6 +4,7 @@ import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 import Json.Decode as JD
+import Lib.Html.Attributes as HA
 
 
 type alias TagInput msg =
@@ -25,7 +26,7 @@ view { name, placeholder, tag, tags, isDisabled, onInput, onEnter, onRemove } =
             not isDisabled
 
         inputAttrs =
-            toAttrs
+            HA.attrList
                 [ HA.class "form-control form-control-lg"
                 , HA.name name
                 , HA.type_ "text"
@@ -51,9 +52,8 @@ viewTags isEnabled onRemove =
             H.span
                 [ HA.class "tag-default tag-pill" ]
                 [ H.i
-                    (toAttrs
-                        [ HA.class "ion-close-round"
-                        ]
+                    (HA.attrList
+                        [ HA.class "ion-close-round" ]
                         [ ( isEnabled, HE.onClick (onRemove tag) )
                         ]
                     )
@@ -79,16 +79,3 @@ onEnterKeyUp msg =
                     )
     in
     HE.on "keyup" enterKeyDecoder
-
-
-toAttrs : List (H.Attribute msg) -> List ( Bool, H.Attribute msg ) -> List (H.Attribute msg)
-toAttrs base =
-    List.filterMap
-        (\( isTrue, attr ) ->
-            if isTrue then
-                Just attr
-
-            else
-                Nothing
-        )
-        >> (++) base

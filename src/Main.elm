@@ -7,18 +7,18 @@ import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
 import View.ArticlePreview as ArticlePreview
-import View.ArticlesToggle as ArticlesToggle
-import View.Banner as Banner
+import View.ArticleTabs as ArticleTabs
 import View.Comment as Comment
 import View.CommentForm as CommentForm
 import View.Editor as Editor
 import View.EditorForm as EditorForm
-import View.FeedToggle as FeedToggle
+import View.FeedTabs as FeedTabs
 import View.FollowButton as FollowButton
 import View.Footer as Footer
-import View.Header as Header
+import View.HomeHeader as HomeHeader
 import View.Login as Login
 import View.LoginForm as LoginForm
+import View.Navigation as Navigation
 import View.Pagination as Pagination
 import View.ProfileHeader as ProfileHeader
 import View.Register as Register
@@ -50,7 +50,7 @@ type alias Model =
 
 type alias HomePageModel =
     { tag : String
-    , activeTab : FeedToggle.Tab
+    , activeTab : FeedTabs.Tab
     , isFavourite : Bool
     , currentPage : Int
     }
@@ -63,7 +63,7 @@ type alias EditorPageModel =
 
 
 type alias ProfilePageModel =
-    { activeTab : ArticlesToggle.Tab
+    { activeTab : ArticleTabs.Tab
     }
 
 
@@ -71,7 +71,7 @@ init : Model
 init =
     { homePageModel =
         { tag = ""
-        , activeTab = FeedToggle.Global
+        , activeTab = FeedTabs.Global
         , isFavourite = False
         , currentPage = 1
         }
@@ -82,7 +82,7 @@ init =
             ]
         }
     , profilePageModel =
-        { activeTab = ArticlesToggle.Personal
+        { activeTab = ArticleTabs.Personal
         }
     }
 
@@ -93,14 +93,14 @@ init =
 
 type Msg
     = NoOp
-    | ClickedFeedToggle FeedToggle.Tab
-    | ClickedFavourite Bool
+    | SwitchedFeedTabs FeedTabs.Tab
+    | ToggledFavourite Bool
     | ClickedPagination Int
     | ClickedSidebar String
     | InputTag String
     | EnterTag String
     | RemoveTag String
-    | ClickedArticlesToggle ArticlesToggle.Tab
+    | SwitchedArticleTabs ArticleTabs.Tab
 
 
 update : Msg -> Model -> Model
@@ -109,7 +109,7 @@ update msg model =
         NoOp ->
             model
 
-        ClickedFeedToggle tab ->
+        SwitchedFeedTabs tab ->
             let
                 homePageModel =
                     model.homePageModel
@@ -119,7 +119,7 @@ update msg model =
             in
             { model | homePageModel = newHomePageModel }
 
-        ClickedFavourite isFavourite ->
+        ToggledFavourite isFavourite ->
             let
                 homePageModel =
                     model.homePageModel
@@ -147,7 +147,7 @@ update msg model =
                 newHomePageModel =
                     { homePageModel
                         | tag = tag
-                        , activeTab = FeedToggle.Tag tag
+                        , activeTab = FeedTabs.Tag tag
                     }
             in
             { model | homePageModel = newHomePageModel }
@@ -197,7 +197,7 @@ update msg model =
             in
             { model | editorPageModel = newEditorPageModel }
 
-        ClickedArticlesToggle tab ->
+        SwitchedArticleTabs tab ->
             let
                 profilePageModel =
                     model.profilePageModel
@@ -215,7 +215,7 @@ update msg model =
 view : Model -> H.Html Msg
 view { homePageModel, editorPageModel, profilePageModel } =
     H.div []
-        [ viewHeader
+        [ viewNavigation
         , viewHomePage homePageModel
         , viewLoginPage
         , viewRegisterPage
@@ -227,27 +227,27 @@ view { homePageModel, editorPageModel, profilePageModel } =
         ]
 
 
-viewHeader : H.Html msg
-viewHeader =
+viewNavigation : H.Html msg
+viewNavigation =
     H.div []
-        [ H.h2 [] [ H.text "Header" ]
-        , Header.view (Header.Unauthenticated Nothing)
+        [ H.h2 [] [ H.text "Navigation" ]
+        , Navigation.view (Navigation.Unauthenticated Nothing)
         , H.hr [] []
-        , Header.view (Header.Unauthenticated <| Just Header.GuestHome)
+        , Navigation.view (Navigation.Unauthenticated <| Just Navigation.GuestHome)
         , H.hr [] []
-        , Header.view (Header.Unauthenticated <| Just Header.Login)
+        , Navigation.view (Navigation.Unauthenticated <| Just Navigation.Login)
         , H.hr [] []
-        , Header.view (Header.Unauthenticated <| Just Header.Register)
+        , Navigation.view (Navigation.Unauthenticated <| Just Navigation.Register)
         , H.hr [] []
-        , Header.view (Header.Authenticated "Eric Simons" Nothing)
+        , Navigation.view (Navigation.Authenticated "Eric Simons" Nothing)
         , H.hr [] []
-        , Header.view (Header.Authenticated "Eric Simons" <| Just Header.Home)
+        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.Home)
         , H.hr [] []
-        , Header.view (Header.Authenticated "Eric Simons" <| Just Header.NewArticle)
+        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.NewArticle)
         , H.hr [] []
-        , Header.view (Header.Authenticated "Eric Simons" <| Just Header.Settings)
+        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.Settings)
         , H.hr [] []
-        , Header.view (Header.Authenticated "Eric Simons" <| Just Header.Profile)
+        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.Profile)
         ]
 
 
@@ -257,26 +257,24 @@ viewHomePage { tag, activeTab, isFavourite, currentPage } =
         [ H.h2 [] [ H.text "Home" ]
         , H.div
             [ HA.class "home-page" ]
-            [ Banner.view
+            [ HomeHeader.view
             , H.div
                 [ HA.class "container page" ]
                 [ H.div
                     [ HA.class "row" ]
                     [ H.div
                         [ HA.class "col-md-9" ]
-                        [ FeedToggle.view
+                        [ FeedTabs.view
                             { hasPersonal = True
                             , tag = tag
-                            , active = activeTab
-                            , onClick = ClickedFeedToggle
+                            , activeTab = activeTab
+                            , onSwitch = SwitchedFeedTabs
                             }
                         , ArticlePreview.view
-                            { author =
-                                { username = "Eric Simons"
-                                , imageSrc = "http://i.imgur.com/Qr71crq.jpg"
-                                }
+                            { name = "Eric Simons"
+                            , imageUrl = "http://i.imgur.com/Qr71crq.jpg"
                             , date = "January 20th"
-                            , favourites =
+                            , totalFavourites =
                                 if isFavourite then
                                     30
 
@@ -290,15 +288,13 @@ viewHomePage { tag, activeTab, isFavourite, currentPage } =
                                 [ "realworld"
                                 , "implementations"
                                 ]
-                            , onClick = ClickedFavourite
+                            , onToggleFavourite = ToggledFavourite
                             }
                         , ArticlePreview.view
-                            { author =
-                                { username = "Albert Pai"
-                                , imageSrc = "http://i.imgur.com/N4VcUeJ.jpg"
-                                }
+                            { name = "Albert Pai"
+                            , imageUrl = "http://i.imgur.com/N4VcUeJ.jpg"
                             , date = "January 20th"
-                            , favourites = 32
+                            , totalFavourites = 32
                             , isFavourite = False
                             , slug = "the-song-you-wont-ever-stop-singing"
                             , title = "The song you won't ever stop singing. No matter how hard you try."
@@ -307,11 +303,11 @@ viewHomePage { tag, activeTab, isFavourite, currentPage } =
                                 [ "realworld"
                                 , "implementations"
                                 ]
-                            , onClick = always NoOp
+                            , onToggleFavourite = always NoOp
                             }
                         , Pagination.view
-                            { pages = 5
-                            , current = currentPage
+                            { totalPages = 5
+                            , currentPage = currentPage
                             , onClick = ClickedPagination
                             }
                         ]
@@ -352,7 +348,7 @@ viewLoginPage =
                     [ HA.class "row" ]
                     [ Login.view
                         "col-md-6 offset-md-3 col-xs-12"
-                        { loginForm =
+                        { form =
                             { email = ""
                             , password = ""
                             , status = LoginForm.Invalid
@@ -382,7 +378,7 @@ viewRegisterPage =
                     [ HA.class "row" ]
                     [ Register.view
                         "col-md-6 offset-md-3 col-xs-12"
-                        { registerForm =
+                        { form =
                             { username = ""
                             , email = ""
                             , password = ""
@@ -414,7 +410,7 @@ viewSettingsPage =
                     [ HA.class "row" ]
                     [ Settings.view
                         "col-md-6 offset-md-3 col-xs-12"
-                        { settingsForm =
+                        { form =
                             { profilePicUrl = ""
                             , username = ""
                             , bio = ""
@@ -451,7 +447,7 @@ viewEditorPage { tag, tags } =
                     [ HA.class "row" ]
                     [ Editor.view
                         "col-md-10 offset-md-1 col-xs-12"
-                        { editorForm =
+                        { form =
                             { title = ""
                             , description = ""
                             , body = ""
@@ -552,17 +548,15 @@ viewProfilePage { activeTab } =
                     [ HA.class "row" ]
                     [ H.div
                         [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
-                        [ ArticlesToggle.view
-                            { active = activeTab
-                            , onClick = ClickedArticlesToggle
+                        [ ArticleTabs.view
+                            { activeTab = activeTab
+                            , onSwitch = SwitchedArticleTabs
                             }
                         , ArticlePreview.view
-                            { author =
-                                { username = "Eric Simons"
-                                , imageSrc = "http://i.imgur.com/Qr71crq.jpg"
-                                }
+                            { name = "Eric Simons"
+                            , imageUrl = "http://i.imgur.com/Qr71crq.jpg"
                             , date = "January 20th"
-                            , favourites = 30
+                            , totalFavourites = 30
                             , isFavourite = True
                             , slug = "how-to-build-webapps-that-scale"
                             , title = "How to build webapps that scale"
@@ -571,15 +565,13 @@ viewProfilePage { activeTab } =
                                 [ "realworld"
                                 , "implementations"
                                 ]
-                            , onClick = always NoOp
+                            , onToggleFavourite = always NoOp
                             }
                         , ArticlePreview.view
-                            { author =
-                                { username = "Albert Pai"
-                                , imageSrc = "http://i.imgur.com/N4VcUeJ.jpg"
-                                }
+                            { name = "Albert Pai"
+                            , imageUrl = "http://i.imgur.com/N4VcUeJ.jpg"
                             , date = "January 20th"
-                            , favourites = 32
+                            , totalFavourites = 32
                             , isFavourite = False
                             , slug = "the-song-you-wont-ever-stop-singing"
                             , title = "The song you won't ever stop singing. No matter how hard you try."
@@ -588,11 +580,11 @@ viewProfilePage { activeTab } =
                                 [ "realworld"
                                 , "implementations"
                                 ]
-                            , onClick = always NoOp
+                            , onToggleFavourite = always NoOp
                             }
                         , Pagination.view
-                            { pages = 2
-                            , current = 1
+                            { totalPages = 2
+                            , currentPage = 1
                             , onClick = always NoOp
                             }
                         ]

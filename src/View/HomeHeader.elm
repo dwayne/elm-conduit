@@ -1,4 +1,4 @@
-module View.Banner exposing (view)
+module View.HomeHeader exposing (view)
 
 import Html as H
 import Html.Attributes as HA

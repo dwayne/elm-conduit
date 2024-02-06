@@ -3,6 +3,7 @@ module View.Comment exposing (Comment, DeleteOptions, view)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Lib.Html.Attributes as HA
 
 
 type alias Comment msg =
@@ -55,14 +56,13 @@ view { comment, name, imageUrl, date, maybeDelete } =
             , case maybeDelete of
                 Just { isDisabled, onDelete } ->
                     let
-                        attrs =
-                            List.filterMap identity <|
-                                [ Just <| HA.class "mod-options"
-                                , if isDisabled then
-                                    Nothing
+                        isEnabled =
+                            not isDisabled
 
-                                  else
-                                    Just <| HE.onClick onDelete
+                        attrs =
+                            HA.attrList
+                                [ HA.class "mod-options" ]
+                                [ ( isEnabled, HE.onClick onDelete )
                                 ]
                     in
                     H.span attrs

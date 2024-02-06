@@ -1,12 +1,12 @@
-module View.ArticlesToggle exposing (ArticlesToggle, Tab(..), view)
+module View.ArticleTabs exposing (ArticleTabs, Tab(..), view)
 
 import Html as H
-import View.Toggle as Toggle
+import View.Tabs as Tabs
 
 
-type alias ArticlesToggle msg =
-    { active : Tab
-    , onClick : Tab -> msg
+type alias ArticleTabs msg =
+    { activeTab : Tab
+    , onSwitch : Tab -> msg
     }
 
 
@@ -15,9 +15,9 @@ type Tab
     | Favourites
 
 
-view : ArticlesToggle msg -> H.Html msg
-view { active, onClick } =
-    Toggle.view
+view : ArticleTabs msg -> H.Html msg
+view { activeTab, onSwitch } =
+    Tabs.view
         { name = "articles"
         , tabs =
             [ { id = Personal
@@ -27,6 +27,6 @@ view { active, onClick } =
               , title = "Favourited Articles"
               }
             ]
-        , active = active
-        , onClick = onClick
+        , activeTab = activeTab
+        , onSwitch = onSwitch
         }

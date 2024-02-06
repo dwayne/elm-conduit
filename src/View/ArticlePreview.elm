@@ -1,4 +1,4 @@
-module View.ArticlePreview exposing (ArticlePreview, Author, view)
+module View.ArticlePreview exposing (ArticlePreview, view)
 
 import Html as H
 import Html.Attributes as HA
@@ -6,29 +6,24 @@ import Html.Events as HE
 
 
 type alias ArticlePreview msg =
-    { author : Author
+    { name : String
+    , imageUrl : String
     , date : String
-    , favourites : Int
+    , totalFavourites : Int
     , isFavourite : Bool
     , slug : String
     , title : String
     , description : String
     , tags : List String
-    , onClick : Bool -> msg
-    }
-
-
-type alias Author =
-    { username : String
-    , imageSrc : String
+    , onToggleFavourite : Bool -> msg
     }
 
 
 view : ArticlePreview msg -> H.Html msg
-view { author, date, favourites, isFavourite, onClick, slug, title, description, tags } =
+view { name, imageUrl, date, totalFavourites, isFavourite, onToggleFavourite, slug, title, description, tags } =
     let
         profileHref =
-            "./profile-" ++ author.username ++ ".html"
+            "./profile-" ++ name ++ ".html"
     in
     H.div
         [ HA.class "article-preview" ]
@@ -36,14 +31,14 @@ view { author, date, favourites, isFavourite, onClick, slug, title, description,
             [ HA.class "article-meta" ]
             [ H.a
                 [ HA.href profileHref ]
-                [ H.img [ HA.src author.imageSrc ] [] ]
+                [ H.img [ HA.src imageUrl ] [] ]
             , H.div
                 [ HA.class "info" ]
                 [ H.a
                     [ HA.class "author"
                     , HA.href profileHref
                     ]
-                    [ H.text author.username ]
+                    [ H.text name ]
                 , H.span
                     [ HA.class "date" ]
                     [ H.text date ]
@@ -56,11 +51,11 @@ view { author, date, favourites, isFavourite, onClick, slug, title, description,
 
                     else
                         "btn-outline-primary"
-                , HE.onClick (onClick <| not isFavourite)
+                , HE.onClick (onToggleFavourite <| not isFavourite)
                 ]
                 [ H.i [ HA.class "ion-heart" ] []
                 , H.text " "
-                , H.text <| String.fromInt favourites
+                , H.text <| String.fromInt totalFavourites
                 ]
             ]
         , H.a

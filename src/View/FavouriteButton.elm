@@ -1,7 +1,4 @@
-module View.FavouriteButton exposing
-    ( FavouriteButton
-    , view
-    )
+module View.FavouriteButton exposing (FavouriteButton, view)
 
 import Html as H
 import Html.Attributes as HA

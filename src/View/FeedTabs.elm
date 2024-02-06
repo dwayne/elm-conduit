@@ -1,14 +1,14 @@
-module View.FeedToggle exposing (FeedToggle, Tab(..), view)
+module View.FeedTabs exposing (FeedTabs, Tab(..), view)
 
 import Html as H
-import View.Toggle as Toggle
+import View.Tabs as Tabs
 
 
-type alias FeedToggle msg =
+type alias FeedTabs msg =
     { hasPersonal : Bool
     , tag : String
-    , active : Tab
-    , onClick : Tab -> msg
+    , activeTab : Tab
+    , onSwitch : Tab -> msg
     }
 
 
@@ -18,8 +18,8 @@ type Tab
     | Tag String
 
 
-view : FeedToggle msg -> H.Html msg
-view { hasPersonal, tag, active, onClick } =
+view : FeedTabs msg -> H.Html msg
+view { hasPersonal, tag, activeTab, onSwitch } =
     let
         tabs =
             List.filterMap identity <|
@@ -45,9 +45,9 @@ view { hasPersonal, tag, active, onClick } =
                         }
                 ]
     in
-    Toggle.view
+    Tabs.view
         { name = "feed"
         , tabs = tabs
-        , active = active
-        , onClick = onClick
+        , activeTab = activeTab
+        , onSwitch = onSwitch
         }

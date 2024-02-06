@@ -3,27 +3,28 @@ module View.Pagination exposing (Pagination, view)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Lib.Html.Attributes as HA
 
 
 type alias Pagination msg =
-    { pages : Int
-    , current : Int
+    { totalPages : Int
+    , currentPage : Int
     , onClick : Int -> msg
     }
 
 
 view : Pagination msg -> H.Html msg
-view { pages, current, onClick } =
+view { totalPages, currentPage, onClick } =
     let
         oneToPages =
-            List.range 1 pages
+            List.range 1 totalPages
     in
     H.ul [ HA.class "pagination" ] <|
         List.map
             (\page ->
                 viewPageItem
                     { page = page
-                    , current = current
+                    , currentPage = currentPage
                     , onClick = onClick
                     }
             )
@@ -32,25 +33,21 @@ view { pages, current, onClick } =
 
 type alias PageItemOptions msg =
     { page : Int
-    , current : Int
+    , currentPage : Int
     , onClick : Int -> msg
     }
 
 
 viewPageItem : PageItemOptions msg -> H.Html msg
-viewPageItem { page, current, onClick } =
+viewPageItem { page, currentPage, onClick } =
     let
         isActive =
-            page == current
+            page == currentPage
 
         buttonAttrs =
-            List.filterMap identity <|
-                [ Just <| HA.class "page-link"
-                , if isActive then
-                    Nothing
-
-                  else
-                    Just <| HE.onClick (onClick page)
+            HA.attrList
+                [ HA.class "page-link" ]
+                [ ( not isActive, HE.onClick (onClick page) )
                 ]
     in
     H.li

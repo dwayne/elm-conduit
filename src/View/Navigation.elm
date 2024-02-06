@@ -1,6 +1,6 @@
-module View.Header exposing
+module View.Navigation exposing
     ( AuthenticatedItem(..)
-    , Header(..)
+    , Navigation(..)
     , UnauthenticatedItem(..)
     , view
     )
@@ -9,7 +9,7 @@ import Html as H
 import Html.Attributes as HA
 
 
-type Header
+type Navigation
     = Unauthenticated (Maybe UnauthenticatedItem)
     | Authenticated String (Maybe AuthenticatedItem)
 
@@ -27,8 +27,8 @@ type AuthenticatedItem
     | Profile
 
 
-view : Header -> H.Html msg
-view header =
+view : Navigation -> H.Html msg
+view navigation =
     let
         navItems =
             List.map
@@ -39,7 +39,7 @@ view header =
                         ]
                 )
             <|
-                case header of
+                case navigation of
                     Unauthenticated maybeItem ->
                         unauthenticatedNavLinks maybeItem
 

@@ -7,13 +7,13 @@ import View.LoginForm as LoginForm exposing (LoginForm)
 
 
 type alias Login msg =
-    { loginForm : LoginForm msg
+    { form : LoginForm msg
     , errorMessages : List String
     }
 
 
 view : String -> Login msg -> H.Html msg
-view classNames { loginForm, errorMessages } =
+view classNames { form, errorMessages } =
     H.div
         [ HA.class classNames ]
         [ H.h1
@@ -26,5 +26,5 @@ view classNames { loginForm, errorMessages } =
                 [ H.text "Need an account?" ]
             ]
         , AuthErrors.view errorMessages
-        , LoginForm.view loginForm
+        , LoginForm.view form
         ]

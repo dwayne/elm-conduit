@@ -8,21 +8,21 @@ import View.SettingsForm as SettingsForm exposing (SettingsForm)
 
 
 type alias Settings msg =
-    { settingsForm : SettingsForm msg
+    { form : SettingsForm msg
     , errorMessages : List String
     , onLogout : msg
     }
 
 
 view : String -> Settings msg -> H.Html msg
-view classNames { settingsForm, errorMessages, onLogout } =
+view classNames { form, errorMessages, onLogout } =
     H.div
         [ HA.class classNames ]
         [ H.h1
             [ HA.class "text-xs-center" ]
             [ H.text "Your Settings" ]
         , AuthErrors.view errorMessages
-        , SettingsForm.view settingsForm
+        , SettingsForm.view form
         , H.hr [] []
         , H.button
             [ HA.class "btn btn-outline-danger"

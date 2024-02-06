@@ -1,7 +1,4 @@
-module View.FollowButton exposing
-    ( FollowButton
-    , view
-    )
+module View.FollowButton exposing (FollowButton, view)
 
 import Html as H
 import Html.Attributes as HA

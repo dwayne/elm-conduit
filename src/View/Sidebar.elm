@@ -3,6 +3,7 @@ module View.Sidebar exposing (Sidebar(..), TagListOptions, view)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Lib.Html.Attributes as HA
 
 
 type Sidebar msg
@@ -39,13 +40,9 @@ viewTagList sidebar =
                     (\tag ->
                         let
                             attrs =
-                                List.filterMap identity <|
-                                    [ Just <| HA.class "tag-pill tag-default"
-                                    , if tag == activeTag then
-                                        Nothing
-
-                                      else
-                                        Just <| HE.onClick (onClick tag)
+                                HA.attrList
+                                    [ HA.class "tag-pill tag-default" ]
+                                    [ ( tag /= activeTag, HE.onClick (onClick tag) )
                                     ]
                         in
                         H.button attrs [ H.text tag ]

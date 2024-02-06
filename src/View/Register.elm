@@ -7,13 +7,13 @@ import View.RegisterForm as RegisterForm exposing (RegisterForm)
 
 
 type alias Register msg =
-    { registerForm : RegisterForm msg
+    { form : RegisterForm msg
     , errorMessages : List String
     }
 
 
 view : String -> Register msg -> H.Html msg
-view classNames { registerForm, errorMessages } =
+view classNames { form, errorMessages } =
     H.div
         [ HA.class classNames ]
         [ H.h1
@@ -26,5 +26,5 @@ view classNames { registerForm, errorMessages } =
                 [ H.text "Have an account?" ]
             ]
         , AuthErrors.view errorMessages
-        , RegisterForm.view registerForm
+        , RegisterForm.view form
         ]

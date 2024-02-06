@@ -1,32 +1,32 @@
-module View.Toggle exposing (Tab, Toggle, view)
+module View.Tabs exposing (Tab, Tabs, view)
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 
 
-type alias Toggle a msg =
+type alias Tabs tab msg =
     { name : String
-    , tabs : List (Tab a)
-    , active : a
-    , onClick : a -> msg
+    , tabs : List (Tab tab)
+    , activeTab : tab
+    , onSwitch : tab -> msg
     }
 
 
-type alias Tab a =
-    { id : a
+type alias Tab tab =
+    { id : tab
     , title : String
     }
 
 
-view : Toggle a msg -> H.Html msg
-view { name, tabs, active, onClick } =
+view : Tabs tab msg -> H.Html msg
+view { name, tabs, activeTab, onSwitch } =
     let
         className =
             name ++ "-toggle"
 
         viewTabs =
-            List.map (viewTab active onClick) tabs
+            List.map (viewTab activeTab onSwitch) tabs
     in
     H.div
         [ HA.class className ]
@@ -36,20 +36,20 @@ view { name, tabs, active, onClick } =
         ]
 
 
-viewTab : a -> (a -> msg) -> Tab a -> H.Html msg
-viewTab active onClick { id, title } =
+viewTab : tab -> (tab -> msg) -> Tab tab -> H.Html msg
+viewTab activeTab onSwitch { id, title } =
     let
         baseAttrs =
             [ HA.class "nav-link"
             ]
 
         extraAttrs =
-            if active == id then
+            if id == activeTab then
                 [ HA.class "active"
                 ]
 
             else
-                [ HE.onClick (onClick id)
+                [ HE.onClick (onSwitch id)
                 ]
 
         attrs =
