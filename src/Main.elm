@@ -5,9 +5,12 @@ import Html as H
 import Html.Attributes as HA
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
+import View.ArticleMeta as ArticleMeta
 import View.ArticlePreview as ArticlePreview
 import View.ArticlesToggle as ArticlesToggle
 import View.Banner as Banner
+import View.Comment as Comment
+import View.CommentForm as CommentForm
 import View.Editor as Editor
 import View.EditorForm as EditorForm
 import View.FeedToggle as FeedToggle
@@ -626,79 +629,89 @@ viewArticle =
             [ HA.class "article-page" ]
             [ ArticleHeader.view
                 { title = title
-                , name = name
-                , imageUrl = imageUrl
-                , date = date
-                , role =
-                    ArticleHeader.Guest
-                        { isDisabled = False
-                        , isFollowed = False
-                        , totalFollowers = totalFollowers
-                        , onFollow = NoOp
-                        , onUnfollow = NoOp
-                        , isFavourite = True
-                        , totalFavourites = totalFavourites
-                        , onFavourite = NoOp
-                        , onUnfavourite = NoOp
-                        }
+                , meta =
+                    { name = name
+                    , imageUrl = imageUrl
+                    , date = date
+                    , role =
+                        ArticleMeta.Guest
+                            { isDisabled = False
+                            , isFollowed = False
+                            , totalFollowers = totalFollowers
+                            , onFollow = NoOp
+                            , onUnfollow = NoOp
+                            , isFavourite = True
+                            , totalFavourites = totalFavourites
+                            , onFavourite = NoOp
+                            , onUnfavourite = NoOp
+                            }
+                    }
                 }
             , ArticleHeader.view
                 { title = title
-                , name = name
-                , imageUrl = imageUrl
-                , date = date
-                , role =
-                    ArticleHeader.Guest
-                        { isDisabled = False
-                        , isFollowed = True
-                        , totalFollowers = totalFollowers
-                        , onFollow = NoOp
-                        , onUnfollow = NoOp
-                        , isFavourite = False
-                        , totalFavourites = totalFavourites
-                        , onFavourite = NoOp
-                        , onUnfavourite = NoOp
-                        }
+                , meta =
+                    { name = name
+                    , imageUrl = imageUrl
+                    , date = date
+                    , role =
+                        ArticleMeta.Guest
+                            { isDisabled = False
+                            , isFollowed = True
+                            , totalFollowers = totalFollowers
+                            , onFollow = NoOp
+                            , onUnfollow = NoOp
+                            , isFavourite = False
+                            , totalFavourites = totalFavourites
+                            , onFavourite = NoOp
+                            , onUnfavourite = NoOp
+                            }
+                    }
                 }
             , ArticleHeader.view
                 { title = title
-                , name = name
-                , imageUrl = imageUrl
-                , date = date
-                , role =
-                    ArticleHeader.Guest
-                        { isDisabled = True
-                        , isFollowed = False
-                        , totalFollowers = totalFollowers
-                        , onFollow = NoOp
-                        , onUnfollow = NoOp
-                        , isFavourite = False
-                        , totalFavourites = totalFavourites
-                        , onFavourite = NoOp
-                        , onUnfavourite = NoOp
-                        }
+                , meta =
+                    { name = name
+                    , imageUrl = imageUrl
+                    , date = date
+                    , role =
+                        ArticleMeta.Guest
+                            { isDisabled = True
+                            , isFollowed = False
+                            , totalFollowers = totalFollowers
+                            , onFollow = NoOp
+                            , onUnfollow = NoOp
+                            , isFavourite = False
+                            , totalFavourites = totalFavourites
+                            , onFavourite = NoOp
+                            , onUnfavourite = NoOp
+                            }
+                    }
                 }
             , ArticleHeader.view
                 { title = title
-                , name = name
-                , imageUrl = imageUrl
-                , date = date
-                , role =
-                    ArticleHeader.Owner
-                        { isDisabled = False
-                        , onDelete = NoOp
-                        }
+                , meta =
+                    { name = name
+                    , imageUrl = imageUrl
+                    , date = date
+                    , role =
+                        ArticleMeta.Owner
+                            { isDisabled = False
+                            , onDelete = NoOp
+                            }
+                    }
                 }
             , ArticleHeader.view
                 { title = title
-                , name = name
-                , imageUrl = imageUrl
-                , date = date
-                , role =
-                    ArticleHeader.Owner
-                        { isDisabled = True
-                        , onDelete = NoOp
-                        }
+                , meta =
+                    { name = name
+                    , imageUrl = imageUrl
+                    , date = date
+                    , role =
+                        ArticleMeta.Owner
+                            { isDisabled = True
+                            , onDelete = NoOp
+                            }
+                    }
                 }
             , H.div
                 [ HA.class "container page" ]
@@ -710,8 +723,84 @@ viewArticle =
                         , "implementations"
                         ]
                     }
+                , H.hr [] []
+                , H.div
+                    [ HA.class "article-actions" ]
+                    [ ArticleMeta.view
+                        { name = name
+                        , imageUrl = imageUrl
+                        , date = date
+                        , role =
+                            ArticleMeta.Guest
+                                { isDisabled = False
+                                , isFollowed = False
+                                , totalFollowers = totalFollowers
+                                , onFollow = NoOp
+                                , onUnfollow = NoOp
+                                , isFavourite = True
+                                , totalFavourites = totalFavourites
+                                , onFavourite = NoOp
+                                , onUnfavourite = NoOp
+                                }
+                        }
+                    ]
+                , H.div
+                    [ HA.class "row" ]
+                    [ H.div
+                        [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
+                        [ CommentForm.view
+                            { comment = ""
+                            , imageUrl = imageUrl
+                            , status = CommentForm.Invalid
+                            , onInputComment = always NoOp
+                            , onSubmit = NoOp
+                            }
+                        , CommentForm.view
+                            { comment = "This is a comment."
+                            , imageUrl = imageUrl
+                            , status = CommentForm.Valid
+                            , onInputComment = always NoOp
+                            , onSubmit = NoOp
+                            }
+                        , CommentForm.view
+                            { comment = ""
+                            , imageUrl = imageUrl
+                            , status = CommentForm.Loading
+                            , onInputComment = always NoOp
+                            , onSubmit = NoOp
+                            }
+                        , Comment.view
+                            { comment = "With supporting text below as a natural lead-in to additional content."
+                            , name = "Jacob Schmidt"
+                            , imageUrl = imageUrl
+                            , date = "Dec 29th"
+                            , maybeDelete = Nothing
+                            }
+                        , Comment.view
+                            { comment = "With supporting text below as a natural lead-in to additional content."
+                            , name = "Jacob Schmidt"
+                            , imageUrl = imageUrl
+                            , date = "Dec 29th"
+                            , maybeDelete =
+                                Just
+                                    { isDisabled = False
+                                    , onDelete = NoOp
+                                    }
+                            }
+                        , Comment.view
+                            { comment = "With supporting text below as a natural lead-in to additional content."
+                            , name = "Jacob Schmidt"
+                            , imageUrl = imageUrl
+                            , date = "Dec 29th"
+                            , maybeDelete =
+                                Just
+                                    { isDisabled = True
+                                    , onDelete = NoOp
+                                    }
+                            }
+                        ]
+                    ]
                 ]
-            , H.hr [] []
             ]
         ]
 
