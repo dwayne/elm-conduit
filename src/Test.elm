@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Test exposing (main)
 
 import Browser
 import Html as H
@@ -53,7 +53,7 @@ type alias HomePageModel =
     { tag : String
     , activeTab : FeedTabs.Tab
     , isFavourite : Bool
-    , currentPage : Int
+    , currentPageNumber : Int
     }
 
 
@@ -74,7 +74,7 @@ init =
         { tag = ""
         , activeTab = FeedTabs.Global
         , isFavourite = False
-        , currentPage = 1
+        , currentPageNumber = 1
         }
     , editorPageModel =
         { tag = ""
@@ -140,7 +140,7 @@ update msg model =
                     model.homePageModel
 
                 newHomePageModel =
-                    { homePageModel | currentPage = page }
+                    { homePageModel | currentPageNumber = page }
             in
             { model | homePageModel = newHomePageModel }
 
@@ -231,30 +231,36 @@ view { homePageModel, editorPageModel, profilePageModel } =
 
 viewNavigation : H.Html msg
 viewNavigation =
+    let
+        userDetails =
+            { name = "Eric Simons"
+            , imageUrl = "./images/smiley-cyrus.jpeg"
+            }
+    in
     H.div []
         [ H.h2 [] [ H.text "Navigation" ]
-        , Navigation.view (Navigation.Unauthenticated Nothing)
+        , Navigation.view { role = Navigation.guest }
         , H.hr [] []
-        , Navigation.view (Navigation.Unauthenticated <| Just Navigation.GuestHome)
+        , Navigation.view { role = Navigation.guestHome }
         , H.hr [] []
-        , Navigation.view (Navigation.Unauthenticated <| Just Navigation.Login)
+        , Navigation.view { role = Navigation.login }
         , H.hr [] []
-        , Navigation.view (Navigation.Unauthenticated <| Just Navigation.Register)
+        , Navigation.view { role = Navigation.register }
         , H.hr [] []
-        , Navigation.view (Navigation.Authenticated "Eric Simons" Nothing)
+        , Navigation.view { role = Navigation.user userDetails }
         , H.hr [] []
-        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.Home)
+        , Navigation.view { role = Navigation.userHome userDetails }
         , H.hr [] []
-        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.NewArticle)
+        , Navigation.view { role = Navigation.newArticle userDetails }
         , H.hr [] []
-        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.Settings)
+        , Navigation.view { role = Navigation.settings userDetails }
         , H.hr [] []
-        , Navigation.view (Navigation.Authenticated "Eric Simons" <| Just Navigation.Profile)
+        , Navigation.view { role = Navigation.profile userDetails }
         ]
 
 
 viewHomePage : HomePageModel -> H.Html Msg
-viewHomePage { tag, activeTab, isFavourite, currentPage } =
+viewHomePage { tag, activeTab, isFavourite, currentPageNumber } =
     H.div []
         [ H.h2 [] [ H.text "Home" ]
         , H.div
@@ -270,6 +276,7 @@ viewHomePage { tag, activeTab, isFavourite, currentPage } =
                             { hasPersonal = True
                             , tag = tag
                             , activeTab = activeTab
+                            , isDisabled = False
                             , onSwitch = SwitchedFeedTabs
                             }
                         , ArticlePreview.view
@@ -309,7 +316,7 @@ viewHomePage { tag, activeTab, isFavourite, currentPage } =
                             }
                         , Pagination.view
                             { totalPages = 5
-                            , currentPage = currentPage
+                            , currentPageNumber = currentPageNumber
                             , onClick = ClickedPagination
                             }
                         ]
@@ -552,6 +559,7 @@ viewProfilePage { activeTab } =
                         [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
                         [ ArticleTabs.view
                             { activeTab = activeTab
+                            , isDisabled = False
                             , onSwitch = SwitchedArticleTabs
                             }
                         , ArticlePreview.view
@@ -586,7 +594,7 @@ viewProfilePage { activeTab } =
                             }
                         , Pagination.view
                             { totalPages = 2
-                            , currentPage = 1
+                            , currentPageNumber = 1
                             , onClick = always NoOp
                             }
                         ]

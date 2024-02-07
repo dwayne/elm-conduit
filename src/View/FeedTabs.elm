@@ -8,6 +8,7 @@ type alias FeedTabs msg =
     { hasPersonal : Bool
     , tag : String
     , activeTab : Tab
+    , isDisabled : Bool
     , onSwitch : Tab -> msg
     }
 
@@ -19,7 +20,7 @@ type Tab
 
 
 view : FeedTabs msg -> H.Html msg
-view { hasPersonal, tag, activeTab, onSwitch } =
+view { hasPersonal, tag, activeTab, isDisabled, onSwitch } =
     let
         tabs =
             List.filterMap identity <|
@@ -49,5 +50,6 @@ view { hasPersonal, tag, activeTab, onSwitch } =
         { name = "feed"
         , tabs = tabs
         , activeTab = activeTab
+        , isDisabled = isDisabled
         , onSwitch = onSwitch
         }

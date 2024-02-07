@@ -6,6 +6,7 @@ import View.Tabs as Tabs
 
 type alias ArticleTabs msg =
     { activeTab : Tab
+    , isDisabled : Bool
     , onSwitch : Tab -> msg
     }
 
@@ -16,7 +17,7 @@ type Tab
 
 
 view : ArticleTabs msg -> H.Html msg
-view { activeTab, onSwitch } =
+view { activeTab, isDisabled, onSwitch } =
     Tabs.view
         { name = "articles"
         , tabs =
@@ -28,5 +29,6 @@ view { activeTab, onSwitch } =
               }
             ]
         , activeTab = activeTab
+        , isDisabled = isDisabled
         , onSwitch = onSwitch
         }

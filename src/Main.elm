@@ -3,7 +3,10 @@ module Main exposing (main)
 import Browser as B
 import Browser.Navigation exposing (Key)
 import Html as H
+import Page.Home as HomePage
 import Route
+import Task
+import Time
 import Url exposing (Url)
 
 
@@ -28,14 +31,16 @@ type alias Flags =
 
 
 type alias Model =
-    { url : Url
+    { apiUrl : String
+    , url : Url
     , key : Key
+    , zone : Time.Zone
     , page : Page
     }
 
 
 type Page
-    = Home
+    = Home HomePage.Model
     | SignIn
     | SignUp
     | Settings
@@ -45,45 +50,72 @@ type Page
     | NotFound
 
 
-init : Flags -> Url -> Key -> ( Model, Cmd msg )
+init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( { url = url
+    let
+        apiUrl =
+            "https://api.realworld.io/api"
+
+        ( page, pageCmd ) =
+            getPageFromUrl apiUrl url
+    in
+    ( { apiUrl = apiUrl
+      , url = url
       , key = key
-      , page = getPageFromUrl url
+      , zone = Time.utc
+      , page = page
       }
-    , Cmd.none
+    , Cmd.batch
+        [ getZone
+        , pageCmd
+        ]
     )
 
 
-getPageFromUrl : Url -> Page
-getPageFromUrl url =
+getZone : Cmd Msg
+getZone =
+    Task.perform GotZone Time.here
+
+
+getPageFromUrl : String -> Url -> ( Page, Cmd Msg )
+getPageFromUrl apiUrl url =
     case Route.fromUrl url of
         Just Route.Home ->
-            Home
+            let
+                ( model, cmd ) =
+                    HomePage.init
+                        { apiUrl = apiUrl
+                        , viewer = HomePage.Guest
+                        , onChange = ChangedHomePage
+                        }
+            in
+            ( Home model
+            , cmd
+            )
 
         Just Route.Login ->
-            SignIn
+            ( SignIn, Cmd.none )
 
         Just Route.Register ->
-            SignUp
+            ( SignUp, Cmd.none )
 
         Just Route.Settings ->
-            Settings
+            ( Settings, Cmd.none )
 
         Just Route.CreateArticle ->
-            Editor
+            ( Editor, Cmd.none )
 
         Just (Route.EditArticle _) ->
-            Editor
+            ( Editor, Cmd.none )
 
         Just (Route.Article _) ->
-            Article
+            ( Article, Cmd.none )
 
         Just (Route.Profile _ _) ->
-            Profile
+            ( Profile, Cmd.none )
 
         Nothing ->
-            NotFound
+            ( NotFound, Cmd.none )
 
 
 
@@ -93,9 +125,11 @@ getPageFromUrl url =
 type Msg
     = ClickedLink B.UrlRequest
     | ChangedUrl Url
+    | GotZone Time.Zone
+    | ChangedHomePage HomePage.Msg
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ClickedLink _ ->
@@ -104,27 +138,69 @@ update msg model =
             )
 
         ChangedUrl url ->
-            ( changeUrl url model
+            changeUrl url model
+
+        GotZone zone ->
+            ( { model | zone = zone }
             , Cmd.none
             )
 
+        ChangedHomePage pageMsg ->
+            case model.page of
+                Home pageModel ->
+                    let
+                        ( newPageModel, newPageCmd ) =
+                            HomePage.update
+                                { apiUrl = model.apiUrl
+                                , onChange = ChangedHomePage
+                                }
+                                pageMsg
+                                pageModel
+                    in
+                    ( { model | page = Home newPageModel }
+                    , newPageCmd
+                    )
 
-changeUrl : Url -> Model -> Model
+                _ ->
+                    ( model, Cmd.none )
+
+
+changeUrl : Url -> Model -> ( Model, Cmd Msg )
 changeUrl url model =
-    { model
+    let
+        ( page, cmd ) =
+            getPageFromUrl model.apiUrl url
+    in
+    ( { model
         | url = url
-        , page = getPageFromUrl url
-    }
+        , page = page
+      }
+    , cmd
+    )
 
 
 
 -- VIEW
 
 
-view : Model -> B.Document msg
-view { url } =
+view : Model -> B.Document Msg
+view { url, zone, page } =
     { title = "Conduit"
     , body =
-        [ H.text <| "url = " ++ Url.toString url
+        [ viewPage url zone page
         ]
     }
+
+
+viewPage : Url -> Time.Zone -> Page -> H.Html Msg
+viewPage url zone page =
+    case page of
+        Home model ->
+            HomePage.view
+                { zone = zone
+                , onChange = ChangedHomePage
+                }
+                model
+
+        _ ->
+            H.text <| "url = " ++ Url.toString url

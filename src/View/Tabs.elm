@@ -9,6 +9,7 @@ type alias Tabs tab msg =
     { name : String
     , tabs : List (Tab tab)
     , activeTab : tab
+    , isDisabled : Bool
     , onSwitch : tab -> msg
     }
 
@@ -20,13 +21,13 @@ type alias Tab tab =
 
 
 view : Tabs tab msg -> H.Html msg
-view { name, tabs, activeTab, onSwitch } =
+view { name, tabs, activeTab, isDisabled, onSwitch } =
     let
         className =
             name ++ "-toggle"
 
         viewTabs =
-            List.map (viewTab activeTab onSwitch) tabs
+            List.map (viewTab activeTab isDisabled onSwitch) tabs
     in
     H.div
         [ HA.class className ]
@@ -36,8 +37,8 @@ view { name, tabs, activeTab, onSwitch } =
         ]
 
 
-viewTab : tab -> (tab -> msg) -> Tab tab -> H.Html msg
-viewTab activeTab onSwitch { id, title } =
+viewTab : tab -> Bool -> (tab -> msg) -> Tab tab -> H.Html msg
+viewTab activeTab isDisabled onSwitch { id, title } =
     let
         baseAttrs =
             [ HA.class "nav-link"
@@ -49,7 +50,11 @@ viewTab activeTab onSwitch { id, title } =
                 ]
 
             else
-                [ HE.onClick (onSwitch id)
+                [ if isDisabled then
+                    HA.disabled True
+
+                  else
+                    HE.onClick (onSwitch id)
                 ]
 
         attrs =

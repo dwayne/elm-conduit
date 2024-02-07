@@ -8,41 +8,45 @@ import Lib.Html.Attributes as HA
 
 type alias Pagination msg =
     { totalPages : Int
-    , currentPage : Int
+    , currentPageNumber : Int
     , onClick : Int -> msg
     }
 
 
 view : Pagination msg -> H.Html msg
-view { totalPages, currentPage, onClick } =
-    let
-        oneToPages =
-            List.range 1 totalPages
-    in
-    H.ul [ HA.class "pagination" ] <|
-        List.map
-            (\page ->
-                viewPageItem
-                    { page = page
-                    , currentPage = currentPage
-                    , onClick = onClick
-                    }
-            )
-            oneToPages
+view { totalPages, currentPageNumber, onClick } =
+    if totalPages <= 1 || currentPageNumber < 1 then
+        H.text ""
+
+    else
+        let
+            oneToPages =
+                List.range 1 totalPages
+        in
+        H.ul [ HA.class "pagination" ] <|
+            List.map
+                (\page ->
+                    viewPageItem
+                        { page = page
+                        , currentPageNumber = currentPageNumber
+                        , onClick = onClick
+                        }
+                )
+                oneToPages
 
 
 type alias PageItemOptions msg =
     { page : Int
-    , currentPage : Int
+    , currentPageNumber : Int
     , onClick : Int -> msg
     }
 
 
 viewPageItem : PageItemOptions msg -> H.Html msg
-viewPageItem { page, currentPage, onClick } =
+viewPageItem { page, currentPageNumber, onClick } =
     let
         isActive =
-            page == currentPage
+            page == currentPageNumber
 
         buttonAttrs =
             HA.attrList
