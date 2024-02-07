@@ -9,4 +9,4 @@ set -euo pipefail
 port="${1:-8000}"
 
 xdg-open "http://localhost:$port" && \
-  caddy file-server --browse --listen :"$port" --root "${build:?}/application"
+  port="$port" caddy run --config "${project:?}/Caddyfile"
