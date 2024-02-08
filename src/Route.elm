@@ -10,6 +10,15 @@ import Url exposing (Url)
 import Url.Parser as UP exposing ((</>))
 
 
+
+--
+-- TODO:
+--
+-- 1. Move Route into Data.Route.
+-- 2. This module is a good candidate for unit tests.
+--
+
+
 type Route
     = Home
     | Login
