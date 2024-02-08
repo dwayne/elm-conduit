@@ -18,6 +18,13 @@ import Html as H
 import Html.Attributes as HA
 
 
+
+--
+-- TODO: Rename the type that we pass to the view function,
+--       in every View.* module, to ViewOptions.
+--
+
+
 type alias ViewOptions =
     { role : Role
     }
