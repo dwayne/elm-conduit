@@ -1,11 +1,12 @@
 module Page.Home exposing (Model, Msg, ViewOptions, Viewer(..), init, update, view)
 
 import Api.GetArticles as GetArticles
+import Api.GetTags as GetTags
 import Data.Limit as Limit
 import Data.Offset as Offset
 import Data.Pager as Pager exposing (Pager)
 import Data.Slug as Slug exposing (Slug)
-import Data.Tag as Tag
+import Data.Tag as Tag exposing (Tag)
 import Data.Timestamp as Timestamp
 import Data.Total as Total
 import Data.Username as Username
@@ -30,7 +31,7 @@ type Viewer
 
 type alias Model =
     { remoteDataArticles : RemoteData () (List GetArticles.Article)
-    , remoteDataTags : RemoteData () (List ())
+    , remoteDataTags : RemoteData () (List Tag)
     , hasPersonal : Bool
     , tag : String
     , activeTab : FeedTabs.Tab
@@ -41,6 +42,13 @@ type alias Model =
 type alias GlobalFeed =
     { pager : Pager
     , currentPageNumber : Int
+    }
+
+
+initGlobalFeed : GlobalFeed
+initGlobalFeed =
+    { pager = Pager.new
+    , currentPageNumber = 1
     }
 
 
@@ -55,9 +63,7 @@ init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, viewer, onChange } =
     let
         globalFeed =
-            { pager = Pager.new
-            , currentPageNumber = 1
-            }
+            initGlobalFeed
 
         { hasPersonal, activeTab, getArticlesCmd } =
             case viewer of
@@ -74,7 +80,7 @@ init { apiUrl, viewer, onChange } =
                     }
 
         getTagsCmd =
-            Cmd.none
+            GetTags.getTags apiUrl { onResponse = GotTagsResponse }
 
         cmd =
             Cmd.batch
@@ -116,9 +122,11 @@ type alias UpdateOptions msg =
 type Msg
     = NoOp
     | GotGlobalFeedArticlesResponse (Result Http.Error GetArticles.Response)
+    | GotTagsResponse (Result Http.Error GetTags.Response)
     | SwitchedFeedTabs FeedTabs.Tab
     | ToggledFavourite Slug Bool
     | ClickedGlobalFeedPagination Int
+    | ClickedTag String
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
@@ -154,6 +162,18 @@ updateHelper { apiUrl } msg model =
                     , Cmd.none
                     )
 
+        GotTagsResponse result ->
+            case result of
+                Ok tags ->
+                    ( { model | remoteDataTags = RemoteData.Success tags }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( { model | remoteDataTags = RemoteData.Failure () }
+                    , Cmd.none
+                    )
+
         SwitchedFeedTabs tab ->
             ( if RemoteData.isLoading model.remoteDataArticles then
                 model
@@ -176,6 +196,23 @@ updateHelper { apiUrl } msg model =
                 , globalFeed = globalFeed
               }
             , getGlobalFeedArticles apiUrl globalFeed
+            )
+
+        ClickedTag tag ->
+            ( { model
+                | remoteDataArticles = RemoteData.Success []
+                , tag = tag
+                , activeTab = FeedTabs.Tag tag
+
+                --
+                -- FIXME: Maybe we just need 1 feed data structure to hold on to everything.
+                --
+                , globalFeed = initGlobalFeed
+              }
+              --
+              -- TODO: Get articles by tag, getTagFeedArticles apiUrl tagFeed.
+              --
+            , Cmd.none
             )
 
 
@@ -240,7 +277,26 @@ view { zone, onChange } model =
             ]
 
         viewSidebar =
-            Sidebar.view Sidebar.Loading
+            Sidebar.view <|
+                case model.remoteDataTags of
+                    RemoteData.Loading ->
+                        Sidebar.Loading
+
+                    RemoteData.Success tags ->
+                        Sidebar.Tags
+                            { tags = List.map Tag.toString tags
+                            , activeTag =
+                                case model.activeTab of
+                                    FeedTabs.Tag tag ->
+                                        tag
+
+                                    _ ->
+                                        ""
+                            , onClick = ClickedTag
+                            }
+
+                    RemoteData.Failure _ ->
+                        Sidebar.Error "Unable to load tags."
     in
     H.div []
         [ Navigation.view { role = Navigation.guestHome }

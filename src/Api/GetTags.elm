@@ -1,4 +1,4 @@
-module Api.GetTags exposing (Options, getTags)
+module Api.GetTags exposing (Options, Response, getTags)
 
 import Data.Tag as Tag exposing (Tag)
 import Http
@@ -14,11 +14,7 @@ type alias Options msg =
 getTags : String -> Options msg -> Cmd msg
 getTags baseUrl { onResponse } =
     Http.get
-        { url =
-            UB.buildUrl
-                baseUrl
-                [ "tags" ]
-                []
+        { url = UB.buildUrl baseUrl [ "tags" ] [] []
         , expect = Http.expectJson onResponse decoder
         }
 
