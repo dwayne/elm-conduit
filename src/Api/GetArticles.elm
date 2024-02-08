@@ -7,7 +7,6 @@ module Api.GetArticles exposing
     , getArticles
     )
 
-import Api
 import Data.Limit as Limit exposing (Limit)
 import Data.Offset as Offset exposing (Offset)
 import Data.Pager exposing (Page)
@@ -19,6 +18,7 @@ import Data.Username as Username exposing (Username)
 import Http
 import Json.Decode as JD
 import Json.Decode.Pipeline as JD
+import Lib.Url.Builder as UB
 import Url exposing (Url)
 import Url.Builder as UB
 
@@ -41,7 +41,7 @@ getArticles : String -> Options msg -> Cmd msg
 getArticles baseUrl { filter, page, onResponse } =
     Http.get
         { url =
-            Api.buildUrl
+            UB.buildUrl
                 baseUrl
                 [ "articles" ]
                 [ UB.int "offset" <| Offset.toInt page.offset

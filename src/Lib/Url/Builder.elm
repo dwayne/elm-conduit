@@ -1,4 +1,4 @@
-module Api exposing (buildUrl)
+module Lib.Url.Builder exposing (buildUrl)
 
 import Url.Builder as UB
 

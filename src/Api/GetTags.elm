@@ -1,9 +1,9 @@
 module Api.GetTags exposing (Options, getTags)
 
-import Api
 import Data.Tag as Tag exposing (Tag)
 import Http
 import Json.Decode as JD
+import Lib.Url.Builder as UB
 
 
 type alias Options msg =
@@ -15,7 +15,7 @@ getTags : String -> Options msg -> Cmd msg
 getTags baseUrl { onResponse } =
     Http.get
         { url =
-            Api.buildUrl
+            UB.buildUrl
                 baseUrl
                 [ "tags" ]
                 []
