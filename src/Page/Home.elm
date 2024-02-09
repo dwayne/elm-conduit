@@ -8,7 +8,7 @@ import Data.Pager as Pager exposing (Pager)
 import Data.Slug as Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
 import Data.Timestamp as Timestamp
-import Data.Total as Total
+import Data.Total as Total exposing (Total)
 import Data.Username as Username
 import Html as H
 import Html.Attributes as HA
@@ -30,26 +30,42 @@ type Viewer
 
 
 type alias Model =
-    { remoteDataArticles : RemoteData () (List GetArticles.Article)
-    , remoteDataTags : RemoteData () (List Tag)
-    , hasPersonal : Bool
-    , tag : String
+    { hasPersonal : Bool
     , activeTab : FeedTabs.Tab
-    , globalFeed : GlobalFeed
+    , tag : String
+    , feed : Feed
+    , remoteDataTags : RemoteData () (List Tag)
     }
 
 
-type alias GlobalFeed =
-    { pager : Pager
+type alias Feed =
+    { remoteDataArticles : RemoteData () (List GetArticles.Article)
+    , pager : Pager
     , currentPageNumber : Int
     }
 
 
-initGlobalFeed : GlobalFeed
-initGlobalFeed =
-    { pager = Pager.new
+initFeed : Feed
+initFeed =
+    { remoteDataArticles = RemoteData.Loading
+    , pager = Pager.new
     , currentPageNumber = 1
     }
+
+
+setFeedRemoteDataArtciles : RemoteData () (List GetArticles.Article) -> Feed -> Feed
+setFeedRemoteDataArtciles remoteDataArticles feed =
+    { feed | remoteDataArticles = remoteDataArticles }
+
+
+setFeedTotalPages : Total -> Feed -> Feed
+setFeedTotalPages totalPages feed =
+    { feed | pager = Pager.setTotalPages totalPages feed.pager }
+
+
+setFeedCurrentPageNumber : Int -> Feed -> Feed
+setFeedCurrentPageNumber pageNumber feed =
+    { feed | currentPageNumber = pageNumber }
 
 
 type alias InitOptions msg =
@@ -62,15 +78,15 @@ type alias InitOptions msg =
 init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, viewer, onChange } =
     let
-        globalFeed =
-            initGlobalFeed
+        feed =
+            initFeed
 
         { hasPersonal, activeTab, getArticlesCmd } =
             case viewer of
                 Guest ->
                     { hasPersonal = False
                     , activeTab = FeedTabs.Global
-                    , getArticlesCmd = getGlobalFeedArticles apiUrl globalFeed
+                    , getArticlesCmd = getGlobalFeedArticles apiUrl feed
                     }
 
                 User ->
@@ -88,25 +104,14 @@ init { apiUrl, viewer, onChange } =
                 , getTagsCmd
                 ]
     in
-    ( { remoteDataArticles = RemoteData.Loading
-      , remoteDataTags = RemoteData.Loading
-      , hasPersonal = hasPersonal
-      , tag = ""
+    ( { hasPersonal = hasPersonal
       , activeTab = activeTab
-      , globalFeed = globalFeed
+      , tag = ""
+      , feed = feed
+      , remoteDataTags = RemoteData.Loading
       }
     , Cmd.map onChange cmd
     )
-
-
-getGlobalFeedArticles : String -> GlobalFeed -> Cmd Msg
-getGlobalFeedArticles apiUrl { currentPageNumber, pager } =
-    GetArticles.getArticles
-        apiUrl
-        { filter = GetArticles.Global
-        , page = Pager.toPage currentPageNumber pager
-        , onResponse = GotGlobalFeedArticlesResponse
-        }
 
 
 
@@ -120,13 +125,12 @@ type alias UpdateOptions msg =
 
 
 type Msg
-    = NoOp
-    | GotGlobalFeedArticlesResponse (Result Http.Error GetArticles.Response)
+    = GotArticlesResponse (Result Http.Error GetArticles.Response)
     | GotTagsResponse (Result Http.Error GetTags.Response)
     | SwitchedFeedTabs FeedTabs.Tab
-    | ToggledFavourite Slug Bool
-    | ClickedGlobalFeedPagination Int
     | ClickedTag String
+    | ClickedPagination Int
+    | ToggledFavourite String Bool
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
@@ -138,27 +142,26 @@ update options msg model =
 updateHelper : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd Msg )
 updateHelper { apiUrl } msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
-        GotGlobalFeedArticlesResponse result ->
+        GotArticlesResponse result ->
             case result of
                 Ok { articles, totalArticles } ->
                     let
-                        globalFeed =
-                            setGlobalFeedPager
-                                (Pager.setTotalPages totalArticles model.globalFeed.pager)
-                                model.globalFeed
+                        feed =
+                            model.feed
+                                |> setFeedRemoteDataArtciles (RemoteData.Success articles)
+                                |> setFeedTotalPages totalArticles
                     in
-                    ( { model
-                        | remoteDataArticles = RemoteData.Success articles
-                        , globalFeed = globalFeed
-                      }
+                    ( { model | feed = feed }
                     , Cmd.none
                     )
 
                 Err _ ->
-                    ( { model | remoteDataArticles = RemoteData.Failure () }
+                    let
+                        feed =
+                            model.feed
+                                |> setFeedRemoteDataArtciles (RemoteData.Failure ())
+                    in
+                    ( { model | feed = feed }
                     , Cmd.none
                     )
 
@@ -175,55 +178,89 @@ updateHelper { apiUrl } msg model =
                     )
 
         SwitchedFeedTabs tab ->
-            ( if RemoteData.isLoading model.remoteDataArticles then
-                model
-
-              else
-                { model | activeTab = tab }
-            , Cmd.none
-            )
-
-        ToggledFavourite slug isFavourite ->
-            ( model, Cmd.none )
-
-        ClickedGlobalFeedPagination newPageNumber ->
             let
-                globalFeed =
-                    setGlobalFeedCurrentPageNumber newPageNumber model.globalFeed
+                feed =
+                    initFeed
             in
-            ( { model
-                | remoteDataArticles = RemoteData.Loading
-                , globalFeed = globalFeed
-              }
-            , getGlobalFeedArticles apiUrl globalFeed
+            ( { model | activeTab = tab, feed = feed }
+            , getFeedArticles tab apiUrl feed
             )
 
         ClickedTag tag ->
-            ( { model
-                | remoteDataArticles = RemoteData.Success []
-                , tag = tag
-                , activeTab = FeedTabs.Tag tag
-
-                --
-                -- FIXME: Maybe we just need 1 feed data structure to hold on to everything.
-                --
-                , globalFeed = initGlobalFeed
-              }
-              --
-              -- TODO: Get articles by tag, getTagFeedArticles apiUrl tagFeed.
-              --
-            , Cmd.none
+            let
+                feed =
+                    initFeed
+            in
+            ( { model | activeTab = FeedTabs.Tag tag, tag = tag, feed = feed }
+            , getTagFeedArticles tag apiUrl feed
             )
 
+        ClickedPagination newPageNumber ->
+            let
+                feed =
+                    model.feed
+                        |> setFeedRemoteDataArtciles RemoteData.Loading
+                        |> setFeedCurrentPageNumber newPageNumber
+            in
+            ( { model | feed = feed }
+            , getFeedArticles model.activeTab apiUrl feed
+            )
 
-setGlobalFeedPager : Pager -> GlobalFeed -> GlobalFeed
-setGlobalFeedPager pager globalFeed =
-    { globalFeed | pager = pager }
+        ToggledFavourite slug isFavourite ->
+            --
+            -- TODO: Toggle favourite.
+            --
+            ( model, Cmd.none )
 
 
-setGlobalFeedCurrentPageNumber : Int -> GlobalFeed -> GlobalFeed
-setGlobalFeedCurrentPageNumber pageNumber globalFeed =
-    { globalFeed | currentPageNumber = pageNumber }
+
+-- HTTP
+
+
+getFeedArticles : FeedTabs.Tab -> String -> Feed -> Cmd Msg
+getFeedArticles tab =
+    case tab of
+        FeedTabs.Personal ->
+            getPersonalFeedArticles
+
+        FeedTabs.Global ->
+            getGlobalFeedArticles
+
+        FeedTabs.Tag tag ->
+            getTagFeedArticles tag
+
+
+getPersonalFeedArticles : String -> Feed -> Cmd Msg
+getPersonalFeedArticles _ _ =
+    --
+    -- TODO: Get articles for the personal feed.
+    --
+    Cmd.none
+
+
+getGlobalFeedArticles : String -> Feed -> Cmd Msg
+getGlobalFeedArticles apiUrl { pager, currentPageNumber } =
+    GetArticles.getArticles
+        apiUrl
+        { filter = GetArticles.Global
+        , page = Pager.toPage currentPageNumber pager
+        , onResponse = GotArticlesResponse
+        }
+
+
+getTagFeedArticles : String -> String -> Feed -> Cmd Msg
+getTagFeedArticles tagAsString apiUrl { pager, currentPageNumber } =
+    case Tag.fromString tagAsString of
+        Just tag ->
+            GetArticles.getArticles
+                apiUrl
+                { filter = GetArticles.ByTag tag
+                , page = Pager.toPage currentPageNumber pager
+                , onResponse = GotArticlesResponse
+                }
+
+        Nothing ->
+            Cmd.none
 
 
 
@@ -239,41 +276,51 @@ type alias ViewOptions msg =
 view : ViewOptions msg -> Model -> H.Html msg
 view { zone, onChange } model =
     let
+        feed =
+            model.feed
+
         viewFeedTabs =
             [ FeedTabs.view
                 { hasPersonal = model.hasPersonal
                 , tag = model.tag
                 , activeTab = model.activeTab
-                , isDisabled = RemoteData.isLoading model.remoteDataArticles
+                , isDisabled = isLoadingFeed
                 , onSwitch = SwitchedFeedTabs
                 }
             ]
 
-        viewArticlePreviews =
-            case model.remoteDataArticles of
-                RemoteData.Success articles ->
-                    List.map (viewArticlePreview zone) articles
+        ( isLoadingFeed, viewArticlePreviews ) =
+            case feed.remoteDataArticles of
+                RemoteData.Loading ->
+                    ( True
+                    , [ H.div
+                            [ HA.class "article-preview" ]
+                            [ H.text "Loading articles..." ]
+                      ]
+                    )
 
-                _ ->
-                    []
+                RemoteData.Success articles ->
+                    ( False
+                    , List.map (viewArticlePreview zone) articles
+                    )
+
+                RemoteData.Failure _ ->
+                    ( False
+                    , [ H.div
+                            [ HA.class "article-preview" ]
+                            [ H.text "Unable to load articles." ]
+                      ]
+                    )
 
         viewPagination =
-            [ Pagination.view <|
-                case model.activeTab of
-                    FeedTabs.Global ->
-                        { totalPages =
-                            model.globalFeed.pager
-                                |> Pager.toTotalPages
-                                |> Total.toInt
-                        , currentPageNumber = model.globalFeed.currentPageNumber
-                        , onClick = ClickedGlobalFeedPagination
-                        }
-
-                    _ ->
-                        { totalPages = 0
-                        , currentPageNumber = 1
-                        , onClick = always NoOp
-                        }
+            [ Pagination.view
+                { totalPages =
+                    feed.pager
+                        |> Pager.toTotalPages
+                        |> Total.toInt
+                , currentPageNumber = feed.currentPageNumber
+                , onClick = ClickedPagination
+                }
             ]
 
         viewSidebar =
@@ -285,13 +332,7 @@ view { zone, onChange } model =
                     RemoteData.Success tags ->
                         Sidebar.Tags
                             { tags = List.map Tag.toString tags
-                            , activeTag =
-                                case model.activeTab of
-                                    FeedTabs.Tag tag ->
-                                        tag
-
-                                    _ ->
-                                        ""
+                            , activeTag = FeedTabs.activeTag model.activeTab
                             , onClick = ClickedTag
                             }
 
@@ -318,17 +359,21 @@ view { zone, onChange } model =
 
 viewArticlePreview : Time.Zone -> GetArticles.Article -> H.Html Msg
 viewArticlePreview zone { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
+    let
+        slugAsString =
+            Slug.toString slug
+    in
     ArticlePreview.view
         { name = Username.toString author.username
         , imageUrl = author.imageUrl
         , date = Timestamp.toString zone createdAt
         , totalFavourites = Total.toInt totalFavourites
         , isFavourite = isFavourite
-        , slug = Slug.toString slug
+        , slug = slugAsString
         , title = title
         , description = description
         , tags = List.map Tag.toString tags
-        , onToggleFavourite = ToggledFavourite slug
+        , onToggleFavourite = ToggledFavourite slugAsString
         }
 
 

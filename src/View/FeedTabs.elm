@@ -1,4 +1,4 @@
-module View.FeedTabs exposing (FeedTabs, Tab(..), view)
+module View.FeedTabs exposing (FeedTabs, Tab(..), activeTag, view)
 
 import Html as H
 import View.Tabs as Tabs
@@ -17,6 +17,16 @@ type Tab
     = Personal
     | Global
     | Tag String
+
+
+activeTag : Tab -> String
+activeTag tab =
+    case tab of
+        Tag tag ->
+            tag
+
+        _ ->
+            ""
 
 
 view : FeedTabs msg -> H.Html msg
