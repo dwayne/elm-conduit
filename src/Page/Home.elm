@@ -4,6 +4,7 @@ import Api.GetArticles as GetArticles
 import Api.GetTags as GetTags
 import Data.Limit as Limit
 import Data.Offset as Offset
+import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
 import Data.Slug as Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
@@ -32,7 +33,7 @@ type Viewer
 type alias Model =
     { hasPersonal : Bool
     , activeTab : FeedTabs.Tab
-    , tag : String
+    , maybeTag : Maybe Tag
     , feed : Feed
     , remoteDataTags : RemoteData () (List Tag)
     }
@@ -41,7 +42,7 @@ type alias Model =
 type alias Feed =
     { remoteDataArticles : RemoteData () (List GetArticles.Article)
     , pager : Pager
-    , currentPageNumber : Int
+    , currentPageNumber : PageNumber
     }
 
 
@@ -49,7 +50,7 @@ initFeed : Feed
 initFeed =
     { remoteDataArticles = RemoteData.Loading
     , pager = Pager.new
-    , currentPageNumber = 1
+    , currentPageNumber = PageNumber.one
     }
 
 
@@ -63,7 +64,7 @@ setFeedTotalPages totalPages feed =
     { feed | pager = Pager.setTotalPages totalPages feed.pager }
 
 
-setFeedCurrentPageNumber : Int -> Feed -> Feed
+setFeedCurrentPageNumber : PageNumber -> Feed -> Feed
 setFeedCurrentPageNumber pageNumber feed =
     { feed | currentPageNumber = pageNumber }
 
@@ -106,7 +107,7 @@ init { apiUrl, viewer, onChange } =
     in
     ( { hasPersonal = hasPersonal
       , activeTab = activeTab
-      , tag = ""
+      , maybeTag = Nothing
       , feed = feed
       , remoteDataTags = RemoteData.Loading
       }
@@ -128,9 +129,9 @@ type Msg
     = GotArticlesResponse (Result Http.Error GetArticles.Response)
     | GotTagsResponse (Result Http.Error GetTags.Response)
     | SwitchedFeedTabs FeedTabs.Tab
-    | ClickedTag String
-    | ClickedPagination Int
-    | ToggledFavourite String Bool
+    | ClickedTag Tag
+    | ChangedPageNumber PageNumber
+    | ToggledFavourite Slug Bool
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
@@ -182,7 +183,10 @@ updateHelper { apiUrl } msg model =
                 feed =
                     initFeed
             in
-            ( { model | activeTab = tab, feed = feed }
+            ( { model
+                | activeTab = tab
+                , feed = feed
+              }
             , getFeedArticles tab apiUrl feed
             )
 
@@ -191,16 +195,20 @@ updateHelper { apiUrl } msg model =
                 feed =
                     initFeed
             in
-            ( { model | activeTab = FeedTabs.Tag tag, tag = tag, feed = feed }
+            ( { model
+                | activeTab = FeedTabs.Tag tag
+                , maybeTag = Just tag
+                , feed = feed
+              }
             , getTagFeedArticles tag apiUrl feed
             )
 
-        ClickedPagination newPageNumber ->
+        ChangedPageNumber pageNumber ->
             let
                 feed =
                     model.feed
                         |> setFeedRemoteDataArtciles RemoteData.Loading
-                        |> setFeedCurrentPageNumber newPageNumber
+                        |> setFeedCurrentPageNumber pageNumber
             in
             ( { model | feed = feed }
             , getFeedArticles model.activeTab apiUrl feed
@@ -248,19 +256,14 @@ getGlobalFeedArticles apiUrl { pager, currentPageNumber } =
         }
 
 
-getTagFeedArticles : String -> String -> Feed -> Cmd Msg
-getTagFeedArticles tagAsString apiUrl { pager, currentPageNumber } =
-    case Tag.fromString tagAsString of
-        Just tag ->
-            GetArticles.getArticles
-                apiUrl
-                { filter = GetArticles.ByTag tag
-                , page = Pager.toPage currentPageNumber pager
-                , onResponse = GotArticlesResponse
-                }
-
-        Nothing ->
-            Cmd.none
+getTagFeedArticles : Tag -> String -> Feed -> Cmd Msg
+getTagFeedArticles tag apiUrl { pager, currentPageNumber } =
+    GetArticles.getArticles
+        apiUrl
+        { filter = GetArticles.ByTag tag
+        , page = Pager.toPage currentPageNumber pager
+        , onResponse = GotArticlesResponse
+        }
 
 
 
@@ -282,7 +285,7 @@ view { zone, onChange } model =
         viewFeedTabs =
             [ FeedTabs.view
                 { hasPersonal = model.hasPersonal
-                , tag = model.tag
+                , maybeTag = model.maybeTag
                 , activeTab = model.activeTab
                 , isDisabled = isLoadingFeed
                 , onSwitch = SwitchedFeedTabs
@@ -314,30 +317,26 @@ view { zone, onChange } model =
 
         viewPagination =
             [ Pagination.view
-                { totalPages =
-                    feed.pager
-                        |> Pager.toTotalPages
-                        |> Total.toInt
+                { totalPages = Pager.toTotalPages feed.pager
                 , currentPageNumber = feed.currentPageNumber
-                , onClick = ClickedPagination
+                , onChangePageNumber = ChangedPageNumber
                 }
             ]
 
-        viewSidebar =
-            Sidebar.view <|
-                case model.remoteDataTags of
-                    RemoteData.Loading ->
-                        Sidebar.Loading
+        sidebarStatus =
+            case model.remoteDataTags of
+                RemoteData.Loading ->
+                    Sidebar.Loading
 
-                    RemoteData.Success tags ->
-                        Sidebar.Tags
-                            { tags = List.map Tag.toString tags
-                            , activeTag = FeedTabs.activeTag model.activeTab
-                            , onClick = ClickedTag
-                            }
+                RemoteData.Success tags ->
+                    Sidebar.Tags
+                        { tags = tags
+                        , activeTag = FeedTabs.activeTag model.activeTab
+                        , onClick = ClickedTag
+                        }
 
-                    RemoteData.Failure _ ->
-                        Sidebar.Error "Unable to load tags."
+                RemoteData.Failure _ ->
+                    Sidebar.Error "Unable to load tags."
     in
     H.div []
         [ Navigation.view { role = Navigation.guestHome }
@@ -349,7 +348,7 @@ view { zone, onChange } model =
                 , viewArticlePreviews
                 , viewPagination
                 ]
-                [ viewSidebar
+                [ Sidebar.view { status = sidebarStatus }
                 ]
             ]
         , Footer.view
@@ -359,21 +358,18 @@ view { zone, onChange } model =
 
 viewArticlePreview : Time.Zone -> GetArticles.Article -> H.Html Msg
 viewArticlePreview zone { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
-    let
-        slugAsString =
-            Slug.toString slug
-    in
     ArticlePreview.view
-        { name = Username.toString author.username
+        { username = author.username
         , imageUrl = author.imageUrl
-        , date = Timestamp.toString zone createdAt
-        , totalFavourites = Total.toInt totalFavourites
+        , zone = zone
+        , timestamp = createdAt
+        , totalFavourites = totalFavourites
         , isFavourite = isFavourite
-        , slug = slugAsString
+        , slug = slug
         , title = title
         , description = description
-        , tags = List.map Tag.toString tags
-        , onToggleFavourite = ToggledFavourite slugAsString
+        , tags = tags
+        , onToggleFavourite = ToggledFavourite slug
         }
 
 

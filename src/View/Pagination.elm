@@ -1,57 +1,65 @@
-module View.Pagination exposing (Pagination, view)
+module View.Pagination exposing (ViewOptions, view)
 
+import Data.PageNumber as PageNumber exposing (PageNumber)
+import Data.Total as Total exposing (Total)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 import Lib.Html.Attributes as HA
 
 
-type alias Pagination msg =
-    { totalPages : Int
-    , currentPageNumber : Int
-    , onClick : Int -> msg
+type alias ViewOptions msg =
+    { totalPages : Total
+    , currentPageNumber : PageNumber
+    , onChangePageNumber : PageNumber -> msg
     }
 
 
-view : Pagination msg -> H.Html msg
-view { totalPages, currentPageNumber, onClick } =
-    if totalPages <= 1 || currentPageNumber < 1 then
+view : ViewOptions msg -> H.Html msg
+view options =
+    let
+        n =
+            Total.toInt options.totalPages
+    in
+    if n <= 1 then
         H.text ""
 
     else
         let
-            oneToPages =
-                List.range 1 totalPages
+            viewPageItems =
+                n
+                    |> List.range 1
+                    |> List.map
+                        (\i ->
+                            viewPageItem
+                                { pageNumber = PageNumber.fromInt i
+                                , currentPageNumber = options.currentPageNumber
+                                , onChangePageNumber = options.onChangePageNumber
+                                }
+                        )
         in
-        H.ul [ HA.class "pagination" ] <|
-            List.map
-                (\page ->
-                    viewPageItem
-                        { page = page
-                        , currentPageNumber = currentPageNumber
-                        , onClick = onClick
-                        }
-                )
-                oneToPages
+        H.ul [ HA.class "pagination" ] viewPageItems
 
 
 type alias PageItemOptions msg =
-    { page : Int
-    , currentPageNumber : Int
-    , onClick : Int -> msg
+    { pageNumber : PageNumber
+    , currentPageNumber : PageNumber
+    , onChangePageNumber : PageNumber -> msg
     }
 
 
 viewPageItem : PageItemOptions msg -> H.Html msg
-viewPageItem { page, currentPageNumber, onClick } =
+viewPageItem { pageNumber, currentPageNumber, onChangePageNumber } =
     let
         isActive =
-            page == currentPageNumber
+            pageNumber == currentPageNumber
 
         buttonAttrs =
             HA.attrList
                 [ HA.class "page-link" ]
-                [ ( not isActive, HE.onClick (onClick page) )
+                [ ( not isActive
+                  , HE.onClick <| onChangePageNumber pageNumber
+                  )
                 ]
     in
     H.li
@@ -59,5 +67,5 @@ viewPageItem { page, currentPageNumber, onClick } =
         , HA.classList [ ( "active", isActive ) ]
         ]
         [ H.button buttonAttrs
-            [ H.text <| String.fromInt page ]
+            [ H.text <| PageNumber.toString pageNumber ]
         ]

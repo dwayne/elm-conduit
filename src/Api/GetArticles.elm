@@ -18,6 +18,7 @@ import Data.Username as Username exposing (Username)
 import Http
 import Json.Decode as JD
 import Json.Decode.Pipeline as JD
+import Lib.Json.Decode as JD
 import Lib.Url.Builder as UB
 import Url exposing (Url)
 import Url.Builder as UB
@@ -85,7 +86,7 @@ type alias Article =
 
 type alias Author =
     { username : Username
-    , imageUrl : String
+    , imageUrl : Url
     }
 
 
@@ -114,4 +115,4 @@ authorDecoder : JD.Decoder Author
 authorDecoder =
     JD.map2 Author
         (JD.field "username" Username.decoder)
-        (JD.field "image" JD.string)
+        (JD.field "image" JD.url)

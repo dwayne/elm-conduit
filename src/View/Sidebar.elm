@@ -1,37 +1,43 @@
-module View.Sidebar exposing (Sidebar(..), TagListOptions, view)
+module View.Sidebar exposing (Status(..), TagsOptions, ViewOptions, view)
 
+import Data.Tag as Tag exposing (Tag)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 import Lib.Html.Attributes as HA
 
 
-type Sidebar msg
-    = Loading
-    | Tags (TagListOptions msg)
-    | Error String
-
-
-type alias TagListOptions msg =
-    { tags : List String
-    , activeTag : String
-    , onClick : String -> msg
+type alias ViewOptions msg =
+    { status : Status msg
     }
 
 
-view : Sidebar msg -> H.Html msg
-view sidebar =
+type Status msg
+    = Loading
+    | Tags (TagsOptions msg)
+    | Error String
+
+
+type alias TagsOptions msg =
+    { tags : List Tag
+    , activeTag : Maybe Tag
+    , onClick : Tag -> msg
+    }
+
+
+view : ViewOptions msg -> H.Html msg
+view { status } =
     H.div
         [ HA.class "sidebar" ]
         [ H.p [] [ H.text "Popular Tags" ]
-        , viewTagList sidebar
+        , viewTagList status
         ]
 
 
-viewTagList : Sidebar msg -> H.Html msg
-viewTagList sidebar =
+viewTagList : Status msg -> H.Html msg
+viewTagList status =
     H.div [ HA.class "tag-list" ] <|
-        case sidebar of
+        case status of
             Loading ->
                 [ H.text "Loading tags..." ]
 
@@ -42,10 +48,12 @@ viewTagList sidebar =
                             attrs =
                                 HA.attrList
                                     [ HA.class "tag-pill tag-default" ]
-                                    [ ( tag /= activeTag, HE.onClick (onClick tag) )
+                                    [ ( Just tag /= activeTag
+                                      , HE.onClick <| onClick tag
+                                      )
                                     ]
                         in
-                        H.button attrs [ H.text tag ]
+                        H.button attrs [ H.text <| Tag.toString tag ]
                     )
                     tags
 

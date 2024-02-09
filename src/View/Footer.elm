@@ -1,5 +1,6 @@
 module View.Footer exposing (view)
 
+import Data.Route as Route
 import Html as H
 import Html.Attributes as HA
 
@@ -11,7 +12,7 @@ view =
             [ HA.class "container" ]
             [ H.a
                 [ HA.class "logo-font"
-                , HA.href "./home.html"
+                , HA.href <| Route.toString Route.Home
                 ]
                 [ H.text "conduit" ]
             , H.span

@@ -1,12 +1,13 @@
-module View.FeedTabs exposing (FeedTabs, Tab(..), activeTag, view)
+module View.FeedTabs exposing (Tab(..), ViewOptions, activeTag, view)
 
+import Data.Tag as Tag exposing (Tag)
 import Html as H
 import View.Tabs as Tabs
 
 
-type alias FeedTabs msg =
+type alias ViewOptions msg =
     { hasPersonal : Bool
-    , tag : String
+    , maybeTag : Maybe Tag
     , activeTab : Tab
     , isDisabled : Bool
     , onSwitch : Tab -> msg
@@ -16,21 +17,21 @@ type alias FeedTabs msg =
 type Tab
     = Personal
     | Global
-    | Tag String
+    | Tag Tag
 
 
-activeTag : Tab -> String
+activeTag : Tab -> Maybe Tag
 activeTag tab =
     case tab of
         Tag tag ->
-            tag
+            Just tag
 
         _ ->
-            ""
+            Nothing
 
 
-view : FeedTabs msg -> H.Html msg
-view { hasPersonal, tag, activeTab, isDisabled, onSwitch } =
+view : ViewOptions msg -> H.Html msg
+view { hasPersonal, maybeTag, activeTab, isDisabled, onSwitch } =
     let
         tabs =
             List.filterMap identity <|
@@ -46,14 +47,13 @@ view { hasPersonal, tag, activeTab, isDisabled, onSwitch } =
                     { id = Global
                     , title = "Global Feed"
                     }
-                , if String.isEmpty tag then
-                    Nothing
-
-                  else
-                    Just
-                        { id = Tag tag
-                        , title = "#" ++ tag
-                        }
+                , maybeTag
+                    |> Maybe.map
+                        (\tag ->
+                            { id = Tag tag
+                            , title = "#" ++ Tag.toString tag
+                            }
+                        )
                 ]
     in
     Tabs.view

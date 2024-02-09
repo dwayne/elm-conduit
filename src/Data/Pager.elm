@@ -9,6 +9,7 @@ module Data.Pager exposing
 
 import Data.Limit as Limit exposing (Limit)
 import Data.Offset as Offset exposing (Offset)
+import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Total as Total exposing (Total)
 
 
@@ -58,8 +59,8 @@ type alias Page =
     }
 
 
-toPage : Int -> Pager -> Page
-toPage i (Pager { limit, maybeTotalPages }) =
+toPage : PageNumber -> Pager -> Page
+toPage pageNumber (Pager { limit, maybeTotalPages }) =
     case maybeTotalPages of
         Nothing ->
             { offset = Offset.zero
@@ -67,11 +68,10 @@ toPage i (Pager { limit, maybeTotalPages }) =
             }
 
         Just _ ->
-            let
-                n =
-                    max 1 i
-            in
-            { offset = Offset.fromInt <| (n - 1) * Limit.toInt limit
+            { offset =
+                Offset.fromInt <|
+                    (PageNumber.toInt pageNumber - 1)
+                        * Limit.toInt limit
             , limit = limit
             }
 

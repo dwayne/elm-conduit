@@ -1,10 +1,10 @@
 module Main exposing (main)
 
 import Browser as B
-import Browser.Navigation exposing (Key)
+import Browser.Navigation as BN exposing (Key)
+import Data.Route as Route
 import Html as H
 import Page.Home as HomePage
-import Route
 import Task
 import Time
 import Url exposing (Url)
@@ -132,10 +132,17 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ClickedLink _ ->
-            ( model
-            , Cmd.none
-            )
+        ClickedLink urlRequest ->
+            case urlRequest of
+                B.Internal url ->
+                    ( model
+                    , BN.pushUrl model.key (Url.toString url)
+                    )
+
+                B.External url ->
+                    ( model
+                    , BN.load url
+                    )
 
         ChangedUrl url ->
             changeUrl url model

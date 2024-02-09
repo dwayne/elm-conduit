@@ -3,6 +3,7 @@ module Data.Total exposing
     , decoder
     , fromInt
     , toInt
+    , toString
     , zero
     )
 
@@ -19,12 +20,8 @@ zero =
 
 
 fromInt : Int -> Total
-fromInt n =
-    if n > 0 then
-        Total n
-
-    else
-        zero
+fromInt =
+    max 0 >> Total
 
 
 decoder : JD.Decoder Total
@@ -35,3 +32,8 @@ decoder =
 toInt : Total -> Int
 toInt (Total n) =
     n
+
+
+toString : Total -> String
+toString =
+    toInt >> String.fromInt

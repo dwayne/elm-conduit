@@ -14,15 +14,11 @@ module View.Navigation exposing
     , view
     )
 
+import Data.Route as Route exposing (Route)
+import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
-
-
-
---
--- TODO: Rename the type that we pass to the view function,
---       in every View.* module, to ViewOptions.
---
+import Url exposing (Url)
 
 
 type alias ViewOptions =
@@ -36,8 +32,8 @@ type Role
 
 
 type alias UserDetails =
-    { name : String
-    , imageUrl : String
+    { username : Username
+    , imageUrl : Url
     }
 
 
@@ -107,7 +103,7 @@ view { role } =
             [ HA.class "container" ]
             [ H.a
                 [ HA.class "navbar-brand"
-                , HA.href "./home.html"
+                , HA.href <| Route.toString Route.Home
                 ]
                 [ H.text "conduit" ]
             , viewNavItems role
@@ -139,59 +135,59 @@ viewNavItems role =
 
 type NavLink
     = Text
-        { href : String
+        { route : Route
         , text : String
         }
     | Icon
-        { href : String
+        { route : Route
         , text : String
         , iconClass : String
         }
     | Image
-        { href : String
-        , text : String
-        , src : String
+        { route : Route
+        , username : Username
+        , imageUrl : Url
         }
 
 
 guestNavLinks : Maybe GuestItem -> List ( Bool, NavLink )
 guestNavLinks maybeItem =
     [ ( maybeItem == Just GuestHome
-      , Text { href = "./home.html", text = "Home" }
+      , Text { route = Route.Home, text = "Home" }
       )
     , ( maybeItem == Just Login
-      , Text { href = "./login.html", text = "Sign in" }
+      , Text { route = Route.Login, text = "Sign in" }
       )
     , ( maybeItem == Just Register
-      , Text { href = "./register.html", text = "Sign up" }
+      , Text { route = Route.Register, text = "Sign up" }
       )
     ]
 
 
 userNavLinks : Maybe UserItem -> UserDetails -> List ( Bool, NavLink )
-userNavLinks maybeItem { name, imageUrl } =
+userNavLinks maybeItem { username, imageUrl } =
     [ ( maybeItem == Just UserHome
-      , Text { href = "./home.html", text = "Home" }
+      , Text { route = Route.Home, text = "Home" }
       )
     , ( maybeItem == Just NewArticle
       , Icon
-            { href = "./create-edit-article.html"
+            { route = Route.CreateArticle
             , text = "New Article"
             , iconClass = "ion-compose"
             }
       )
     , ( maybeItem == Just Settings
       , Icon
-            { href = "./settings.html"
+            { route = Route.Settings
             , text = "Settings"
             , iconClass = "ion-gear-a"
             }
       )
     , ( maybeItem == Just Profile
       , Image
-            { href = "./profile.html"
-            , text = name
-            , src = imageUrl
+            { route = Route.Profile False username
+            , username = username
+            , imageUrl = imageUrl
             }
       )
     ]
@@ -200,28 +196,32 @@ userNavLinks maybeItem { name, imageUrl } =
 viewNavLink : Bool -> NavLink -> H.Html msg
 viewNavLink isActive navLink =
     let
-        attrs href =
+        attrs route =
             [ HA.class "nav-link"
             , HA.classList [ ( "active", isActive ) ]
-            , HA.href href
+            , HA.href <| Route.toString route
             ]
     in
     case navLink of
-        Text { href, text } ->
-            H.a (attrs href)
+        Text { route, text } ->
+            H.a (attrs route)
                 [ H.text text ]
 
-        Icon { href, text, iconClass } ->
-            H.a (attrs href)
+        Icon { route, text, iconClass } ->
+            H.a (attrs route)
                 [ H.i [ HA.class iconClass ] []
                 , H.text <| "\u{00A0}" ++ text
                 ]
 
-        Image { href, text, src } ->
-            H.a (attrs href)
+        Image { route, username, imageUrl } ->
+            let
+                text =
+                    Username.toString username
+            in
+            H.a (attrs route)
                 [ H.img
                     [ HA.class "user-pic"
-                    , HA.src src
+                    , HA.src <| Url.toString imageUrl
                     , HA.alt text
                     ]
                     []
