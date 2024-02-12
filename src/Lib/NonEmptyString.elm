@@ -1,11 +1,13 @@
 module Lib.NonEmptyString exposing
     ( NonEmptyString
     , decoder
+    , encode
     , fromString
     , toString
     )
 
 import Json.Decode as JD
+import Json.Encode as JE
 
 
 type NonEmptyString
@@ -37,6 +39,11 @@ decoder =
                     Nothing ->
                         JD.fail <| "Expected a non-empty string: '" ++ s ++ "'"
             )
+
+
+encode : NonEmptyString -> JE.Value
+encode (NonEmptyString t) =
+    JE.string t
 
 
 toString : NonEmptyString -> String

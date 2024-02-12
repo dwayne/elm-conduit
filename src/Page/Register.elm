@@ -1,7 +1,14 @@
 module Page.Register exposing (Model, Msg, ViewOptions, init, update, view)
 
+import Api
+import Api.Register as Register
+import Data.Email as Email exposing (Email)
+import Data.Password as Password exposing (Password)
+import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
+import Lib.String as String
+import Lib.Validation as Validation exposing (Validation)
 import View.Footer as Footer
 import View.Navigation as Navigation
 import View.Register as Register
@@ -16,6 +23,8 @@ type alias Model =
     { username : String
     , email : String
     , password : String
+    , errorMessages : List String
+    , isDisabled : Bool
     }
 
 
@@ -24,6 +33,8 @@ init =
     { username = ""
     , email = ""
     , password = ""
+    , errorMessages = []
+    , isDisabled = False
     }
 
 
@@ -31,15 +42,28 @@ init =
 -- UPDATE
 
 
+type alias UpdateOptions msg =
+    { apiUrl : String
+    , onChange : Msg -> msg
+    }
+
+
 type Msg
     = ChangedUsername String
     | ChangedEmail String
     | ChangedPassword String
     | SubmittedForm
+    | GotRegisterResponse (Result (Api.Error (List String)) Register.RegistrationDetails)
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg model =
+update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
+update options msg model =
+    updateHelper options msg model
+        |> Tuple.mapSecond (Cmd.map options.onChange)
+
+
+updateHelper : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd Msg )
+updateHelper { apiUrl } msg model =
     case msg of
         ChangedUsername username ->
             ( { model | username = username }
@@ -57,7 +81,108 @@ update msg model =
             )
 
         SubmittedForm ->
-            ( model, Cmd.none )
+            case validate model of
+                Validation.Success { username, email, password } ->
+                    ( { model | errorMessages = [], isDisabled = True }
+                    , Register.register
+                        apiUrl
+                        { username = username
+                        , email = email
+                        , password = password
+                        , onResponse = GotRegisterResponse
+                        }
+                    )
+
+                Validation.Failure errorMessages ->
+                    ( { model | errorMessages = errorMessages }
+                    , Cmd.none
+                    )
+
+        GotRegisterResponse result ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            case result of
+                Ok registrationDetails ->
+                    --
+                    -- TODO: Handle getting the registration details.
+                    --
+                    -- What do we do next?
+                    --
+                    ( newModel, Cmd.none )
+                        |> Debug.log (Debug.toString registrationDetails)
+
+                Err err ->
+                    case err of
+                        Api.UserError errorMessages ->
+                            ( { newModel | errorMessages = errorMessages }
+                            , Cmd.none
+                            )
+
+                        _ ->
+                            ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
+                            , Cmd.none
+                            )
+
+
+type alias ValidatedFields =
+    { username : Username
+    , email : Email
+    , password : Password
+    }
+
+
+validate : Model -> Validation ValidatedFields
+validate { username, email, password } =
+    Validation.map ValidatedFields (validateUsername username)
+        |> Validation.ap (validateEmail email)
+        |> Validation.ap (validatePassword password)
+
+
+validateUsername : String -> Validation Username
+validateUsername rawUsername =
+    case Username.fromString rawUsername of
+        Just username ->
+            Validation.Success username
+
+        Nothing ->
+            Validation.Failure [ "username can't be blank" ]
+
+
+validateEmail : String -> Validation Email
+validateEmail rawEmail =
+    case Email.fromString rawEmail of
+        Just email ->
+            Validation.Success email
+
+        Nothing ->
+            Validation.Failure [ "email can't be blank" ]
+
+
+validatePassword : String -> Validation Password
+validatePassword rawPassword =
+    case Password.fromString rawPassword of
+        Ok password ->
+            Validation.Success password
+
+        Err Password.Blank ->
+            Validation.Failure [ "password can't be blank" ]
+
+        Err (Password.TooShort expectedLength) ->
+            [ "password must be at least "
+            , String.fromInt expectedLength
+            , " "
+            , String.pluralize
+                expectedLength
+                { singular = "character"
+                , plural = "characters"
+                }
+            , " long"
+            ]
+                |> String.concat
+                |> List.singleton
+                |> Validation.Failure
 
 
 
@@ -70,11 +195,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { onChange } { username, email, password } =
-    let
-        errorMessages =
-            []
-    in
+view { onChange } { username, email, password, errorMessages, isDisabled } =
     H.div []
         [ Navigation.view { role = Navigation.register }
         , H.div
@@ -84,18 +205,18 @@ view { onChange } { username, email, password } =
                 [ H.div
                     [ HA.class "row" ]
                     [ Register.view
-                        "col-md-6 offset-md-3 col-xs-12"
-                        { form =
+                        { classNames = "col-md-6 offset-md-3 col-xs-12"
+                        , errorMessages = errorMessages
+                        , form =
                             { username = username
                             , email = email
                             , password = password
-                            , status = RegisterForm.Invalid
+                            , isDisabled = isDisabled
                             , onInputUsername = ChangedUsername
                             , onInputEmail = ChangedEmail
                             , onInputPassword = ChangedPassword
                             , onSubmit = SubmittedForm
                             }
-                        , errorMessages = errorMessages
                         }
                     ]
                 ]

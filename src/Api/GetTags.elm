@@ -1,28 +1,28 @@
-module Api.GetTags exposing (Options, Response, getTags)
+module Api.GetTags exposing (Options, Tags, getTags)
 
+import Api
 import Data.Tag as Tag exposing (Tag)
 import Http
 import Json.Decode as JD
-import Lib.Url.Builder as UB
 
 
 type alias Options msg =
-    { onResponse : Result Http.Error Response -> msg
+    { onResponse : Result (Api.Error ()) Tags -> msg
     }
 
 
 getTags : String -> Options msg -> Cmd msg
 getTags baseUrl { onResponse } =
     Http.get
-        { url = UB.buildUrl baseUrl [ "tags" ] [] []
-        , expect = Http.expectJson onResponse decoder
+        { url = Api.buildUrl baseUrl [ "tags" ] [] []
+        , expect = Api.expectJson onResponse decoder Api.emptyErrorsDecoder
         }
 
 
-type alias Response =
+type alias Tags =
     List Tag
 
 
-decoder : JD.Decoder Response
+decoder : JD.Decoder Tags
 decoder =
     JD.field "tags" (JD.list Tag.decoder)

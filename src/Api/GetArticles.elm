@@ -1,12 +1,13 @@
 module Api.GetArticles exposing
     ( Article
+    , Articles
     , Author
     , Filter(..)
     , Options
-    , Response
     , getArticles
     )
 
+import Api
 import Data.Limit as Limit exposing (Limit)
 import Data.Offset as Offset exposing (Offset)
 import Data.Pager exposing (Page)
@@ -19,7 +20,6 @@ import Http
 import Json.Decode as JD
 import Json.Decode.Pipeline as JD
 import Lib.Json.Decode as JD
-import Lib.Url.Builder as UB
 import Url exposing (Url)
 import Url.Builder as UB
 
@@ -27,7 +27,7 @@ import Url.Builder as UB
 type alias Options msg =
     { filter : Filter
     , page : Page
-    , onResponse : Result Http.Error Response -> msg
+    , onResponse : Result (Api.Error ()) Articles -> msg
     }
 
 
@@ -42,7 +42,7 @@ getArticles : String -> Options msg -> Cmd msg
 getArticles baseUrl { filter, page, onResponse } =
     Http.get
         { url =
-            UB.buildUrl
+            Api.buildUrl
                 baseUrl
                 [ "articles" ]
                 [ UB.int "offset" <| Offset.toInt page.offset
@@ -61,11 +61,11 @@ getArticles baseUrl { filter, page, onResponse } =
                     ByFavourite username ->
                         Just <| UB.string "favorited" <| Username.toString username
                 ]
-        , expect = Http.expectJson onResponse decoder
+        , expect = Api.expectJson onResponse decoder Api.emptyErrorsDecoder
         }
 
 
-type alias Response =
+type alias Articles =
     { articles : List Article
     , totalArticles : Total
     }
@@ -90,9 +90,9 @@ type alias Author =
     }
 
 
-decoder : JD.Decoder Response
+decoder : JD.Decoder Articles
 decoder =
-    JD.map2 Response
+    JD.map2 Articles
         (JD.field "articles" <| JD.list articleDecoder)
         (JD.field "articlesCount" Total.decoder)
 

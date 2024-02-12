@@ -1,4 +1,4 @@
-module View.RegisterForm exposing (RegisterForm, Status(..), view)
+module View.RegisterForm exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
@@ -6,11 +6,11 @@ import Html.Events as HE
 import View.Input as Input
 
 
-type alias RegisterForm msg =
+type alias ViewOptions msg =
     { username : String
     , email : String
     , password : String
-    , status : Status
+    , isDisabled : Bool
     , onInputUsername : String -> msg
     , onInputEmail : String -> msg
     , onInputPassword : String -> msg
@@ -18,23 +18,11 @@ type alias RegisterForm msg =
     }
 
 
-type Status
-    = Invalid
-    | Valid
-    | Loading
-
-
-view : RegisterForm msg -> H.Html msg
-view { username, email, password, status, onInputUsername, onInputEmail, onInputPassword, onSubmit } =
+view : ViewOptions msg -> H.Html msg
+view { username, email, password, isDisabled, onInputUsername, onInputEmail, onInputPassword, onSubmit } =
     let
-        isFormDisabled =
-            status == Invalid || status == Loading
-
-        isFieldDisabled =
-            status == Loading
-
         attrs =
-            if isFormDisabled then
+            if isDisabled then
                 []
 
             else
@@ -46,7 +34,7 @@ view { username, email, password, status, onInputUsername, onInputEmail, onInput
             , type_ = "text"
             , placeholder = "Username"
             , value = username
-            , isDisabled = isFieldDisabled
+            , isDisabled = isDisabled
             , onInput = onInputUsername
             }
         , Input.view
@@ -54,7 +42,7 @@ view { username, email, password, status, onInputUsername, onInputEmail, onInput
             , type_ = "text"
             , placeholder = "Email"
             , value = email
-            , isDisabled = isFieldDisabled
+            , isDisabled = isDisabled
             , onInput = onInputEmail
             }
         , Input.view
@@ -62,13 +50,13 @@ view { username, email, password, status, onInputUsername, onInputEmail, onInput
             , type_ = "password"
             , placeholder = "Password"
             , value = password
-            , isDisabled = isFieldDisabled
+            , isDisabled = isDisabled
             , onInput = onInputPassword
             }
         , H.button
             [ HA.class "btn btn-lg btn-primary pull-xs-right"
             , HA.type_ "submit"
-            , HA.disabled isFormDisabled
+            , HA.disabled isDisabled
             ]
             [ H.text "Sign up" ]
         ]

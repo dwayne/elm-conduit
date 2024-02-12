@@ -1,11 +1,17 @@
-module View.Input exposing (Input, view)
+module View.Input exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 
 
-type alias Input msg =
+
+--
+-- TODO: Remove isDisabled field.
+--
+
+
+type alias ViewOptions msg =
     { name : String
     , type_ : String
     , placeholder : String
@@ -15,7 +21,7 @@ type alias Input msg =
     }
 
 
-view : Input msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { name, type_, placeholder, value, isDisabled, onInput } =
     H.fieldset
         [ HA.class "form-group" ]

@@ -1,5 +1,6 @@
 module Page.Home exposing (Model, Msg, ViewOptions, Viewer(..), init, update, view)
 
+import Api
 import Api.GetArticles as GetArticles
 import Api.GetTags as GetTags
 import Data.Limit as Limit
@@ -13,7 +14,6 @@ import Data.Total as Total exposing (Total)
 import Data.Username as Username
 import Html as H
 import Html.Attributes as HA
-import Http
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Time
 import View.ArticlePreview as ArticlePreview
@@ -126,8 +126,8 @@ type alias UpdateOptions msg =
 
 
 type Msg
-    = GotArticlesResponse (Result Http.Error GetArticles.Response)
-    | GotTagsResponse (Result Http.Error GetTags.Response)
+    = GotArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
+    | GotTagsResponse (Result (Api.Error ()) GetTags.Tags)
     | SwitchedFeedTabs FeedTabs.Tab
     | ClickedTag Tag
     | ChangedPageNumber PageNumber

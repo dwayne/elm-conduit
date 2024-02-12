@@ -179,6 +179,9 @@ update msg model =
                     let
                         ( newPageModel, newPageCmd ) =
                             RegisterPage.update
+                                { apiUrl = model.apiUrl
+                                , onChange = ChangedRegisterPage
+                                }
                                 pageMsg
                                 pageModel
                     in

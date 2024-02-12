@@ -1,19 +1,21 @@
-module View.Register exposing (Register, view)
+module View.Register exposing (ViewOptions, view)
 
+import Data.Route as Route
 import Html as H
 import Html.Attributes as HA
 import View.AuthErrors as AuthErrors
-import View.RegisterForm as RegisterForm exposing (RegisterForm)
+import View.RegisterForm as RegisterForm
 
 
-type alias Register msg =
-    { form : RegisterForm msg
+type alias ViewOptions msg =
+    { classNames : String
     , errorMessages : List String
+    , form : RegisterForm.ViewOptions msg
     }
 
 
-view : String -> Register msg -> H.Html msg
-view classNames { form, errorMessages } =
+view : ViewOptions msg -> H.Html msg
+view { classNames, errorMessages, form } =
     H.div
         [ HA.class classNames ]
         [ H.h1
@@ -22,7 +24,7 @@ view classNames { form, errorMessages } =
         , H.p
             [ HA.class "text-xs-center" ]
             [ H.a
-                [ HA.href "./login.html" ]
+                [ HA.href <| Route.toString Route.Login ]
                 [ H.text "Have an account?" ]
             ]
         , AuthErrors.view errorMessages

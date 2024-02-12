@@ -1,11 +1,13 @@
 module Data.Username exposing
     ( Username
     , decoder
+    , encode
     , fromString
     , toString
     )
 
 import Json.Decode as JD
+import Json.Encode as JE
 import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 
 
@@ -21,6 +23,11 @@ fromString =
 decoder : JD.Decoder Username
 decoder =
     JD.map Username NonEmptyString.decoder
+
+
+encode : Username -> JE.Value
+encode (Username username) =
+    NonEmptyString.encode username
 
 
 toString : Username -> String
