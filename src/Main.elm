@@ -5,6 +5,7 @@ import Browser.Navigation as BN exposing (Key)
 import Data.Route as Route
 import Html as H
 import Page.Home as HomePage
+import Page.Register as RegisterPage
 import Task
 import Time
 import Url exposing (Url)
@@ -42,7 +43,7 @@ type alias Model =
 type Page
     = Home HomePage.Model
     | SignIn
-    | SignUp
+    | Register RegisterPage.Model
     | Settings
     | Editor
     | Article
@@ -97,7 +98,7 @@ getPageFromUrl apiUrl url =
             ( SignIn, Cmd.none )
 
         Just Route.Register ->
-            ( SignUp, Cmd.none )
+            ( Register RegisterPage.init, Cmd.none )
 
         Just Route.Settings ->
             ( Settings, Cmd.none )
@@ -127,6 +128,7 @@ type Msg
     | ChangedUrl Url
     | GotZone Time.Zone
     | ChangedHomePage HomePage.Msg
+    | ChangedRegisterPage RegisterPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -171,6 +173,22 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        ChangedRegisterPage pageMsg ->
+            case model.page of
+                Register pageModel ->
+                    let
+                        ( newPageModel, newPageCmd ) =
+                            RegisterPage.update
+                                pageMsg
+                                pageModel
+                    in
+                    ( { model | page = Register newPageModel }
+                    , newPageCmd
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
+
 
 changeUrl : Url -> Model -> ( Model, Cmd Msg )
 changeUrl url model =
@@ -206,6 +224,12 @@ viewPage url zone page =
             HomePage.view
                 { zone = zone
                 , onChange = ChangedHomePage
+                }
+                model
+
+        Register model ->
+            RegisterPage.view
+                { onChange = ChangedRegisterPage
                 }
                 model
 
