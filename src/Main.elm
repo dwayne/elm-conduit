@@ -3,6 +3,8 @@ module Main exposing (main)
 import Browser as B
 import Browser.Navigation as BN exposing (Key)
 import Data.Route as Route
+import Data.User exposing (User)
+import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Page.Home as HomePage
 import Page.Register as RegisterPage
@@ -36,6 +38,7 @@ type alias Model =
     , url : Url
     , key : Key
     , zone : Time.Zone
+    , viewer : Viewer
     , page : Page
     }
 
@@ -57,13 +60,17 @@ init _ url key =
         apiUrl =
             "https://api.realworld.io/api"
 
+        viewer =
+            Viewer.Guest
+
         ( page, pageCmd ) =
-            getPageFromUrl apiUrl url
+            getPageFromUrl apiUrl url viewer
     in
     ( { apiUrl = apiUrl
       , url = url
       , key = key
       , zone = Time.utc
+      , viewer = viewer
       , page = page
       }
     , Cmd.batch
@@ -78,15 +85,15 @@ getZone =
     Task.perform GotZone Time.here
 
 
-getPageFromUrl : String -> Url -> ( Page, Cmd Msg )
-getPageFromUrl apiUrl url =
+getPageFromUrl : String -> Url -> Viewer -> ( Page, Cmd Msg )
+getPageFromUrl apiUrl url viewer =
     case Route.fromUrl url of
         Just Route.Home ->
             let
                 ( model, cmd ) =
                     HomePage.init
                         { apiUrl = apiUrl
-                        , viewer = HomePage.Guest
+                        , viewer = viewer
                         , onChange = ChangedHomePage
                         }
             in
@@ -129,6 +136,7 @@ type Msg
     | GotZone Time.Zone
     | ChangedHomePage HomePage.Msg
     | ChangedRegisterPage RegisterPage.Msg
+    | Registered User
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -161,6 +169,7 @@ update msg model =
                         ( newPageModel, newPageCmd ) =
                             HomePage.update
                                 { apiUrl = model.apiUrl
+                                , viewer = model.viewer
                                 , onChange = ChangedHomePage
                                 }
                                 pageMsg
@@ -180,6 +189,7 @@ update msg model =
                         ( newPageModel, newPageCmd ) =
                             RegisterPage.update
                                 { apiUrl = model.apiUrl
+                                , onRegistered = Registered
                                 , onChange = ChangedRegisterPage
                                 }
                                 pageMsg
@@ -192,12 +202,17 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        Registered user ->
+            ( { model | viewer = Viewer.User user }
+            , Route.redirectToHome model.key
+            )
+
 
 changeUrl : Url -> Model -> ( Model, Cmd Msg )
 changeUrl url model =
     let
         ( page, cmd ) =
-            getPageFromUrl model.apiUrl url
+            getPageFromUrl model.apiUrl url model.viewer
     in
     ( { model
         | url = url
@@ -212,20 +227,21 @@ changeUrl url model =
 
 
 view : Model -> B.Document Msg
-view { url, zone, page } =
+view model =
     { title = "Conduit"
     , body =
-        [ viewPage url zone page
+        [ viewPage model
         ]
     }
 
 
-viewPage : Url -> Time.Zone -> Page -> H.Html Msg
-viewPage url zone page =
+viewPage : Model -> H.Html Msg
+viewPage { url, zone, viewer, page } =
     case page of
         Home model ->
             HomePage.view
                 { zone = zone
+                , viewer = viewer
                 , onChange = ChangedHomePage
                 }
                 model

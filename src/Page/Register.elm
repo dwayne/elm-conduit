@@ -4,10 +4,12 @@ import Api
 import Api.Register as Register
 import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
+import Data.User exposing (User)
 import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
 import Lib.String as String
+import Lib.Task as Task
 import Lib.Validation as Validation exposing (Validation)
 import View.Footer as Footer
 import View.Navigation as Navigation
@@ -44,6 +46,7 @@ init =
 
 type alias UpdateOptions msg =
     { apiUrl : String
+    , onRegistered : User -> msg
     , onChange : Msg -> msg
     }
 
@@ -53,17 +56,11 @@ type Msg
     | ChangedEmail String
     | ChangedPassword String
     | SubmittedForm
-    | GotRegisterResponse (Result (Api.Error (List String)) Register.RegistrationDetails)
+    | GotRegisterResponse (Result (Api.Error (List String)) User)
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
-    updateHelper options msg model
-        |> Tuple.mapSecond (Cmd.map options.onChange)
-
-
-updateHelper : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd Msg )
-updateHelper { apiUrl } msg model =
     case msg of
         ChangedUsername username ->
             ( { model | username = username }
@@ -85,12 +82,13 @@ updateHelper { apiUrl } msg model =
                 Validation.Success { username, email, password } ->
                     ( { model | errorMessages = [], isDisabled = True }
                     , Register.register
-                        apiUrl
+                        options.apiUrl
                         { username = username
                         , email = email
                         , password = password
                         , onResponse = GotRegisterResponse
                         }
+                        |> Cmd.map options.onChange
                     )
 
                 Validation.Failure errorMessages ->
@@ -99,21 +97,17 @@ updateHelper { apiUrl } msg model =
                     )
 
         GotRegisterResponse result ->
-            let
-                newModel =
-                    { model | isDisabled = False }
-            in
             case result of
-                Ok registrationDetails ->
-                    --
-                    -- TODO: Handle getting the registration details.
-                    --
-                    -- What do we do next?
-                    --
-                    ( newModel, Cmd.none )
-                        |> Debug.log (Debug.toString registrationDetails)
+                Ok user ->
+                    ( init
+                    , Task.dispatch (options.onRegistered user)
+                    )
 
                 Err err ->
+                    let
+                        newModel =
+                            { model | isDisabled = False }
+                    in
                     case err of
                         Api.UserError errorMessages ->
                             ( { newModel | errorMessages = errorMessages }

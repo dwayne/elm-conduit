@@ -1,4 +1,4 @@
-module View.ArticlePreview exposing (ViewOptions, view)
+module View.ArticlePreview exposing (ViewOptions, view, viewMessage)
 
 import Data.Route as Route
 import Data.Slug as Slug exposing (Slug)
@@ -87,3 +87,10 @@ view { username, imageUrl, zone, timestamp, totalFavourites, isFavourite, slug, 
                     tags
             ]
         ]
+
+
+viewMessage : String -> H.Html msg
+viewMessage message =
+    H.div
+        [ HA.class "article-preview" ]
+        [ H.text message ]

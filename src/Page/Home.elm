@@ -1,4 +1,4 @@
-module Page.Home exposing (Model, Msg, ViewOptions, Viewer(..), init, update, view)
+module Page.Home exposing (Model, Msg, ViewOptions, init, update, view)
 
 import Api
 import Api.GetArticles as GetArticles
@@ -10,8 +10,10 @@ import Data.Pager as Pager exposing (Pager)
 import Data.Slug as Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
 import Data.Timestamp as Timestamp
+import Data.Token exposing (Token)
 import Data.Total as Total exposing (Total)
 import Data.Username as Username
+import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
@@ -25,14 +27,8 @@ import View.Pagination as Pagination
 import View.Sidebar as Sidebar
 
 
-type Viewer
-    = Guest
-    | User
-
-
 type alias Model =
-    { hasPersonal : Bool
-    , activeTab : FeedTabs.Tab
+    { activeTab : FeedTabs.Tab
     , maybeTag : Maybe Tag
     , feed : Feed
     , remoteDataTags : RemoteData () (List Tag)
@@ -82,18 +78,16 @@ init { apiUrl, viewer, onChange } =
         feed =
             initFeed
 
-        { hasPersonal, activeTab, getArticlesCmd } =
+        { activeTab, getArticlesCmd } =
             case viewer of
-                Guest ->
-                    { hasPersonal = False
-                    , activeTab = FeedTabs.Global
+                Viewer.Guest ->
+                    { activeTab = FeedTabs.Global
                     , getArticlesCmd = getGlobalFeedArticles apiUrl feed
                     }
 
-                User ->
-                    { hasPersonal = True
-                    , activeTab = FeedTabs.Personal
-                    , getArticlesCmd = Cmd.none
+                Viewer.User { token } ->
+                    { activeTab = FeedTabs.Personal
+                    , getArticlesCmd = getPersonalFeedArticles token apiUrl feed
                     }
 
         getTagsCmd =
@@ -105,8 +99,7 @@ init { apiUrl, viewer, onChange } =
                 , getTagsCmd
                 ]
     in
-    ( { hasPersonal = hasPersonal
-      , activeTab = activeTab
+    ( { activeTab = activeTab
       , maybeTag = Nothing
       , feed = feed
       , remoteDataTags = RemoteData.Loading
@@ -121,6 +114,7 @@ init { apiUrl, viewer, onChange } =
 
 type alias UpdateOptions msg =
     { apiUrl : String
+    , viewer : Viewer
     , onChange : Msg -> msg
     }
 
@@ -141,7 +135,7 @@ update options msg model =
 
 
 updateHelper : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd Msg )
-updateHelper { apiUrl } msg model =
+updateHelper options msg model =
     case msg of
         GotArticlesResponse result ->
             case result of
@@ -187,7 +181,7 @@ updateHelper { apiUrl } msg model =
                 | activeTab = tab
                 , feed = feed
               }
-            , getFeedArticles tab apiUrl feed
+            , getFeedArticles tab options.viewer options.apiUrl feed
             )
 
         ClickedTag tag ->
@@ -200,7 +194,7 @@ updateHelper { apiUrl } msg model =
                 , maybeTag = Just tag
                 , feed = feed
               }
-            , getTagFeedArticles tag apiUrl feed
+            , getTagFeedArticles tag options.apiUrl feed
             )
 
         ChangedPageNumber pageNumber ->
@@ -211,7 +205,7 @@ updateHelper { apiUrl } msg model =
                         |> setFeedCurrentPageNumber pageNumber
             in
             ( { model | feed = feed }
-            , getFeedArticles model.activeTab apiUrl feed
+            , getFeedArticles model.activeTab options.viewer options.apiUrl feed
             )
 
         ToggledFavourite slug isFavourite ->
@@ -225,11 +219,19 @@ updateHelper { apiUrl } msg model =
 -- HTTP
 
 
-getFeedArticles : FeedTabs.Tab -> String -> Feed -> Cmd Msg
-getFeedArticles tab =
+getFeedArticles : FeedTabs.Tab -> Viewer -> String -> Feed -> Cmd Msg
+getFeedArticles tab viewer =
     case tab of
         FeedTabs.Personal ->
-            getPersonalFeedArticles
+            case viewer of
+                Viewer.User { token } ->
+                    getPersonalFeedArticles token
+
+                Viewer.Guest ->
+                    --
+                    -- N.B. This should NEVER happen.
+                    --
+                    always <| always Cmd.none
 
         FeedTabs.Global ->
             getGlobalFeedArticles
@@ -238,19 +240,21 @@ getFeedArticles tab =
             getTagFeedArticles tag
 
 
-getPersonalFeedArticles : String -> Feed -> Cmd Msg
-getPersonalFeedArticles _ _ =
-    --
-    -- TODO: Get articles for the personal feed.
-    --
-    Cmd.none
+getPersonalFeedArticles : Token -> String -> Feed -> Cmd Msg
+getPersonalFeedArticles token apiUrl { pager, currentPageNumber } =
+    GetArticles.getArticles
+        apiUrl
+        { request = GetArticles.fromUsersYouFollow token
+        , page = Pager.toPage currentPageNumber pager
+        , onResponse = GotArticlesResponse
+        }
 
 
 getGlobalFeedArticles : String -> Feed -> Cmd Msg
 getGlobalFeedArticles apiUrl { pager, currentPageNumber } =
     GetArticles.getArticles
         apiUrl
-        { filter = GetArticles.Global
+        { request = GetArticles.global
         , page = Pager.toPage currentPageNumber pager
         , onResponse = GotArticlesResponse
         }
@@ -260,7 +264,7 @@ getTagFeedArticles : Tag -> String -> Feed -> Cmd Msg
 getTagFeedArticles tag apiUrl { pager, currentPageNumber } =
     GetArticles.getArticles
         apiUrl
-        { filter = GetArticles.ByTag tag
+        { request = GetArticles.byTag tag
         , page = Pager.toPage currentPageNumber pager
         , onResponse = GotArticlesResponse
         }
@@ -272,19 +276,36 @@ getTagFeedArticles tag apiUrl { pager, currentPageNumber } =
 
 type alias ViewOptions msg =
     { zone : Time.Zone
+    , viewer : Viewer
     , onChange : Msg -> msg
     }
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, onChange } model =
+view { zone, viewer, onChange } model =
     let
         feed =
             model.feed
 
+        { role, hasPersonal } =
+            case viewer of
+                Viewer.Guest ->
+                    { role = Navigation.guestHome
+                    , hasPersonal = False
+                    }
+
+                Viewer.User { username, imageUrl } ->
+                    { role =
+                        Navigation.userHome
+                            { username = username
+                            , imageUrl = imageUrl
+                            }
+                    , hasPersonal = True
+                    }
+
         viewFeedTabs =
             [ FeedTabs.view
-                { hasPersonal = model.hasPersonal
+                { hasPersonal = hasPersonal
                 , maybeTag = model.maybeTag
                 , activeTab = model.activeTab
                 , isDisabled = isLoadingFeed
@@ -296,23 +317,22 @@ view { zone, onChange } model =
             case feed.remoteDataArticles of
                 RemoteData.Loading ->
                     ( True
-                    , [ H.div
-                            [ HA.class "article-preview" ]
-                            [ H.text "Loading articles..." ]
-                      ]
+                    , [ ArticlePreview.viewMessage "Loading articles..." ]
                     )
 
                 RemoteData.Success articles ->
                     ( False
-                    , List.map (viewArticlePreview zone) articles
+                    , case ( model.activeTab, articles ) of
+                        ( FeedTabs.Personal, [] ) ->
+                            [ ArticlePreview.viewMessage "You need to follow some users to populate this feed." ]
+
+                        _ ->
+                            List.map (viewArticlePreview zone) articles
                     )
 
                 RemoteData.Failure _ ->
                     ( False
-                    , [ H.div
-                            [ HA.class "article-preview" ]
-                            [ H.text "Unable to load articles." ]
-                      ]
+                    , [ ArticlePreview.viewMessage "Unable to load articles." ]
                     )
 
         viewPagination =
@@ -339,7 +359,7 @@ view { zone, onChange } model =
                     Sidebar.Error "Unable to load tags."
     in
     H.div []
-        [ Navigation.view { role = Navigation.guestHome }
+        [ Navigation.view { role = role }
         , H.div
             [ HA.class "home-page" ]
             [ HomeHeader.view

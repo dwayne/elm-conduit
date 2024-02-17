@@ -1,9 +1,11 @@
 module Data.Route exposing
     ( Route(..)
     , fromUrl
+    , redirectToHome
     , toString
     )
 
+import Browser.Navigation as BN
 import Data.Slug as Slug exposing (Slug)
 import Data.Username as Username exposing (Username)
 import Url exposing (Url)
@@ -50,6 +52,22 @@ slugParser =
 usernameParser : UP.Parser (Username -> a) a
 usernameParser =
     UP.custom "USERNAME" Username.fromString
+
+
+
+--
+-- TODO: Add Route.href, see https://github.com/rtfeldman/elm-spa-example/blob/master/src/Route.elm#L49-L51.
+--
+
+
+redirectToHome : BN.Key -> Cmd msg
+redirectToHome key =
+    replaceUrl key Home
+
+
+replaceUrl : BN.Key -> Route -> Cmd msg
+replaceUrl key =
+    toString >> BN.replaceUrl key
 
 
 toString : Route -> String

@@ -2,9 +2,11 @@ module Api.GetArticles exposing
     ( Article
     , Articles
     , Author
-    , Filter(..)
     , Options
+    , byTag
+    , fromUsersYouFollow
     , getArticles
+    , global
     )
 
 import Api
@@ -14,6 +16,7 @@ import Data.Pager exposing (Page)
 import Data.Slug as Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
 import Data.Timestamp as Timestamp exposing (Timestamp)
+import Data.Token as Token exposing (Token)
 import Data.Total as Total exposing (Total)
 import Data.Username as Username exposing (Username)
 import Http
@@ -25,21 +28,71 @@ import Url.Builder as UB
 
 
 type alias Options msg =
-    { filter : Filter
+    { request : Request
     , page : Page
     , onResponse : Result (Api.Error ()) Articles -> msg
     }
 
 
+type Request
+    = FromUsersYouFollow Token
+    | Global Filter
+
+
 type Filter
-    = Global
+    = None
     | ByTag Tag
     | ByAuthor Username
     | ByFavourite Username
 
 
+fromUsersYouFollow : Token -> Request
+fromUsersYouFollow =
+    FromUsersYouFollow
+
+
+global : Request
+global =
+    Global None
+
+
+byTag : Tag -> Request
+byTag =
+    ByTag >> Global
+
+
 getArticles : String -> Options msg -> Cmd msg
-getArticles baseUrl { filter, page, onResponse } =
+getArticles baseUrl { request, page, onResponse } =
+    case request of
+        FromUsersYouFollow token ->
+            getArticlesFromUsersYouFollow baseUrl token page onResponse
+
+        Global filter ->
+            getArticlesGlobally baseUrl filter page onResponse
+
+
+getArticlesFromUsersYouFollow : String -> Token -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
+getArticlesFromUsersYouFollow baseUrl token page onResponse =
+    Http.request
+        { method = "GET"
+        , headers = [ Token.toAuthorizationHeader token ]
+        , url =
+            Api.buildUrl
+                baseUrl
+                [ "articles", "feed" ]
+                [ UB.int "offset" <| Offset.toInt page.offset
+                , UB.int "limit" <| Limit.toInt page.limit
+                ]
+                []
+        , body = Http.emptyBody
+        , expect = Api.expectJson onResponse decoder Api.emptyErrorsDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getArticlesGlobally : String -> Filter -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
+getArticlesGlobally baseUrl filter page onResponse =
     Http.get
         { url =
             Api.buildUrl
@@ -49,7 +102,7 @@ getArticles baseUrl { filter, page, onResponse } =
                 , UB.int "limit" <| Limit.toInt page.limit
                 ]
                 [ case filter of
-                    Global ->
+                    None ->
                         Nothing
 
                     ByTag tag ->
