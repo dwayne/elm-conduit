@@ -10,7 +10,7 @@ import Html as H
 import Html.Attributes as HA
 import Lib.String as String
 import Lib.Task as Task
-import Lib.Validation as Validation exposing (Validation)
+import Lib.Validation as V
 import View.Footer as Footer
 import View.Navigation as Navigation
 import View.Register as Register
@@ -78,23 +78,26 @@ update options msg model =
             )
 
         SubmittedForm ->
-            case validate model of
-                Validation.Success { username, email, password } ->
-                    ( { model | errorMessages = [], isDisabled = True }
-                    , Register.register
-                        options.apiUrl
-                        { username = username
-                        , email = email
-                        , password = password
-                        , onResponse = GotRegisterResponse
-                        }
-                        |> Cmd.map options.onChange
-                    )
-
-                Validation.Failure errorMessages ->
-                    ( { model | errorMessages = errorMessages }
-                    , Cmd.none
-                    )
+            validate model
+                |> V.withValidation
+                    { onSuccess =
+                        \{ username, email, password } ->
+                            ( { model | errorMessages = [], isDisabled = True }
+                            , Register.register
+                                options.apiUrl
+                                { username = username
+                                , email = email
+                                , password = password
+                                , onResponse = GotRegisterResponse
+                                }
+                                |> Cmd.map options.onChange
+                            )
+                    , onFailure =
+                        \errorMessages ->
+                            ( { model | errorMessages = errorMessages }
+                            , Cmd.none
+                            )
+                    }
 
         GotRegisterResponse result ->
             case result of
@@ -127,56 +130,56 @@ type alias ValidatedFields =
     }
 
 
-validate : Model -> Validation ValidatedFields
+validate : Model -> V.Validation ValidatedFields
 validate { username, email, password } =
-    Validation.map ValidatedFields (validateUsername username)
-        |> Validation.ap (validateEmail email)
-        |> Validation.ap (validatePassword password)
+    V.succeed ValidatedFields
+        |> V.required (validateUsername username)
+        |> V.required (validateEmail email)
+        |> V.required (validatePassword password)
 
 
-validateUsername : String -> Validation Username
+validateUsername : String -> V.Validation Username
 validateUsername rawUsername =
     case Username.fromString rawUsername of
         Just username ->
-            Validation.Success username
+            V.succeed username
 
         Nothing ->
-            Validation.Failure [ "username can't be blank" ]
+            V.fail "username can't be blank"
 
 
-validateEmail : String -> Validation Email
+validateEmail : String -> V.Validation Email
 validateEmail rawEmail =
     case Email.fromString rawEmail of
         Just email ->
-            Validation.Success email
+            V.succeed email
 
         Nothing ->
-            Validation.Failure [ "email can't be blank" ]
+            V.fail "email can't be blank"
 
 
-validatePassword : String -> Validation Password
+validatePassword : String -> V.Validation Password
 validatePassword rawPassword =
     case Password.fromString rawPassword of
         Ok password ->
-            Validation.Success password
+            V.succeed password
 
         Err Password.Blank ->
-            Validation.Failure [ "password can't be blank" ]
+            V.fail "password can't be blank"
 
         Err (Password.TooShort expectedLength) ->
-            [ "password must be at least "
-            , String.fromInt expectedLength
-            , " "
-            , String.pluralize
-                expectedLength
-                { singular = "character"
-                , plural = "characters"
-                }
-            , " long"
-            ]
-                |> String.concat
-                |> List.singleton
-                |> Validation.Failure
+            V.fail <|
+                String.concat
+                    [ "password must be at least "
+                    , String.fromInt expectedLength
+                    , " "
+                    , String.pluralize
+                        expectedLength
+                        { singular = "character"
+                        , plural = "characters"
+                        }
+                    , " long"
+                    ]
 
 
 

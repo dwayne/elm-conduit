@@ -1,4 +1,10 @@
-module Lib.Validation exposing (Validation(..), ap, map)
+module Lib.Validation exposing
+    ( Validation
+    , fail
+    , required
+    , succeed
+    , withValidation
+    )
 
 
 type Validation a
@@ -6,18 +12,18 @@ type Validation a
     | Failure (List String)
 
 
-map : (a -> b) -> Validation a -> Validation b
-map f va =
-    case va of
-        Success a ->
-            Success (f a)
-
-        Failure es ->
-            Failure es
+succeed : a -> Validation a
+succeed =
+    Success
 
 
-ap : Validation a -> Validation (a -> b) -> Validation b
-ap va vf =
+fail : String -> Validation a
+fail message =
+    Failure [ message ]
+
+
+required : Validation a -> Validation (a -> b) -> Validation b
+required va vf =
     case ( vf, va ) of
         ( Success f, Success a ) ->
             Success (f a)
@@ -30,3 +36,18 @@ ap va vf =
 
         ( Failure es1, Failure es2 ) ->
             Failure (es1 ++ es2)
+
+
+withValidation :
+    { onSuccess : a -> b
+    , onFailure : List String -> b
+    }
+    -> Validation a
+    -> b
+withValidation { onSuccess, onFailure } va =
+    case va of
+        Success a ->
+            onSuccess a
+
+        Failure es ->
+            onFailure es
