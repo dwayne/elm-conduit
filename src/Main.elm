@@ -1,8 +1,8 @@
 module Main exposing (main)
 
 import Browser as B
-import Browser.Navigation as BN exposing (Key)
-import Data.Route as Route
+import Browser.Navigation as BN
+import Data.Route as Route exposing (Route)
 import Data.User exposing (User)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
@@ -26,7 +26,7 @@ main =
 
 
 type alias Flags =
-    ()
+    String
 
 
 
@@ -36,7 +36,7 @@ type alias Flags =
 type alias Model =
     { apiUrl : String
     , url : Url
-    , key : Key
+    , key : BN.Key
     , zone : Time.Zone
     , viewer : Viewer
     , page : Page
@@ -45,7 +45,7 @@ type alias Model =
 
 type Page
     = Home HomePage.Model
-    | SignIn
+    | Login
     | Register RegisterPage.Model
     | Settings
     | Editor
@@ -54,17 +54,14 @@ type Page
     | NotFound
 
 
-init : Flags -> Url -> Key -> ( Model, Cmd Msg )
-init _ url key =
+init : Flags -> Url -> BN.Key -> ( Model, Cmd Msg )
+init apiUrl url key =
     let
-        apiUrl =
-            "https://api.realworld.io/api"
-
         viewer =
             Viewer.Guest
 
         ( page, pageCmd ) =
-            getPageFromUrl apiUrl url viewer
+            getPageFromUrl apiUrl viewer url
     in
     ( { apiUrl = apiUrl
       , url = url
@@ -85,45 +82,50 @@ getZone =
     Task.perform GotZone Time.here
 
 
-getPageFromUrl : String -> Url -> Viewer -> ( Page, Cmd Msg )
-getPageFromUrl apiUrl url viewer =
+getPageFromUrl : String -> Viewer -> Url -> ( Page, Cmd Msg )
+getPageFromUrl apiUrl viewer url =
     case Route.fromUrl url of
-        Just Route.Home ->
+        Just route ->
+            getPageFromRoute apiUrl viewer route
+
+        Nothing ->
+            ( NotFound, Cmd.none )
+
+
+getPageFromRoute : String -> Viewer -> Route -> ( Page, Cmd Msg )
+getPageFromRoute apiUrl viewer route =
+    case route of
+        Route.Home ->
             let
                 ( model, cmd ) =
                     HomePage.init
                         { apiUrl = apiUrl
                         , viewer = viewer
-                        , onChange = ChangedHomePage
+                        , onChange = ChangedPage << ChangedHomePage
                         }
             in
-            ( Home model
-            , cmd
-            )
+            ( Home model, cmd )
 
-        Just Route.Login ->
-            ( SignIn, Cmd.none )
+        Route.Login ->
+            ( Login, Cmd.none )
 
-        Just Route.Register ->
+        Route.Register ->
             ( Register RegisterPage.init, Cmd.none )
 
-        Just Route.Settings ->
+        Route.Settings ->
             ( Settings, Cmd.none )
 
-        Just Route.CreateArticle ->
+        Route.CreateArticle ->
             ( Editor, Cmd.none )
 
-        Just (Route.EditArticle _) ->
+        Route.EditArticle _ ->
             ( Editor, Cmd.none )
 
-        Just (Route.Article _) ->
+        Route.Article _ ->
             ( Article, Cmd.none )
 
-        Just (Route.Profile _ _) ->
+        Route.Profile _ _ ->
             ( Profile, Cmd.none )
-
-        Nothing ->
-            ( NotFound, Cmd.none )
 
 
 
@@ -134,9 +136,13 @@ type Msg
     = ClickedLink B.UrlRequest
     | ChangedUrl Url
     | GotZone Time.Zone
-    | ChangedHomePage HomePage.Msg
-    | ChangedRegisterPage RegisterPage.Msg
     | Registered User
+    | ChangedPage PageMsg
+
+
+type PageMsg
+    = ChangedHomePage HomePage.Msg
+    | ChangedRegisterPage RegisterPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -162,57 +168,74 @@ update msg model =
             , Cmd.none
             )
 
-        ChangedHomePage pageMsg ->
-            case model.page of
-                Home pageModel ->
-                    let
-                        ( newPageModel, newPageCmd ) =
-                            HomePage.update
-                                { apiUrl = model.apiUrl
-                                , viewer = model.viewer
-                                , onChange = ChangedHomePage
-                                }
-                                pageMsg
-                                pageModel
-                    in
-                    ( { model | page = Home newPageModel }
-                    , newPageCmd
-                    )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        ChangedRegisterPage pageMsg ->
-            case model.page of
-                Register pageModel ->
-                    let
-                        ( newPageModel, newPageCmd ) =
-                            RegisterPage.update
-                                { apiUrl = model.apiUrl
-                                , onRegistered = Registered
-                                , onChange = ChangedRegisterPage
-                                }
-                                pageMsg
-                                pageModel
-                    in
-                    ( { model | page = Register newPageModel }
-                    , newPageCmd
-                    )
-
-                _ ->
-                    ( model, Cmd.none )
-
         Registered user ->
             ( { model | viewer = Viewer.User user }
             , Route.redirectToHome model.key
             )
+
+        ChangedPage pageMsg ->
+            updatePage pageMsg model
+
+
+updatePage : PageMsg -> Model -> ( Model, Cmd Msg )
+updatePage msg model =
+    case msg of
+        ChangedHomePage pageMsg ->
+            updateHomePage pageMsg model
+
+        ChangedRegisterPage pageMsg ->
+            updateRegisterPage pageMsg model
+
+
+updateHomePage : HomePage.Msg -> Model -> ( Model, Cmd Msg )
+updateHomePage pageMsg model =
+    case model.page of
+        Home pageModel ->
+            let
+                ( newPageModel, newPageCmd ) =
+                    HomePage.update
+                        { apiUrl = model.apiUrl
+                        , viewer = model.viewer
+                        , onChange = ChangedPage << ChangedHomePage
+                        }
+                        pageMsg
+                        pageModel
+            in
+            ( { model | page = Home newPageModel }
+            , newPageCmd
+            )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+updateRegisterPage : RegisterPage.Msg -> Model -> ( Model, Cmd Msg )
+updateRegisterPage pageMsg model =
+    case model.page of
+        Register pageModel ->
+            let
+                ( newPageModel, newPageCmd ) =
+                    RegisterPage.update
+                        { apiUrl = model.apiUrl
+                        , onRegistered = Registered
+                        , onChange = ChangedPage << ChangedRegisterPage
+                        }
+                        pageMsg
+                        pageModel
+            in
+            ( { model | page = Register newPageModel }
+            , newPageCmd
+            )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 changeUrl : Url -> Model -> ( Model, Cmd Msg )
 changeUrl url model =
     let
         ( page, cmd ) =
-            getPageFromUrl model.apiUrl url model.viewer
+            getPageFromUrl model.apiUrl model.viewer url
     in
     ( { model
         | url = url
@@ -242,13 +265,13 @@ viewPage { url, zone, viewer, page } =
             HomePage.view
                 { zone = zone
                 , viewer = viewer
-                , onChange = ChangedHomePage
+                , onChange = ChangedPage << ChangedHomePage
                 }
                 model
 
         Register model ->
             RegisterPage.view
-                { onChange = ChangedRegisterPage
+                { onChange = ChangedPage << ChangedRegisterPage
                 }
                 model
 
