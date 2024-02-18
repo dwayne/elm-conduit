@@ -17,6 +17,7 @@ import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
+import Lib.Task as Task
 import Time
 import View.ArticlePreview as ArticlePreview
 import View.FeedTabs as FeedTabs
@@ -25,6 +26,10 @@ import View.HomeHeader as HomeHeader
 import View.Navigation as Navigation
 import View.Pagination as Pagination
 import View.Sidebar as Sidebar
+
+
+
+-- MODEL
 
 
 type alias Model =
@@ -37,32 +42,37 @@ type alias Model =
 
 type alias Feed =
     { remoteDataArticles : RemoteData () (List GetArticles.Article)
-    , pager : Pager
     , currentPageNumber : PageNumber
+    , pager : Pager
     }
 
 
-initFeed : Feed
-initFeed =
+feedInit : Feed
+feedInit =
     { remoteDataArticles = RemoteData.Loading
-    , pager = Pager.new
     , currentPageNumber = PageNumber.one
+    , pager = Pager.new
     }
 
 
-setFeedRemoteDataArtciles : RemoteData () (List GetArticles.Article) -> Feed -> Feed
-setFeedRemoteDataArtciles remoteDataArticles feed =
+feedSetRemoteDataArtciles : RemoteData () (List GetArticles.Article) -> Feed -> Feed
+feedSetRemoteDataArtciles remoteDataArticles feed =
     { feed | remoteDataArticles = remoteDataArticles }
 
 
-setFeedTotalPages : Total -> Feed -> Feed
-setFeedTotalPages totalPages feed =
+feedSetCurrentPageNumber : PageNumber -> Feed -> Feed
+feedSetCurrentPageNumber pageNumber feed =
+    { feed | currentPageNumber = pageNumber }
+
+
+feedSetTotalPages : Total -> Feed -> Feed
+feedSetTotalPages totalPages feed =
     { feed | pager = Pager.setTotalPages totalPages feed.pager }
 
 
-setFeedCurrentPageNumber : PageNumber -> Feed -> Feed
-setFeedCurrentPageNumber pageNumber feed =
-    { feed | currentPageNumber = pageNumber }
+feedToPage : Feed -> Pager.Page
+feedToPage { currentPageNumber, pager } =
+    Pager.toPage currentPageNumber pager
 
 
 type alias InitOptions msg =
@@ -76,18 +86,18 @@ init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, viewer, onChange } =
     let
         feed =
-            initFeed
+            feedInit
 
         { activeTab, getArticlesCmd } =
             case viewer of
                 Viewer.Guest ->
                     { activeTab = FeedTabs.Global
-                    , getArticlesCmd = getGlobalFeedArticles apiUrl feed
+                    , getArticlesCmd = getGlobalArticles apiUrl feed
                     }
 
                 Viewer.User { token } ->
                     { activeTab = FeedTabs.Personal
-                    , getArticlesCmd = getPersonalFeedArticles token apiUrl feed
+                    , getArticlesCmd = getPersonalArticles token apiUrl feed
                     }
 
         getTagsCmd =
@@ -143,8 +153,8 @@ updateHelper options msg model =
                     let
                         feed =
                             model.feed
-                                |> setFeedRemoteDataArtciles (RemoteData.Success articles)
-                                |> setFeedTotalPages totalArticles
+                                |> feedSetRemoteDataArtciles (RemoteData.Success articles)
+                                |> feedSetTotalPages totalArticles
                     in
                     ( { model | feed = feed }
                     , Cmd.none
@@ -154,7 +164,7 @@ updateHelper options msg model =
                     let
                         feed =
                             model.feed
-                                |> setFeedRemoteDataArtciles (RemoteData.Failure ())
+                                |> feedSetRemoteDataArtciles (RemoteData.Failure ())
                     in
                     ( { model | feed = feed }
                     , Cmd.none
@@ -175,37 +185,37 @@ updateHelper options msg model =
         SwitchedFeedTabs tab ->
             let
                 feed =
-                    initFeed
+                    feedInit
             in
             ( { model
                 | activeTab = tab
                 , feed = feed
               }
-            , getFeedArticles tab options.viewer options.apiUrl feed
+            , getArticles tab options.viewer options.apiUrl feed
             )
 
         ClickedTag tag ->
             let
                 feed =
-                    initFeed
+                    feedInit
             in
             ( { model
                 | activeTab = FeedTabs.Tag tag
                 , maybeTag = Just tag
                 , feed = feed
               }
-            , getTagFeedArticles tag options.apiUrl feed
+            , getArticlesByTag tag options.apiUrl feed
             )
 
         ChangedPageNumber pageNumber ->
             let
                 feed =
                     model.feed
-                        |> setFeedRemoteDataArtciles RemoteData.Loading
-                        |> setFeedCurrentPageNumber pageNumber
+                        |> feedSetRemoteDataArtciles RemoteData.Loading
+                        |> feedSetCurrentPageNumber pageNumber
             in
             ( { model | feed = feed }
-            , getFeedArticles model.activeTab options.viewer options.apiUrl feed
+            , getArticles model.activeTab options.viewer options.apiUrl feed
             )
 
         ToggledFavourite slug isFavourite ->
@@ -219,53 +229,55 @@ updateHelper options msg model =
 -- HTTP
 
 
-getFeedArticles : FeedTabs.Tab -> Viewer -> String -> Feed -> Cmd Msg
-getFeedArticles tab viewer =
+getArticles : FeedTabs.Tab -> Viewer -> String -> Feed -> Cmd Msg
+getArticles tab viewer =
     case tab of
         FeedTabs.Personal ->
             case viewer of
                 Viewer.User { token } ->
-                    getPersonalFeedArticles token
+                    getPersonalArticles token
 
                 Viewer.Guest ->
                     --
                     -- N.B. This should NEVER happen.
                     --
-                    always <| always Cmd.none
+                    Task.dispatch (GotArticlesResponse (Err Api.Unauthorized))
+                        |> always
+                        |> always
 
         FeedTabs.Global ->
-            getGlobalFeedArticles
+            getGlobalArticles
 
         FeedTabs.Tag tag ->
-            getTagFeedArticles tag
+            getArticlesByTag tag
 
 
-getPersonalFeedArticles : Token -> String -> Feed -> Cmd Msg
-getPersonalFeedArticles token apiUrl { pager, currentPageNumber } =
+getPersonalArticles : Token -> String -> Feed -> Cmd Msg
+getPersonalArticles token apiUrl feed =
     GetArticles.getArticles
         apiUrl
         { request = GetArticles.fromUsersYouFollow token
-        , page = Pager.toPage currentPageNumber pager
+        , page = feedToPage feed
         , onResponse = GotArticlesResponse
         }
 
 
-getGlobalFeedArticles : String -> Feed -> Cmd Msg
-getGlobalFeedArticles apiUrl { pager, currentPageNumber } =
+getGlobalArticles : String -> Feed -> Cmd Msg
+getGlobalArticles apiUrl feed =
     GetArticles.getArticles
         apiUrl
         { request = GetArticles.global
-        , page = Pager.toPage currentPageNumber pager
+        , page = feedToPage feed
         , onResponse = GotArticlesResponse
         }
 
 
-getTagFeedArticles : Tag -> String -> Feed -> Cmd Msg
-getTagFeedArticles tag apiUrl { pager, currentPageNumber } =
+getArticlesByTag : Tag -> String -> Feed -> Cmd Msg
+getArticlesByTag tag apiUrl feed =
     GetArticles.getArticles
         apiUrl
         { request = GetArticles.byTag tag
-        , page = Pager.toPage currentPageNumber pager
+        , page = feedToPage feed
         , onResponse = GotArticlesResponse
         }
 
