@@ -1,13 +1,19 @@
 module Main exposing (main)
 
+import Api
+import Api.GetUser as GetUser
 import Browser as B
 import Browser.Navigation as BN
+import Data.Config as Config
 import Data.Route as Route exposing (Route)
+import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
+import Json.Decode as JD
 import Page.Home as HomePage
 import Page.Register as RegisterPage
+import Port.Action
 import Task
 import Time
 import Url exposing (Url)
@@ -25,15 +31,33 @@ main =
         }
 
 
+
+-- FLAGS
+
+
 type alias Flags =
-    String
+    JD.Value
 
 
 
 -- MODEL
 
 
-type alias Model =
+type Model
+    = LoadingUser LoadingUserModel
+    | Success SuccessModel
+    | Failure Error
+
+
+type alias LoadingUserModel =
+    { apiUrl : String
+    , url : Url
+    , key : BN.Key
+    , zone : Time.Zone
+    }
+
+
+type alias SuccessModel =
     { apiUrl : String
     , url : Url
     , key : BN.Key
@@ -54,27 +78,155 @@ type Page
     | NotFound
 
 
+type Error
+    = BadConfig JD.Error
+
+
+withModel
+    : { onLoadingUser : LoadingUserModel -> a
+      , onSuccess : SuccessModel -> a
+      , onFailure : Error -> a
+      }
+    -> Model
+    -> a
+withModel { onLoadingUser, onSuccess, onFailure } model =
+    case model of
+        LoadingUser subModel ->
+            onLoadingUser subModel
+
+        Success subModel ->
+            onSuccess subModel
+
+        Failure error ->
+            onFailure error
+
+
+withLoadingUserModel
+    : { onLoadingUser : LoadingUserModel -> a
+      , default : a
+      }
+    -> Model
+    -> a
+withLoadingUserModel { onLoadingUser, default } =
+    withModel
+        { onLoadingUser = onLoadingUser
+        , onSuccess = always default
+        , onFailure = always default
+        }
+
+
+withSuccessModel
+    : { onSuccess : SuccessModel -> a
+      , default : a
+      }
+    -> Model
+    -> a
+withSuccessModel { onSuccess, default } =
+    withModel
+        { onLoadingUser = always default
+        , onSuccess = onSuccess
+        , onFailure = always default
+        }
+
+
 init : Flags -> Url -> BN.Key -> ( Model, Cmd Msg )
-init apiUrl url key =
+init flags url key =
+    case JD.decodeValue Config.decoder flags of
+        Ok { apiUrl, resultMaybeToken } ->
+            case resultMaybeToken of
+                Ok (Just token) ->
+                    initLoadingUser
+                        { apiUrl = apiUrl
+                        , url = url
+                        , key = key
+                        , token = token
+                        }
+
+                Ok Nothing ->
+                    initSuccess
+                        { apiUrl = apiUrl
+                        , url = url
+                        , key = key
+                        , maybeZone = Nothing
+                        , viewer = Viewer.Guest
+                        }
+
+                Err (Config.BadToken error) ->
+                    initSuccess
+                        { apiUrl = apiUrl
+                        , url = url
+                        , key = key
+                        , maybeZone = Nothing
+                        , viewer = Viewer.Guest
+                        }
+                        |> Debug.log (JD.errorToString error)
+
+        Err error ->
+            ( Failure (BadConfig error)
+            , Cmd.none
+            )
+
+
+initLoadingUser
+    : { apiUrl : String
+      , url : Url
+      , key : BN.Key
+      , token : Token
+      }
+    -> ( Model, Cmd Msg )
+initLoadingUser { apiUrl, url, key, token } =
+    ( LoadingUser
+        { apiUrl = apiUrl
+        , url = url
+        , key = key
+        , zone = Time.utc
+        }
+    , Cmd.batch
+        [ getZone
+        , GetUser.getUser
+            apiUrl
+            { token = token
+            , onResponse = GotUserResponse
+            }
+        ]
+    )
+
+
+initSuccess
+    : { apiUrl : String
+      , url : Url
+      , key : BN.Key
+      , maybeZone : Maybe Time.Zone
+      , viewer : Viewer
+      }
+    -> ( Model, Cmd Msg )
+initSuccess { apiUrl, url, key, maybeZone, viewer } =
     let
-        viewer =
-            Viewer.Guest
+        ( zone, zoneCmd ) =
+            case maybeZone of
+                Nothing ->
+                    ( Time.utc, getZone )
+
+                Just givenZone ->
+                    ( givenZone, Cmd.none )
 
         ( page, pageCmd ) =
             getPageFromUrl apiUrl viewer url
     in
-    ( { apiUrl = apiUrl
-      , url = url
-      , key = key
-      , zone = Time.utc
-      , viewer = viewer
-      , page = page
-      }
+    ( Success
+        { apiUrl = apiUrl
+        , url = url
+        , key = key
+        , zone = zone
+        , viewer = viewer
+        , page = page
+        }
     , Cmd.batch
-        [ getZone
+        [ zoneCmd
         , pageCmd
         ]
     )
+
 
 
 getZone : Cmd Msg
@@ -133,7 +285,8 @@ getPageFromRoute apiUrl viewer route =
 
 
 type Msg
-    = ClickedLink B.UrlRequest
+    = GotUserResponse (Result (Api.Error ()) User)
+    | ClickedLink B.UrlRequest
     | ChangedUrl Url
     | GotZone Time.Zone
     | Registered User
@@ -148,102 +301,182 @@ type PageMsg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotUserResponse result ->
+            handleUserResponse result model
+
         ClickedLink urlRequest ->
             case urlRequest of
                 B.Internal url ->
-                    ( model
-                    , BN.pushUrl model.key (Url.toString url)
-                    )
+                    pushUrl url model
 
                 B.External url ->
-                    ( model
-                    , BN.load url
-                    )
+                    loadUrl url model
 
         ChangedUrl url ->
             changeUrl url model
 
         GotZone zone ->
-            ( { model | zone = zone }
-            , Cmd.none
-            )
+            setZone zone model
 
         Registered user ->
-            ( { model | viewer = Viewer.User user }
-            , Route.redirectToHome model.key
-            )
+            registerUser user model
 
         ChangedPage pageMsg ->
             updatePage pageMsg model
 
 
+handleUserResponse : Result (Api.Error ()) User -> Model -> ( Model, Cmd Msg )
+handleUserResponse result model =
+    withLoadingUserModel
+        { onLoadingUser =
+            \{ apiUrl, url, key, zone } ->
+                case result of
+                    Ok user ->
+                        initSuccess
+                            { apiUrl = apiUrl
+                            , url = url
+                            , key = key
+                            , maybeZone = Just zone
+                            , viewer = Viewer.User user
+                            }
+
+                    Err error ->
+                        initSuccess
+                            { apiUrl = apiUrl
+                            , url = url
+                            , key = key
+                            , maybeZone = Just zone
+                            , viewer = Viewer.Guest
+                            }
+                            |> Debug.log ("Unable to get the user: " ++ Debug.toString error)
+        , default = ( model, Cmd.none )
+        }
+        model
+
+
+pushUrl : Url -> Model -> ( Model, Cmd msg )
+pushUrl url model =
+    ( model
+    , withSuccessModel
+        { onSuccess = \{ key } -> BN.pushUrl key (Url.toString url)
+        , default = Cmd.none
+        }
+        model
+    )
+
+
+loadUrl : String -> Model -> ( Model, Cmd msg )
+loadUrl url model =
+    ( model
+    , BN.load url
+    )
+
+
+changeUrl : Url -> Model -> ( Model, Cmd Msg )
+changeUrl url model =
+    withSuccessModel
+        { onSuccess =
+            \subModel ->
+                let
+                    ( page, cmd ) =
+                        getPageFromUrl subModel.apiUrl subModel.viewer url
+                in
+                ( Success { subModel | url = url, page = page }
+                , cmd
+                )
+        , default = ( model, Cmd.none )
+        }
+        model
+
+
+setZone : Time.Zone -> Model -> ( Model, Cmd msg )
+setZone zone model =
+    ( withModel
+        { onLoadingUser = \subModel -> LoadingUser { subModel | zone = zone }
+        , onSuccess = \subModel -> Success { subModel | zone = zone }
+        , onFailure = always model
+        }
+        model
+    , Cmd.none
+    )
+
+
+registerUser : User -> Model -> ( Model, Cmd Msg )
+registerUser user model =
+    withSuccessModel
+        { onSuccess =
+            \subModel ->
+                ( Success { subModel | viewer = Viewer.User user }
+                , Cmd.batch
+                    [ Port.Action.saveToken user.token
+                    , Route.redirectToHome subModel.key
+                    ]
+                )
+        , default = ( model, Cmd.none )
+        }
+        model
+
+
 updatePage : PageMsg -> Model -> ( Model, Cmd Msg )
 updatePage msg model =
-    case msg of
-        ChangedHomePage pageMsg ->
-            updateHomePage pageMsg model
+    let
+        updatePageHelper subModel =
+            case msg of
+                ChangedHomePage pageMsg ->
+                    updateHomePage pageMsg subModel
 
-        ChangedRegisterPage pageMsg ->
-            updateRegisterPage pageMsg model
+                ChangedRegisterPage pageMsg ->
+                    updateRegisterPage pageMsg subModel
+    in
+    withSuccessModel
+        { onSuccess = updatePageHelper >> Tuple.mapFirst Success
+        , default = ( model, Cmd.none )
+        }
+        model
 
 
-updateHomePage : HomePage.Msg -> Model -> ( Model, Cmd Msg )
-updateHomePage pageMsg model =
-    case model.page of
+updateHomePage : HomePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
+updateHomePage pageMsg subModel =
+    case subModel.page of
         Home pageModel ->
             let
                 ( newPageModel, newPageCmd ) =
                     HomePage.update
-                        { apiUrl = model.apiUrl
-                        , viewer = model.viewer
+                        { apiUrl = subModel.apiUrl
+                        , viewer = subModel.viewer
                         , onChange = ChangedPage << ChangedHomePage
                         }
                         pageMsg
                         pageModel
             in
-            ( { model | page = Home newPageModel }
+            ( { subModel | page = Home newPageModel }
             , newPageCmd
             )
 
         _ ->
-            ( model, Cmd.none )
+            ( subModel, Cmd.none )
 
 
-updateRegisterPage : RegisterPage.Msg -> Model -> ( Model, Cmd Msg )
-updateRegisterPage pageMsg model =
-    case model.page of
+updateRegisterPage : RegisterPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
+updateRegisterPage pageMsg subModel =
+    case subModel.page of
         Register pageModel ->
             let
                 ( newPageModel, newPageCmd ) =
                     RegisterPage.update
-                        { apiUrl = model.apiUrl
+                        { apiUrl = subModel.apiUrl
                         , onRegistered = Registered
                         , onChange = ChangedPage << ChangedRegisterPage
                         }
                         pageMsg
                         pageModel
             in
-            ( { model | page = Register newPageModel }
+            ( { subModel | page = Register newPageModel }
             , newPageCmd
             )
 
         _ ->
-            ( model, Cmd.none )
-
-
-changeUrl : Url -> Model -> ( Model, Cmd Msg )
-changeUrl url model =
-    let
-        ( page, cmd ) =
-            getPageFromUrl model.apiUrl model.viewer url
-    in
-    ( { model
-        | url = url
-        , page = page
-      }
-    , cmd
-    )
-
+            ( subModel, Cmd.none )
 
 
 -- VIEW
@@ -253,13 +486,23 @@ view : Model -> B.Document Msg
 view model =
     { title = "Conduit"
     , body =
-        [ viewPage model
+        [ withModel
+            { onLoadingUser = viewLoadingUserPage
+            , onSuccess = viewSuccessPage
+            , onFailure = viewFailurePage
+            }
+            model
         ]
     }
 
 
-viewPage : Model -> H.Html Msg
-viewPage { url, zone, viewer, page } =
+viewLoadingUserPage : LoadingUserModel -> H.Html msg
+viewLoadingUserPage _ =
+    H.text ""
+
+
+viewSuccessPage : SuccessModel -> H.Html Msg
+viewSuccessPage { url, zone, viewer, page } =
     case page of
         Home model ->
             HomePage.view
@@ -277,3 +520,13 @@ viewPage { url, zone, viewer, page } =
 
         _ ->
             H.text <| "url = " ++ Url.toString url
+
+
+viewFailurePage : Error -> H.Html msg
+viewFailurePage (BadConfig error) =
+    H.div
+        []
+        [ H.h1 [] [ H.text "Configuration Error" ]
+        , H.p [] [ H.text "An unexpected configuration error occurred." ]
+        , H.p [] [ H.text <| JD.errorToString error ]
+        ]

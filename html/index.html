@@ -16,9 +16,42 @@
     <div id="app"></div>
     <script src="/app.js"></script>
     <script>
-      Elm.Main.init({
+      class TokenStorage {
+        constructor(key) {
+          this.key = key;
+        }
+
+        getToken() {
+          return localStorage.getItem(this.key);
+        }
+
+        setToken(token) {
+          localStorage.setItem(this.key, token);
+        }
+      }
+
+      const tokenStorage = new TokenStorage("elm-conduit-token");
+      const maybeToken = tokenStorage.getToken();
+
+      const app = Elm.Main.init({
         node: document.getElementById("app"),
-        flags: "https://api.realworld.io/api"
+        flags: {
+          apiUrl: "https://api.realworld.io/api",
+          maybeToken
+        }
+      });
+
+      app.ports.send.subscribe(message => {
+        console.info("sendValue", message);
+
+        switch (message?.namespace) {
+          case "saveToken":
+            tokenStorage.setToken(message.value);
+            break;
+
+          default:
+            console.error("Received an unexpected message", message);
+        }
       });
     </script>
   </body>
