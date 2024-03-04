@@ -8,6 +8,8 @@ module Data.Route exposing
 import Browser.Navigation as BN
 import Data.Slug as Slug exposing (Slug)
 import Data.Username as Username exposing (Username)
+import Html as H
+import Html.Attributes as HA
 import Url exposing (Url)
 import Url.Builder as UB
 import Url.Parser as UP exposing ((</>))
@@ -52,12 +54,6 @@ slugParser =
 usernameParser : UP.Parser (Username -> a) a
 usernameParser =
     UP.custom "USERNAME" Username.fromString
-
-
-
---
--- TODO: Add Route.href, see https://github.com/rtfeldman/elm-spa-example/blob/master/src/Route.elm#L49-L51.
---
 
 
 redirectToHome : BN.Key -> Cmd msg
