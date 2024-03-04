@@ -1,4 +1,4 @@
-module View.ArticlePreview exposing (ViewOptions, view, viewMessage)
+module View.ArticlePreview exposing (Role(..), ViewOptions, view, viewMessage)
 
 import Data.Route as Route
 import Data.Slug as Slug exposing (Slug)
@@ -14,7 +14,8 @@ import Url exposing (Url)
 
 
 type alias ViewOptions msg =
-    { username : Username
+    { role : Role msg
+    , username : Username
     , imageUrl : Url
     , zone : Time.Zone
     , timestamp : Timestamp
@@ -24,12 +25,16 @@ type alias ViewOptions msg =
     , title : String
     , description : String
     , tags : List Tag
-    , onToggleFavourite : Bool -> msg
     }
 
 
+type Role msg
+    = Guest
+    | User (Bool -> msg)
+
+
 view : ViewOptions msg -> H.Html msg
-view { username, imageUrl, zone, timestamp, totalFavourites, isFavourite, slug, title, description, tags, onToggleFavourite } =
+view { role, username, imageUrl, zone, timestamp, totalFavourites, isFavourite, slug, title, description, tags } =
     let
         profileHref =
             Route.toString <| Route.Profile False username
@@ -63,7 +68,12 @@ view { username, imageUrl, zone, timestamp, totalFavourites, isFavourite, slug, 
 
                     else
                         "btn-outline-primary"
-                , HE.onClick (onToggleFavourite <| not isFavourite)
+                , case role of
+                    Guest ->
+                        HA.disabled True
+
+                    User onToggleFavourite ->
+                        HE.onClick (onToggleFavourite <| not isFavourite)
                 ]
                 [ H.i [ HA.class "ion-heart" ] []
                 , H.text " "

@@ -3,6 +3,7 @@ module Page.Home exposing (Model, Msg, ViewOptions, init, update, view)
 import Api
 import Api.GetArticles as GetArticles
 import Api.GetTags as GetTags
+import Api.ToggleFavourite as ToggleFavourite
 import Data.Limit as Limit
 import Data.Offset as Offset
 import Data.PageNumber as PageNumber exposing (PageNumber)
@@ -55,8 +56,8 @@ feedInit =
     }
 
 
-feedSetRemoteDataArtciles : RemoteData () (List GetArticles.Article) -> Feed -> Feed
-feedSetRemoteDataArtciles remoteDataArticles feed =
+feedSetRemoteDataArticles : RemoteData () (List GetArticles.Article) -> Feed -> Feed
+feedSetRemoteDataArticles remoteDataArticles feed =
     { feed | remoteDataArticles = remoteDataArticles }
 
 
@@ -73,6 +74,25 @@ feedSetTotalPages totalPages feed =
 feedToPage : Feed -> Pager.Page
 feedToPage { currentPageNumber, pager } =
     Pager.toPage currentPageNumber pager
+
+
+feedUpdateFavourite : ToggleFavourite.TotalFavourites -> Feed -> Feed
+feedUpdateFavourite { slug, isFavourite, totalFavourites } feed =
+    let
+        remoteDataArticles =
+            RemoteData.map
+                (List.map
+                    (\article ->
+                        if article.slug == slug then
+                            { article | isFavourite = isFavourite, totalFavourites = totalFavourites }
+
+                        else
+                            article
+                    )
+                )
+                feed.remoteDataArticles
+    in
+    { feed | remoteDataArticles = remoteDataArticles }
 
 
 type alias InitOptions msg =
@@ -92,7 +112,7 @@ init { apiUrl, viewer, onChange } =
             case viewer of
                 Viewer.Guest ->
                     { activeTab = FeedTabs.Global
-                    , getArticlesCmd = getGlobalArticles apiUrl feed
+                    , getArticlesCmd = getGlobalArticles Nothing apiUrl feed
                     }
 
                 Viewer.User { token } ->
@@ -135,7 +155,8 @@ type Msg
     | SwitchedFeedTabs FeedTabs.Tab
     | ClickedTag Tag
     | ChangedPageNumber PageNumber
-    | ToggledFavourite Slug Bool
+    | ToggledFavourite Token Slug Bool
+    | GotToggleFavouriteResponse (Result (Api.Error ()) ToggleFavourite.TotalFavourites)
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
@@ -153,7 +174,7 @@ updateHelper options msg model =
                     let
                         feed =
                             model.feed
-                                |> feedSetRemoteDataArtciles (RemoteData.Success articles)
+                                |> feedSetRemoteDataArticles (RemoteData.Success articles)
                                 |> feedSetTotalPages totalArticles
                     in
                     ( { model | feed = feed }
@@ -164,7 +185,7 @@ updateHelper options msg model =
                     let
                         feed =
                             model.feed
-                                |> feedSetRemoteDataArtciles (RemoteData.Failure ())
+                                |> feedSetRemoteDataArticles (RemoteData.Failure ())
                     in
                     ( { model | feed = feed }
                     , Cmd.none
@@ -204,25 +225,42 @@ updateHelper options msg model =
                 , maybeTag = Just tag
                 , feed = feed
               }
-            , getArticlesByTag tag options.apiUrl feed
+            , getArticlesByTag (Viewer.toToken options.viewer) tag options.apiUrl feed
             )
 
         ChangedPageNumber pageNumber ->
             let
                 feed =
                     model.feed
-                        |> feedSetRemoteDataArtciles RemoteData.Loading
+                        |> feedSetRemoteDataArticles RemoteData.Loading
                         |> feedSetCurrentPageNumber pageNumber
             in
             ( { model | feed = feed }
             , getArticles model.activeTab options.viewer options.apiUrl feed
             )
 
-        ToggledFavourite slug isFavourite ->
-            --
-            -- TODO: Toggle favourite.
-            --
-            ( model, Cmd.none )
+        ToggledFavourite token slug isFavourite ->
+            ( model
+            , ToggleFavourite.toggleFavourite
+                options.apiUrl
+                { token = token
+                , slug = slug
+                , isFavourite = isFavourite
+                , onResponse = GotToggleFavouriteResponse
+                }
+            )
+
+        GotToggleFavouriteResponse result ->
+            case result of
+                Ok totalFavourites ->
+                    ( { model | feed = feedUpdateFavourite totalFavourites model.feed }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( model
+                    , Cmd.none
+                    )
 
 
 
@@ -231,13 +269,17 @@ updateHelper options msg model =
 
 getArticles : FeedTabs.Tab -> Viewer -> String -> Feed -> Cmd Msg
 getArticles tab viewer =
+    let
+        maybeToken =
+            Viewer.toToken viewer
+    in
     case tab of
         FeedTabs.Personal ->
-            case viewer of
-                Viewer.User { token } ->
+            case maybeToken of
+                Just token ->
                     getPersonalArticles token
 
-                Viewer.Guest ->
+                Nothing ->
                     --
                     -- N.B. This should NEVER happen.
                     --
@@ -246,10 +288,10 @@ getArticles tab viewer =
                         |> always
 
         FeedTabs.Global ->
-            getGlobalArticles
+            getGlobalArticles maybeToken
 
         FeedTabs.Tag tag ->
-            getArticlesByTag tag
+            getArticlesByTag maybeToken tag
 
 
 getPersonalArticles : Token -> String -> Feed -> Cmd Msg
@@ -262,21 +304,21 @@ getPersonalArticles token apiUrl feed =
         }
 
 
-getGlobalArticles : String -> Feed -> Cmd Msg
-getGlobalArticles apiUrl feed =
+getGlobalArticles : Maybe Token -> String -> Feed -> Cmd Msg
+getGlobalArticles maybeToken apiUrl feed =
     GetArticles.getArticles
         apiUrl
-        { request = GetArticles.global
+        { request = GetArticles.global maybeToken
         , page = feedToPage feed
         , onResponse = GotArticlesResponse
         }
 
 
-getArticlesByTag : Tag -> String -> Feed -> Cmd Msg
-getArticlesByTag tag apiUrl feed =
+getArticlesByTag : Maybe Token -> Tag -> String -> Feed -> Cmd Msg
+getArticlesByTag maybeToken tag apiUrl feed =
     GetArticles.getArticles
         apiUrl
-        { request = GetArticles.byTag tag
+        { request = GetArticles.byTag maybeToken tag
         , page = feedToPage feed
         , onResponse = GotArticlesResponse
         }
@@ -339,7 +381,7 @@ view { zone, viewer, onChange } model =
                             [ ArticlePreview.viewMessage "You need to follow some users to populate this feed." ]
 
                         _ ->
-                            List.map (viewArticlePreview zone) articles
+                            List.map (viewArticlePreview viewer zone) articles
                     )
 
                 RemoteData.Failure _ ->
@@ -388,10 +430,17 @@ view { zone, viewer, onChange } model =
         |> H.map onChange
 
 
-viewArticlePreview : Time.Zone -> GetArticles.Article -> H.Html Msg
-viewArticlePreview zone { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
+viewArticlePreview : Viewer -> Time.Zone -> GetArticles.Article -> H.Html Msg
+viewArticlePreview viewer zone { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
     ArticlePreview.view
-        { username = author.username
+        { role =
+            case viewer of
+                Viewer.Guest ->
+                    ArticlePreview.Guest
+
+                Viewer.User { token } ->
+                    ArticlePreview.User (ToggledFavourite token slug)
+        , username = author.username
         , imageUrl = author.imageUrl
         , zone = zone
         , timestamp = createdAt
@@ -401,7 +450,6 @@ viewArticlePreview zone { slug, title, description, body, tags, createdAt, isFav
         , title = title
         , description = description
         , tags = tags
-        , onToggleFavourite = ToggledFavourite slug
         }
 
 

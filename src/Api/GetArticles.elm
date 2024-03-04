@@ -36,7 +36,7 @@ type alias Options msg =
 
 type Request
     = FromUsersYouFollow Token
-    | Global Filter
+    | Global (Maybe Token) Filter
 
 
 type Filter
@@ -51,14 +51,14 @@ fromUsersYouFollow =
     FromUsersYouFollow
 
 
-global : Request
-global =
-    Global None
+global : Maybe Token -> Request
+global maybeToken =
+    Global maybeToken None
 
 
-byTag : Tag -> Request
-byTag =
-    ByTag >> Global
+byTag : Maybe Token -> Tag -> Request
+byTag maybeToken =
+    Global maybeToken << ByTag
 
 
 getArticles : String -> Options msg -> Cmd msg
@@ -67,8 +67,8 @@ getArticles baseUrl { request, page, onResponse } =
         FromUsersYouFollow token ->
             getArticlesFromUsersYouFollow baseUrl token page onResponse
 
-        Global filter ->
-            getArticlesGlobally baseUrl filter page onResponse
+        Global maybeToken filter ->
+            getArticlesGlobally baseUrl maybeToken filter page onResponse
 
 
 getArticlesFromUsersYouFollow : String -> Token -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
@@ -91,10 +91,18 @@ getArticlesFromUsersYouFollow baseUrl token page onResponse =
         }
 
 
-getArticlesGlobally : String -> Filter -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
-getArticlesGlobally baseUrl filter page onResponse =
-    Http.get
-        { url =
+getArticlesGlobally : String -> Maybe Token -> Filter -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
+getArticlesGlobally baseUrl maybeToken filter page onResponse =
+    Http.request
+        { method = "GET"
+        , headers =
+            case maybeToken of
+                Nothing ->
+                    []
+
+                Just token ->
+                    [ Token.toAuthorizationHeader token ]
+        , url =
             Api.buildUrl
                 baseUrl
                 [ "articles" ]
@@ -114,7 +122,10 @@ getArticlesGlobally baseUrl filter page onResponse =
                     ByFavourite username ->
                         Just <| UB.string "favorited" <| Username.toString username
                 ]
+        , body = Http.emptyBody
         , expect = Api.expectJson onResponse decoder Api.emptyErrorsDecoder
+        , timeout = Nothing
+        , tracker = Nothing
         }
 
 

@@ -1,4 +1,4 @@
-module Data.Config exposing (Config, BadToken(..), decoder)
+module Data.Config exposing (BadToken(..), Config, decoder)
 
 import Data.Token as Token exposing (Token)
 import Json.Decode as JD
@@ -29,6 +29,7 @@ tokenDecoder : JD.Decoder (Result BadToken (Maybe Token))
 tokenDecoder =
     JD.oneOf
         [ JD.map Ok (JD.nullable Token.decoder)
+
         --
         -- NOTE: It's possible that a token exists but it has been corrupted in
         -- some way. If that's the case we want to recognize the error but we

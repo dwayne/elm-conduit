@@ -82,11 +82,11 @@ type Error
     = BadConfig JD.Error
 
 
-withModel
-    : { onLoadingUser : LoadingUserModel -> a
-      , onSuccess : SuccessModel -> a
-      , onFailure : Error -> a
-      }
+withModel :
+    { onLoadingUser : LoadingUserModel -> a
+    , onSuccess : SuccessModel -> a
+    , onFailure : Error -> a
+    }
     -> Model
     -> a
 withModel { onLoadingUser, onSuccess, onFailure } model =
@@ -101,10 +101,10 @@ withModel { onLoadingUser, onSuccess, onFailure } model =
             onFailure error
 
 
-withLoadingUserModel
-    : { onLoadingUser : LoadingUserModel -> a
-      , default : a
-      }
+withLoadingUserModel :
+    { onLoadingUser : LoadingUserModel -> a
+    , default : a
+    }
     -> Model
     -> a
 withLoadingUserModel { onLoadingUser, default } =
@@ -115,10 +115,10 @@ withLoadingUserModel { onLoadingUser, default } =
         }
 
 
-withSuccessModel
-    : { onSuccess : SuccessModel -> a
-      , default : a
-      }
+withSuccessModel :
+    { onSuccess : SuccessModel -> a
+    , default : a
+    }
     -> Model
     -> a
 withSuccessModel { onSuccess, default } =
@@ -167,12 +167,12 @@ init flags url key =
             )
 
 
-initLoadingUser
-    : { apiUrl : String
-      , url : Url
-      , key : BN.Key
-      , token : Token
-      }
+initLoadingUser :
+    { apiUrl : String
+    , url : Url
+    , key : BN.Key
+    , token : Token
+    }
     -> ( Model, Cmd Msg )
 initLoadingUser { apiUrl, url, key, token } =
     ( LoadingUser
@@ -192,13 +192,13 @@ initLoadingUser { apiUrl, url, key, token } =
     )
 
 
-initSuccess
-    : { apiUrl : String
-      , url : Url
-      , key : BN.Key
-      , maybeZone : Maybe Time.Zone
-      , viewer : Viewer
-      }
+initSuccess :
+    { apiUrl : String
+    , url : Url
+    , key : BN.Key
+    , maybeZone : Maybe Time.Zone
+    , viewer : Viewer
+    }
     -> ( Model, Cmd Msg )
 initSuccess { apiUrl, url, key, maybeZone, viewer } =
     let
@@ -226,7 +226,6 @@ initSuccess { apiUrl, url, key, maybeZone, viewer } =
         , pageCmd
         ]
     )
-
 
 
 getZone : Cmd Msg
@@ -477,6 +476,7 @@ updateRegisterPage pageMsg subModel =
 
         _ ->
             ( subModel, Cmd.none )
+
 
 
 -- VIEW
