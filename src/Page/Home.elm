@@ -37,6 +37,7 @@ type alias Model =
     { activeTab : FeedTabs.Tab
     , maybeTag : Maybe Tag
     , feed : Feed
+    , togglingFavourite : Maybe Slug
     , remoteDataTags : RemoteData () (List Tag)
     }
 
@@ -132,6 +133,7 @@ init { apiUrl, viewer, onChange } =
     ( { activeTab = activeTab
       , maybeTag = Nothing
       , feed = feed
+      , togglingFavourite = Nothing
       , remoteDataTags = RemoteData.Loading
       }
     , Cmd.map onChange cmd
@@ -240,7 +242,7 @@ updateHelper options msg model =
             )
 
         ToggledFavourite token slug isFavourite ->
-            ( model
+            ( { model | togglingFavourite = Just slug }
             , ToggleFavourite.toggleFavourite
                 options.apiUrl
                 { token = token
@@ -251,14 +253,18 @@ updateHelper options msg model =
             )
 
         GotToggleFavouriteResponse result ->
+            let
+                newModel =
+                    { model | togglingFavourite = Nothing }
+            in
             case result of
                 Ok totalFavourites ->
-                    ( { model | feed = feedUpdateFavourite totalFavourites model.feed }
+                    ( { newModel | feed = feedUpdateFavourite totalFavourites model.feed }
                     , Cmd.none
                     )
 
                 Err _ ->
-                    ( model
+                    ( newModel
                     , Cmd.none
                     )
 
@@ -381,7 +387,7 @@ view { zone, viewer, onChange } model =
                             [ ArticlePreview.viewMessage "You need to follow some users to populate this feed." ]
 
                         _ ->
-                            List.map (viewArticlePreview viewer zone) articles
+                            List.map (viewArticlePreview viewer zone model.togglingFavourite) articles
                     )
 
                 RemoteData.Failure _ ->
@@ -430,8 +436,8 @@ view { zone, viewer, onChange } model =
         |> H.map onChange
 
 
-viewArticlePreview : Viewer -> Time.Zone -> GetArticles.Article -> H.Html Msg
-viewArticlePreview viewer zone { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
+viewArticlePreview : Viewer -> Time.Zone -> Maybe Slug -> GetArticles.Article -> H.Html Msg
+viewArticlePreview viewer zone togglingFavourite { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
     ArticlePreview.view
         { role =
             case viewer of
@@ -439,7 +445,10 @@ viewArticlePreview viewer zone { slug, title, description, body, tags, createdAt
                     ArticlePreview.Guest
 
                 Viewer.User { token } ->
-                    ArticlePreview.User (ToggledFavourite token slug)
+                    ArticlePreview.User
+                        { isLoading = togglingFavourite == Just slug
+                        , onToggleFavourite = ToggledFavourite token slug
+                        }
         , username = author.username
         , imageUrl = author.imageUrl
         , zone = zone

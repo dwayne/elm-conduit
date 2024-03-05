@@ -30,7 +30,10 @@ type alias ViewOptions msg =
 
 type Role msg
     = Guest
-    | User (Bool -> msg)
+    | User
+        { isLoading : Bool
+        , onToggleFavourite : Bool -> msg
+        }
 
 
 view : ViewOptions msg -> H.Html msg
@@ -72,8 +75,12 @@ view { role, username, imageUrl, zone, timestamp, totalFavourites, isFavourite, 
                     Guest ->
                         HA.disabled True
 
-                    User onToggleFavourite ->
-                        HE.onClick (onToggleFavourite <| not isFavourite)
+                    User { isLoading, onToggleFavourite } ->
+                        if isLoading then
+                            HA.disabled True
+
+                        else
+                            HE.onClick (onToggleFavourite <| not isFavourite)
                 ]
                 [ H.i [ HA.class "ion-heart" ] []
                 , H.text " "
