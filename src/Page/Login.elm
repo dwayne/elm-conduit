@@ -1,19 +1,18 @@
-module Page.Register exposing (Model, Msg, ViewOptions, init, update, view)
+module Page.Login exposing (Model, Msg, ViewOptions, init, update, view)
 
 import Api
-import Api.Register as Register
+import Api.Login as Login
 import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
 import Data.User exposing (User)
-import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
 import Lib.String as String
 import Lib.Task as Task
 import Lib.Validation as V
 import View.Footer as Footer
+import View.Login as Login
 import View.Navigation as Navigation
-import View.Register as Register
 
 
 
@@ -21,8 +20,7 @@ import View.Register as Register
 
 
 type alias Model =
-    { username : String
-    , email : String
+    { email : String
     , password : String
     , errorMessages : List String
     , isDisabled : Bool
@@ -31,8 +29,7 @@ type alias Model =
 
 init : Model
 init =
-    { username = ""
-    , email = ""
+    { email = ""
     , password = ""
     , errorMessages = []
     , isDisabled = False
@@ -45,27 +42,21 @@ init =
 
 type alias UpdateOptions msg =
     { apiUrl : String
-    , onRegistered : User -> msg
+    , onLoggedIn : User -> msg
     , onChange : Msg -> msg
     }
 
 
 type Msg
-    = ChangedUsername String
-    | ChangedEmail String
+    = ChangedEmail String
     | ChangedPassword String
     | SubmittedForm
-    | GotRegisterResponse (Result (Api.Error (List String)) User)
+    | GotLoginResponse (Result (Api.Error (List String)) User)
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
-        ChangedUsername username ->
-            ( { model | username = username }
-            , Cmd.none
-            )
-
         ChangedEmail email ->
             ( { model | email = email }
             , Cmd.none
@@ -80,14 +71,13 @@ update options msg model =
             validate model
                 |> V.withValidation
                     { onSuccess =
-                        \{ username, email, password } ->
+                        \{ email, password } ->
                             ( { model | errorMessages = [], isDisabled = True }
-                            , Register.register
+                            , Login.login
                                 options.apiUrl
-                                { username = username
-                                , email = email
+                                { email = email
                                 , password = password
-                                , onResponse = GotRegisterResponse
+                                , onResponse = GotLoginResponse
                                 }
                                 |> Cmd.map options.onChange
                             )
@@ -98,11 +88,11 @@ update options msg model =
                             )
                     }
 
-        GotRegisterResponse result ->
+        GotLoginResponse result ->
             case result of
                 Ok user ->
                     ( init
-                    , Task.dispatch (options.onRegistered user)
+                    , Task.dispatch (options.onLoggedIn user)
                     )
 
                 Err err ->
@@ -123,28 +113,16 @@ update options msg model =
 
 
 type alias ValidatedFields =
-    { username : Username
-    , email : Email
+    { email : Email
     , password : Password
     }
 
 
 validate : Model -> V.Validation ValidatedFields
-validate { username, email, password } =
+validate { email, password } =
     V.succeed ValidatedFields
-        |> V.required (validateUsername username)
         |> V.required (validateEmail email)
         |> V.required (validatePassword password)
-
-
-validateUsername : String -> V.Validation Username
-validateUsername rawUsername =
-    case Username.fromString rawUsername of
-        Just username ->
-            V.succeed username
-
-        Nothing ->
-            V.fail "username can't be blank"
 
 
 validateEmail : String -> V.Validation Email
@@ -191,24 +169,22 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { onChange } { username, email, password, errorMessages, isDisabled } =
+view { onChange } { email, password, errorMessages, isDisabled } =
     H.div []
-        [ Navigation.view { role = Navigation.register }
+        [ Navigation.view { role = Navigation.login }
         , H.div
             [ HA.class "auth-page" ]
             [ H.div
                 [ HA.class "container page" ]
                 [ H.div
                     [ HA.class "row" ]
-                    [ Register.view
+                    [ Login.view
                         { classNames = "col-md-6 offset-md-3 col-xs-12"
                         , errorMessages = errorMessages
                         , form =
-                            { username = username
-                            , email = email
+                            { email = email
                             , password = password
                             , isDisabled = isDisabled
-                            , onInputUsername = ChangedUsername
                             , onInputEmail = ChangedEmail
                             , onInputPassword = ChangedPassword
                             , onSubmit = SubmittedForm

@@ -54,16 +54,23 @@ expectJson toMsg decoder errorsDecoder =
                         404 ->
                             Err NotFound
 
-                        422 ->
-                            case JD.decodeString (JD.field "errors" errorsDecoder) body of
-                                Ok errors ->
-                                    Err (UserError errors)
-
-                                Err err ->
-                                    Err (BadBody statusCode <| JD.errorToString err)
-
                         _ ->
-                            Err (BadStatus statusCode)
+                            --
+                            -- N.B. The 403 status code is undocumented but I encountered it
+                            -- on the login form. If you provide an invalid email and password
+                            -- then the server responds with the 403 status code and the error
+                            -- message is "email or password is invalid".
+                            --
+                            if List.member statusCode [ 403, 422 ] then
+                                case JD.decodeString (JD.field "errors" errorsDecoder) body of
+                                    Ok errors ->
+                                        Err (UserError errors)
+
+                                    Err err ->
+                                        Err (BadBody statusCode <| JD.errorToString err)
+
+                            else
+                                Err (BadStatus statusCode)
 
                 Http.GoodStatus_ { statusCode } body ->
                     case JD.decodeString decoder body of

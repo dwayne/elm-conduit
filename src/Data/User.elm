@@ -9,8 +9,7 @@ import Url exposing (Url)
 
 
 type alias User =
-    { id : Int
-    , username : Username
+    { username : Username
     , email : Email
     , bio : String
     , imageUrl : Url
@@ -20,8 +19,7 @@ type alias User =
 
 decoder : JD.Decoder User
 decoder =
-    JD.map6 User
-        (JD.field "id" JD.int)
+    JD.map5 User
         (JD.field "username" Username.decoder)
         (JD.field "email" Email.decoder)
         (JD.field "bio" JD.nullableString)

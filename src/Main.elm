@@ -12,6 +12,7 @@ import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Json.Decode as JD
 import Page.Home as HomePage
+import Page.Login as LoginPage
 import Page.Register as RegisterPage
 import Port.Action
 import Task
@@ -69,7 +70,7 @@ type alias SuccessModel =
 
 type Page
     = Home HomePage.Model
-    | Login
+    | Login LoginPage.Model
     | Register RegisterPage.Model
     | Settings
     | Editor
@@ -258,7 +259,7 @@ getPageFromRoute apiUrl viewer route =
             ( Home model, cmd )
 
         Route.Login ->
-            ( Login, Cmd.none )
+            ( Login LoginPage.init, Cmd.none )
 
         Route.Register ->
             ( Register RegisterPage.init, Cmd.none )
@@ -288,12 +289,14 @@ type Msg
     | ClickedLink B.UrlRequest
     | ChangedUrl Url
     | GotZone Time.Zone
+    | LoggedIn User
     | Registered User
     | ChangedPage PageMsg
 
 
 type PageMsg
     = ChangedHomePage HomePage.Msg
+    | ChangedLoginPage LoginPage.Msg
     | ChangedRegisterPage RegisterPage.Msg
 
 
@@ -317,8 +320,11 @@ update msg model =
         GotZone zone ->
             setZone zone model
 
+        LoggedIn user ->
+            loginUser user model
+
         Registered user ->
-            registerUser user model
+            loginUser user model
 
         ChangedPage pageMsg ->
             updatePage pageMsg model
@@ -400,8 +406,8 @@ setZone zone model =
     )
 
 
-registerUser : User -> Model -> ( Model, Cmd Msg )
-registerUser user model =
+loginUser : User -> Model -> ( Model, Cmd Msg )
+loginUser user model =
     withSuccessModel
         { onSuccess =
             \subModel ->
@@ -423,6 +429,9 @@ updatePage msg model =
             case msg of
                 ChangedHomePage pageMsg ->
                     updateHomePage pageMsg subModel
+
+                ChangedLoginPage pageMsg ->
+                    updateLoginPage pageMsg subModel
 
                 ChangedRegisterPage pageMsg ->
                     updateRegisterPage pageMsg subModel
@@ -449,6 +458,28 @@ updateHomePage pageMsg subModel =
                         pageModel
             in
             ( { subModel | page = Home newPageModel }
+            , newPageCmd
+            )
+
+        _ ->
+            ( subModel, Cmd.none )
+
+
+updateLoginPage : LoginPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
+updateLoginPage pageMsg subModel =
+    case subModel.page of
+        Login pageModel ->
+            let
+                ( newPageModel, newPageCmd ) =
+                    LoginPage.update
+                        { apiUrl = subModel.apiUrl
+                        , onLoggedIn = LoggedIn
+                        , onChange = ChangedPage << ChangedLoginPage
+                        }
+                        pageMsg
+                        pageModel
+            in
+            ( { subModel | page = Login newPageModel }
             , newPageCmd
             )
 
@@ -509,6 +540,12 @@ viewSuccessPage { url, zone, viewer, page } =
                 { zone = zone
                 , viewer = viewer
                 , onChange = ChangedPage << ChangedHomePage
+                }
+                model
+
+        Login model ->
+            LoginPage.view
+                { onChange = ChangedPage << ChangedLoginPage
                 }
                 model
 
