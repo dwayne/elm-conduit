@@ -63,29 +63,29 @@ view { role, username, imageUrl, zone, timestamp, totalFavourites, isFavourite, 
                     [ HA.class "date" ]
                     [ H.text <| Timestamp.toString zone timestamp ]
                 ]
-            , H.button
-                [ HA.class "btn btn-sm pull-xs-right"
-                , HA.class <|
-                    if isFavourite then
-                        "btn-primary"
+            , case role of
+                Guest ->
+                    H.text ""
 
-                    else
-                        "btn-outline-primary"
-                , case role of
-                    Guest ->
-                        HA.disabled True
+                User { isLoading, onToggleFavourite } ->
+                    H.button
+                        [ HA.class "btn btn-sm pull-xs-right"
+                        , HA.class <|
+                            if isFavourite then
+                                "btn-primary"
 
-                    User { isLoading, onToggleFavourite } ->
-                        if isLoading then
+                            else
+                                "btn-outline-primary"
+                        , if isLoading then
                             HA.disabled True
 
-                        else
+                          else
                             HE.onClick (onToggleFavourite <| not isFavourite)
-                ]
-                [ H.i [ HA.class "ion-heart" ] []
-                , H.text " "
-                , H.text <| Total.toString totalFavourites
-                ]
+                        ]
+                        [ H.i [ HA.class "ion-heart" ] []
+                        , H.text " "
+                        , H.text <| Total.toString totalFavourites
+                        ]
             ]
         , H.a
             [ HA.class "preview-link"
