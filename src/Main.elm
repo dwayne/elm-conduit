@@ -14,6 +14,7 @@ import Json.Decode as JD
 import Page.Home as HomePage
 import Page.Login as LoginPage
 import Page.Register as RegisterPage
+import Page.Settings as SettingsPage
 import Port.Action
 import Task
 import Time
@@ -72,7 +73,7 @@ type Page
     = Home HomePage.Model
     | Login LoginPage.Model
     | Register RegisterPage.Model
-    | Settings
+    | Settings SettingsPage.Model
     | Editor
     | Article
     | Profile
@@ -265,7 +266,20 @@ getPageFromRoute apiUrl viewer route =
             ( Register RegisterPage.init, Cmd.none )
 
         Route.Settings ->
-            ( Settings, Cmd.none )
+            case viewer of
+                Viewer.Guest ->
+                    ( NotFound, Cmd.none )
+
+                Viewer.User user ->
+                    ( Settings <|
+                        SettingsPage.init
+                            { imageUrl = user.imageUrl
+                            , username = user.username
+                            , bio = user.bio
+                            , email = user.email
+                            }
+                    , Cmd.none
+                    )
 
         Route.CreateArticle ->
             ( Editor, Cmd.none )
@@ -289,8 +303,10 @@ type Msg
     | ClickedLink B.UrlRequest
     | ChangedUrl Url
     | GotZone Time.Zone
-    | LoggedIn User
     | Registered User
+    | LoggedIn User
+    | LoggedOut
+    | UpdatedUser User
     | ChangedPage PageMsg
 
 
@@ -298,6 +314,7 @@ type PageMsg
     = ChangedHomePage HomePage.Msg
     | ChangedLoginPage LoginPage.Msg
     | ChangedRegisterPage RegisterPage.Msg
+    | ChangedSettingsPage SettingsPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -320,11 +337,21 @@ update msg model =
         GotZone zone ->
             setZone zone model
 
+        Registered user ->
+            loginUser user model
+
         LoggedIn user ->
             loginUser user model
 
-        Registered user ->
-            loginUser user model
+        LoggedOut ->
+            --
+            -- TODO: Handle logout.
+            --
+            ( model, Cmd.none )
+                |> Debug.log "You clicked the logout button."
+
+        UpdatedUser user ->
+            updateUser user model
 
         ChangedPage pageMsg ->
             updatePage pageMsg model
@@ -422,6 +449,19 @@ loginUser user model =
         model
 
 
+updateUser : User -> Model -> ( Model, Cmd Msg )
+updateUser user model =
+    withSuccessModel
+        { onSuccess =
+            \subModel ->
+                ( Success { subModel | viewer = Viewer.User user }
+                , Port.Action.saveToken user.token
+                )
+        , default = ( model, Cmd.none )
+        }
+        model
+
+
 updatePage : PageMsg -> Model -> ( Model, Cmd Msg )
 updatePage msg model =
     let
@@ -435,6 +475,9 @@ updatePage msg model =
 
                 ChangedRegisterPage pageMsg ->
                     updateRegisterPage pageMsg subModel
+
+                ChangedSettingsPage pageMsg ->
+                    updateSettingsPage pageMsg subModel
     in
     withSuccessModel
         { onSuccess = updatePageHelper >> Tuple.mapFirst Success
@@ -509,6 +552,34 @@ updateRegisterPage pageMsg subModel =
             ( subModel, Cmd.none )
 
 
+updateSettingsPage : SettingsPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
+updateSettingsPage pageMsg subModel =
+    case subModel.page of
+        Settings pageModel ->
+            case subModel.viewer of
+                Viewer.User user ->
+                    let
+                        ( newPageModel, newPageCmd ) =
+                            SettingsPage.update
+                                { apiUrl = subModel.apiUrl
+                                , token = user.token
+                                , onUpdatedUser = UpdatedUser
+                                , onChange = ChangedPage << ChangedSettingsPage
+                                }
+                                pageMsg
+                                pageModel
+                    in
+                    ( { subModel | page = Settings newPageModel }
+                    , newPageCmd
+                    )
+
+                Viewer.Guest ->
+                    ( subModel, Cmd.none )
+
+        _ ->
+            ( subModel, Cmd.none )
+
+
 
 -- VIEW
 
@@ -554,6 +625,19 @@ viewSuccessPage { url, zone, viewer, page } =
                 { onChange = ChangedPage << ChangedRegisterPage
                 }
                 model
+
+        Settings model ->
+            case viewer of
+                Viewer.Guest ->
+                    H.text "You are not allowed to view this page."
+
+                Viewer.User user ->
+                    SettingsPage.view
+                        { user = user
+                        , onLogout = LoggedOut
+                        , onChange = ChangedPage << ChangedSettingsPage
+                        }
+                        model
 
         _ ->
             H.text <| "url = " ++ Url.toString url

@@ -1,21 +1,22 @@
-module View.Settings exposing (Settings, view)
+module View.Settings exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 import View.AuthErrors as AuthErrors
-import View.SettingsForm as SettingsForm exposing (SettingsForm)
+import View.SettingsForm as SettingsForm
 
 
-type alias Settings msg =
-    { form : SettingsForm msg
+type alias ViewOptions msg =
+    { classNames : String
     , errorMessages : List String
+    , form : SettingsForm.ViewOptions msg
     , onLogout : msg
     }
 
 
-view : String -> Settings msg -> H.Html msg
-view classNames { form, errorMessages, onLogout } =
+view : ViewOptions msg -> H.Html msg
+view { classNames, errorMessages, form, onLogout } =
     H.div
         [ HA.class classNames ]
         [ H.h1

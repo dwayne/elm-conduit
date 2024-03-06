@@ -1,4 +1,4 @@
-module Page.Login exposing (Model, Msg, ViewOptions, init, update, view)
+module Page.Login exposing (Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
 import Api.Login as Login

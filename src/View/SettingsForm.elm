@@ -1,4 +1,4 @@
-module View.SettingsForm exposing (SettingsForm, Status(..), view)
+module View.SettingsForm exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
@@ -7,39 +7,27 @@ import View.Input as Input
 import View.Textarea as Textarea
 
 
-type alias SettingsForm msg =
-    { profilePicUrl : String
+type alias ViewOptions msg =
+    { imageUrl : String
     , username : String
     , bio : String
     , email : String
-    , newPassword : String
-    , status : Status
-    , onInputProfilePicUrl : String -> msg
+    , password : String
+    , isDisabled : Bool
+    , onInputImageUrl : String -> msg
     , onInputUsername : String -> msg
     , onInputBio : String -> msg
     , onInputEmail : String -> msg
-    , onInputNewPassword : String -> msg
+    , onInputPassword : String -> msg
     , onSubmit : msg
     }
 
 
-type Status
-    = Invalid
-    | Valid
-    | Loading
-
-
-view : SettingsForm msg -> H.Html msg
-view { profilePicUrl, username, bio, email, newPassword, status, onInputProfilePicUrl, onInputUsername, onInputBio, onInputEmail, onInputNewPassword, onSubmit } =
+view : ViewOptions msg -> H.Html msg
+view { imageUrl, username, bio, email, password, isDisabled, onInputImageUrl, onInputUsername, onInputBio, onInputEmail, onInputPassword, onSubmit } =
     let
-        isFormDisabled =
-            status == Invalid || status == Loading
-
-        isFieldDisabled =
-            status == Loading
-
         attrs =
-            if isFormDisabled then
+            if isDisabled then
                 []
 
             else
@@ -48,19 +36,19 @@ view { profilePicUrl, username, bio, email, newPassword, status, onInputProfileP
     H.form attrs
         [ H.fieldset []
             [ Input.view
-                { name = "profilePicUrl"
+                { name = "imageUrl"
                 , type_ = "text"
                 , placeholder = "URL of profile picture"
-                , value = profilePicUrl
-                , isDisabled = isFieldDisabled
-                , onInput = onInputProfilePicUrl
+                , value = imageUrl
+                , isDisabled = isDisabled
+                , onInput = onInputImageUrl
                 }
             , Input.view
                 { name = "username"
                 , type_ = "text"
                 , placeholder = "Your Name"
                 , value = username
-                , isDisabled = isFieldDisabled
+                , isDisabled = isDisabled
                 , onInput = onInputUsername
                 }
             , Textarea.view
@@ -68,7 +56,7 @@ view { profilePicUrl, username, bio, email, newPassword, status, onInputProfileP
                 , placeholder = "Short bio about you"
                 , rows = 8
                 , value = bio
-                , isDisabled = isFieldDisabled
+                , isDisabled = isDisabled
                 , onInput = onInputBio
                 }
             , Input.view
@@ -76,21 +64,21 @@ view { profilePicUrl, username, bio, email, newPassword, status, onInputProfileP
                 , type_ = "text"
                 , placeholder = "Email"
                 , value = email
-                , isDisabled = isFieldDisabled
+                , isDisabled = isDisabled
                 , onInput = onInputEmail
                 }
             , Input.view
-                { name = "newPassword"
+                { name = "password"
                 , type_ = "password"
                 , placeholder = "New Password"
-                , value = newPassword
-                , isDisabled = isFieldDisabled
-                , onInput = onInputNewPassword
+                , value = password
+                , isDisabled = isDisabled
+                , onInput = onInputPassword
                 }
             , H.button
                 [ HA.class "btn btn-lg btn-primary pull-xs-right"
                 , HA.type_ "submit"
-                , HA.disabled isFormDisabled
+                , HA.disabled isDisabled
                 ]
                 [ H.text "Update Settings" ]
             ]
