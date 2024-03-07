@@ -19,7 +19,6 @@ import Data.Timestamp as Timestamp exposing (Timestamp)
 import Data.Token as Token exposing (Token)
 import Data.Total as Total exposing (Total)
 import Data.Username as Username exposing (Username)
-import Http
 import Json.Decode as JD
 import Json.Decode.Pipeline as JD
 import Lib.Json.Decode as JD
@@ -73,9 +72,8 @@ getArticles baseUrl { request, page, onResponse } =
 
 getArticlesFromUsersYouFollow : String -> Token -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
 getArticlesFromUsersYouFollow baseUrl token page onResponse =
-    Http.request
-        { method = "GET"
-        , headers = [ Token.toAuthorizationHeader token ]
+    Api.get
+        { maybeToken = Just token
         , url =
             Api.buildUrl
                 baseUrl
@@ -84,24 +82,15 @@ getArticlesFromUsersYouFollow baseUrl token page onResponse =
                 , UB.int "limit" <| Limit.toInt page.limit
                 ]
                 []
-        , body = Http.emptyBody
-        , expect = Api.expectJson onResponse decoder Api.emptyErrorsDecoder
-        , timeout = Nothing
-        , tracker = Nothing
+        , onResponse = onResponse
+        , decoder = decoder
         }
 
 
 getArticlesGlobally : String -> Maybe Token -> Filter -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
 getArticlesGlobally baseUrl maybeToken filter page onResponse =
-    Http.request
-        { method = "GET"
-        , headers =
-            case maybeToken of
-                Nothing ->
-                    []
-
-                Just token ->
-                    [ Token.toAuthorizationHeader token ]
+    Api.get
+        { maybeToken = maybeToken
         , url =
             Api.buildUrl
                 baseUrl
@@ -122,10 +111,8 @@ getArticlesGlobally baseUrl maybeToken filter page onResponse =
                     ByFavourite username ->
                         Just <| UB.string "favorited" <| Username.toString username
                 ]
-        , body = Http.emptyBody
-        , expect = Api.expectJson onResponse decoder Api.emptyErrorsDecoder
-        , timeout = Nothing
-        , tracker = Nothing
+        , onResponse = onResponse
+        , decoder = decoder
         }
 
 

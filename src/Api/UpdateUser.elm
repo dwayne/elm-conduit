@@ -27,18 +27,22 @@ type alias Options msg =
 
 updateUser : String -> Options msg -> Cmd msg
 updateUser baseUrl { token, imageUrl, username, bio, email, maybePassword, onResponse } =
-    Http.request
-        { method = "PUT"
-        , headers = [ Token.toAuthorizationHeader token ]
+    Api.put
+        { token = token
         , url = Api.buildUrl baseUrl [ "user" ] [] []
         , body =
             Http.jsonBody <|
                 encodeInput imageUrl username bio email maybePassword
-        , expect =
-            Api.expectJson onResponse decoder <|
-                Api.formErrorsDecoder [ "image", "username", "bio", "email", "password" ]
-        , timeout = Nothing
-        , tracker = Nothing
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder =
+            Api.formErrorsDecoder
+                [ "image"
+                , "username"
+                , "bio"
+                , "email"
+                , "password"
+                ]
         }
 
 

@@ -21,12 +21,18 @@ type alias Options msg =
 
 login : String -> Options msg -> Cmd msg
 login baseUrl { email, password, onResponse } =
-    Http.post
-        { url = Api.buildUrl baseUrl [ "users", "login" ] [] []
+    Api.post
+        { maybeToken = Nothing
+        , url = Api.buildUrl baseUrl [ "users", "login" ] [] []
         , body = Http.jsonBody <| encodeInput email password
-        , expect =
-            Api.expectJson onResponse decoder <|
-                Api.formErrorsDecoder [ "email", "password", "email or password" ]
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder =
+            Api.formErrorsDecoder
+                [ "email"
+                , "password"
+                , "email or password"
+                ]
         }
 
 

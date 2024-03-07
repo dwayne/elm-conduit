@@ -23,14 +23,18 @@ type alias Options msg =
 
 register : String -> Options msg -> Cmd msg
 register baseUrl { username, email, password, onResponse } =
-    Http.post
-        { url = Api.buildUrl baseUrl [ "users" ] [] []
-        , body =
-            Http.jsonBody <|
-                encodeInput username email password
-        , expect =
-            Api.expectJson onResponse decoder <|
-                Api.formErrorsDecoder [ "username", "email", "password" ]
+    Api.post
+        { maybeToken = Nothing
+        , url = Api.buildUrl baseUrl [ "users" ] [] []
+        , body = Http.jsonBody <| encodeInput username email password
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder =
+            Api.formErrorsDecoder
+                [ "username"
+                , "email"
+                , "password"
+                ]
         }
 
 

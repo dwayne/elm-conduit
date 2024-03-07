@@ -1,16 +1,135 @@
 module Api exposing
     ( Error(..)
+    , Method(..)
     , buildUrl
     , emptyErrorsDecoder
     , expectJson
     , formErrorsDecoder
+    , get
+    , post
+    , put
+    , request
     )
 
+import Data.Token as Token exposing (Token)
 import Dict exposing (Dict)
 import Http
 import Json.Decode as JD
 import Lib.Function exposing (flip)
 import Url.Builder as UB
+
+
+get :
+    { maybeToken : Maybe Token
+    , url : String
+    , onResponse : Result (Error ()) a -> msg
+    , decoder : JD.Decoder a
+    }
+    -> Cmd msg
+get { maybeToken, url, onResponse, decoder } =
+    request
+        { method = GET
+        , maybeToken = maybeToken
+        , url = url
+        , body = Http.emptyBody
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder = emptyErrorsDecoder
+        }
+
+
+post :
+    { maybeToken : Maybe Token
+    , url : String
+    , body : Http.Body
+    , onResponse : Result (Error e) a -> msg
+    , decoder : JD.Decoder a
+    , errorsDecoder : JD.Decoder e
+    }
+    -> Cmd msg
+post { maybeToken, url, body, onResponse, decoder, errorsDecoder } =
+    request
+        { method = POST
+        , maybeToken = maybeToken
+        , url = url
+        , body = body
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder = errorsDecoder
+        }
+
+
+put :
+    { token : Token
+    , url : String
+    , body : Http.Body
+    , onResponse : Result (Error e) a -> msg
+    , decoder : JD.Decoder a
+    , errorsDecoder : JD.Decoder e
+    }
+    -> Cmd msg
+put { token, url, body, onResponse, decoder, errorsDecoder } =
+    request
+        { method = PUT
+        , maybeToken = Just token
+        , url = url
+        , body = body
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder = errorsDecoder
+        }
+
+
+type Method
+    = GET
+    | POST
+    | PUT
+    | DELETE
+
+
+request :
+    { method : Method
+    , maybeToken : Maybe Token
+    , url : String
+    , body : Http.Body
+    , onResponse : Result (Error e) a -> msg
+    , decoder : JD.Decoder a
+    , errorsDecoder : JD.Decoder e
+    }
+    -> Cmd msg
+request { method, maybeToken, url, body, onResponse, decoder, errorsDecoder } =
+    Http.request
+        { method =
+            case method of
+                GET ->
+                    "GET"
+
+                POST ->
+                    "POST"
+
+                PUT ->
+                    "PUT"
+
+                DELETE ->
+                    "DELETE"
+        , headers =
+            case maybeToken of
+                Nothing ->
+                    []
+
+                Just token ->
+                    [ Token.toAuthorizationHeader token ]
+        , url = url
+        , body = body
+        , expect = expectJson onResponse decoder errorsDecoder
+        , timeout = Just oneMinute
+        , tracker = Nothing
+        }
+
+
+oneMinute : Float
+oneMinute =
+    1000 * 60
 
 
 buildUrl : String -> List String -> List UB.QueryParameter -> List (Maybe UB.QueryParameter) -> String

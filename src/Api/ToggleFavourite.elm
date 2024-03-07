@@ -21,14 +21,14 @@ type alias Options msg =
 
 toggleFavourite : String -> Options msg -> Cmd msg
 toggleFavourite baseUrl { token, slug, isFavourite, onResponse } =
-    Http.request
+    Api.request
         { method =
             if isFavourite then
-                "POST"
+                Api.POST
 
             else
-                "DELETE"
-        , headers = [ Token.toAuthorizationHeader token ]
+                Api.DELETE
+        , maybeToken = Just token
         , url =
             Api.buildUrl
                 baseUrl
@@ -36,9 +36,9 @@ toggleFavourite baseUrl { token, slug, isFavourite, onResponse } =
                 []
                 []
         , body = Http.emptyBody
-        , expect = Api.expectJson onResponse decoder Api.emptyErrorsDecoder
-        , timeout = Nothing
-        , tracker = Nothing
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder = Api.emptyErrorsDecoder
         }
 
 
