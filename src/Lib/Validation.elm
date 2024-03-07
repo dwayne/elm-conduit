@@ -1,7 +1,7 @@
 module Lib.Validation exposing
     ( Validation
+    , apply
     , fail
-    , required
     , succeed
     , withValidation
     )
@@ -22,8 +22,8 @@ fail message =
     Failure [ message ]
 
 
-required : Validation a -> Validation (a -> b) -> Validation b
-required va vf =
+apply : Validation a -> Validation (a -> b) -> Validation b
+apply va vf =
     case ( vf, va ) of
         ( Success f, Success a ) ->
             Success (f a)

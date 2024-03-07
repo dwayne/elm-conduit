@@ -6,9 +6,9 @@ import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
 import Data.User exposing (User)
 import Data.Username as Username exposing (Username)
+import Data.Validation as V
 import Html as H
 import Html.Attributes as HA
-import Lib.String as String
 import Lib.Task as Task
 import Lib.Validation as V
 import View.Footer as Footer
@@ -132,53 +132,9 @@ type alias ValidatedFields =
 validate : Model -> V.Validation ValidatedFields
 validate { username, email, password } =
     V.succeed ValidatedFields
-        |> V.required (validateUsername username)
-        |> V.required (validateEmail email)
-        |> V.required (validatePassword password)
-
-
-validateUsername : String -> V.Validation Username
-validateUsername rawUsername =
-    case Username.fromString rawUsername of
-        Just username ->
-            V.succeed username
-
-        Nothing ->
-            V.fail "username can't be blank"
-
-
-validateEmail : String -> V.Validation Email
-validateEmail rawEmail =
-    case Email.fromString rawEmail of
-        Just email ->
-            V.succeed email
-
-        Nothing ->
-            V.fail "email can't be blank"
-
-
-validatePassword : String -> V.Validation Password
-validatePassword rawPassword =
-    case Password.fromString rawPassword of
-        Ok password ->
-            V.succeed password
-
-        Err Password.Blank ->
-            V.fail "password can't be blank"
-
-        Err (Password.TooShort expectedLength) ->
-            V.fail <|
-                String.concat
-                    [ "password must be at least "
-                    , String.fromInt expectedLength
-                    , " "
-                    , String.pluralize
-                        expectedLength
-                        { singular = "character"
-                        , plural = "characters"
-                        }
-                    , " long"
-                    ]
+        |> V.apply (V.username username)
+        |> V.apply (V.email email)
+        |> V.apply (V.password password)
 
 
 
