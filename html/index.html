@@ -28,6 +28,10 @@
         setToken(token) {
           localStorage.setItem(this.key, token);
         }
+
+        deleteToken() {
+          localStorage.removeItem(this.key);
+        }
       }
 
       const tokenStorage = new TokenStorage("elm-conduit-token");
@@ -45,6 +49,10 @@
         console.info("sendValue", message);
 
         switch (message?.namespace) {
+          case "deleteToken":
+            tokenStorage.deleteToken();
+            break;
+
           case "saveToken":
             tokenStorage.setToken(message.value);
             break;

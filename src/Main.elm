@@ -344,11 +344,7 @@ update msg model =
             loginUser user model
 
         LoggedOut ->
-            --
-            -- TODO: Handle logout.
-            --
-            ( model, Cmd.none )
-                |> Debug.log "You clicked the logout button."
+            logout model
 
         UpdatedUser user ->
             updateUser user model
@@ -441,6 +437,22 @@ loginUser user model =
                 ( Success { subModel | viewer = Viewer.User user }
                 , Cmd.batch
                     [ Port.Action.saveToken user.token
+                    , Route.redirectToHome subModel.key
+                    ]
+                )
+        , default = ( model, Cmd.none )
+        }
+        model
+
+
+logout : Model -> ( Model, Cmd Msg )
+logout model =
+    withSuccessModel
+        { onSuccess =
+            \subModel ->
+                ( Success { subModel | viewer = Viewer.Guest }
+                , Cmd.batch
+                    [ Port.Action.deleteToken
                     , Route.redirectToHome subModel.key
                     ]
                 )

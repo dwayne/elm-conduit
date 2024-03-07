@@ -1,4 +1,4 @@
-module Lib.Port.Message exposing (Message, encode, string)
+module Lib.Port.Message exposing (Message, empty, encode, string)
 
 import Json.Encode as JE
 
@@ -7,6 +7,14 @@ type Message
     = Message
         { namespace : String
         , value : JE.Value
+        }
+
+
+empty : String -> Message
+empty namespace =
+    Message
+        { namespace = namespace
+        , value = JE.null
         }
 
 
