@@ -37,8 +37,8 @@ type alias Model =
     , bio : String
     , email : String
     , password : String
-    , isDisabled : Bool
     , errorMessages : List String
+    , isDisabled : Bool
     }
 
 
@@ -57,8 +57,8 @@ init { imageUrl, username, bio, email } =
     , bio = bio
     , email = Email.toString email
     , password = ""
-    , isDisabled = False
     , errorMessages = []
+    , isDisabled = False
     }
 
 
@@ -197,7 +197,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { user, onLogout, onChange } { imageUrl, username, bio, email, password, isDisabled, errorMessages } =
+view { user, onLogout, onChange } { imageUrl, username, bio, email, password, errorMessages, isDisabled } =
     H.div []
         [ Navigation.view
             { role =

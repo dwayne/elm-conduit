@@ -1,4 +1,13 @@
-module Page.Home exposing (Model, Msg, ViewOptions, init, update, view)
+module Page.Home exposing
+    ( Model
+    , Msg
+    , InitOptions
+    , UpdateOptions
+    , ViewOptions
+    , init
+    , update
+    , view
+    )
 
 import Api
 import Api.GetArticles as GetArticles
@@ -144,13 +153,6 @@ init { apiUrl, viewer, onChange } =
 -- UPDATE
 
 
-type alias UpdateOptions msg =
-    { apiUrl : String
-    , viewer : Viewer
-    , onChange : Msg -> msg
-    }
-
-
 type Msg
     = GotArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
     | GotTagsResponse (Result (Api.Error ()) GetTags.Tags)
@@ -159,6 +161,13 @@ type Msg
     | ChangedPageNumber PageNumber
     | ToggledFavourite Token Slug Bool
     | GotToggleFavouriteResponse (Result (Api.Error ()) ToggleFavourite.TotalFavourites)
+
+
+type alias UpdateOptions msg =
+    { apiUrl : String
+    , viewer : Viewer
+    , onChange : Msg -> msg
+    }
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
