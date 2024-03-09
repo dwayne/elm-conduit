@@ -1,5 +1,6 @@
-module View.EditorForm exposing (EditorForm, Status(..), view)
+module View.EditorForm exposing (ViewOptions, view)
 
+import Data.Tag as Tag exposing (Tag)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
@@ -9,40 +10,28 @@ import View.TagInput as TagInput
 import View.Textarea as Textarea
 
 
-type alias EditorForm msg =
+type alias ViewOptions msg =
     { title : String
     , description : String
     , body : String
     , tag : String
-    , tags : OrderedSet String
-    , status : Status
+    , tags : OrderedSet Tag
+    , isDisabled : Bool
     , onInputTitle : String -> msg
     , onInputDescription : String -> msg
     , onInputBody : String -> msg
     , onInputTag : String -> msg
-    , onEnterTag : String -> msg
-    , onRemoveTag : String -> msg
+    , onEnterTag : Tag -> msg
+    , onRemoveTag : Tag -> msg
     , onSubmit : msg
     }
 
 
-type Status
-    = Invalid
-    | Valid
-    | Loading
-
-
-view : EditorForm msg -> H.Html msg
-view { title, description, body, tag, tags, status, onInputTitle, onInputDescription, onInputBody, onInputTag, onEnterTag, onRemoveTag, onSubmit } =
+view : ViewOptions msg -> H.Html msg
+view { title, description, body, tag, tags, isDisabled, onInputTitle, onInputDescription, onInputBody, onInputTag, onEnterTag, onRemoveTag, onSubmit } =
     let
-        isFormDisabled =
-            status == Invalid || status == Loading
-
-        isFieldDisabled =
-            status == Loading
-
         attrs =
-            if isFormDisabled then
+            if isDisabled then
                 []
 
             else
@@ -55,7 +44,7 @@ view { title, description, body, tag, tags, status, onInputTitle, onInputDescrip
                 , type_ = "text"
                 , placeholder = "Article Title"
                 , value = title
-                , isDisabled = isFieldDisabled
+                , isDisabled = isDisabled
                 , onInput = onInputTitle
                 }
             , Input.view
@@ -63,7 +52,7 @@ view { title, description, body, tag, tags, status, onInputTitle, onInputDescrip
                 , type_ = "text"
                 , placeholder = "What's this article about?"
                 , value = description
-                , isDisabled = isFieldDisabled
+                , isDisabled = isDisabled
                 , onInput = onInputDescription
                 }
             , Textarea.view
@@ -71,7 +60,7 @@ view { title, description, body, tag, tags, status, onInputTitle, onInputDescrip
                 , placeholder = "Write your article (in markdown)"
                 , rows = 8
                 , value = body
-                , isDisabled = isFieldDisabled
+                , isDisabled = isDisabled
                 , onInput = onInputBody
                 }
             , TagInput.view
@@ -79,7 +68,7 @@ view { title, description, body, tag, tags, status, onInputTitle, onInputDescrip
                 , placeholder = "Enter tags"
                 , tag = tag
                 , tags = tags
-                , isDisabled = isFieldDisabled
+                , isDisabled = isDisabled
                 , onInput = onInputTag
                 , onEnter = onEnterTag
                 , onRemove = onRemoveTag
@@ -87,7 +76,7 @@ view { title, description, body, tag, tags, status, onInputTitle, onInputDescrip
             , H.button
                 [ HA.class "btn btn-lg btn-primary pull-xs-right"
                 , HA.type_ "submit"
-                , HA.disabled isFormDisabled
+                , HA.disabled isDisabled
                 ]
                 [ H.text "Publish Article" ]
             ]

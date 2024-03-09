@@ -1,8 +1,20 @@
-module Data.Validation exposing (bio, email, imageUrl, optionalPassword, password, username)
+module Data.Validation exposing
+    ( bio
+    , email
+    , imageUrl
+    , nonEmptyString
+    , optionalPassword
+    , password
+    , tags
+    , username
+    )
 
 import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
+import Data.Tag as Tag exposing (Tag)
 import Data.Username as Username exposing (Username)
+import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
+import Lib.OrderedSet as OrderedSet exposing (OrderedSet)
 import Lib.String as String
 import Lib.Validation as V
 import Url exposing (Url)
@@ -41,17 +53,14 @@ imageUrl s =
                 V.fail "image is invalid"
 
 
-password : String -> V.Validation Password
-password s =
-    case Password.fromString s of
-        Ok validPassword ->
-            V.succeed validPassword
+nonEmptyString : String -> String -> V.Validation NonEmptyString
+nonEmptyString fieldName s =
+    case NonEmptyString.fromString s of
+        Just validField ->
+            V.succeed validField
 
-        Err Password.Blank ->
-            V.fail "password can't be blank"
-
-        Err (Password.TooShort expectedLength) ->
-            V.fail <| passwordTooShortMessage expectedLength
+        Nothing ->
+            V.fail <| fieldName ++ " can't be blank"
 
 
 optionalPassword : String -> V.Validation (Maybe Password)
@@ -62,6 +71,19 @@ optionalPassword s =
 
         Err Password.Blank ->
             V.succeed Nothing
+
+        Err (Password.TooShort expectedLength) ->
+            V.fail <| passwordTooShortMessage expectedLength
+
+
+password : String -> V.Validation Password
+password s =
+    case Password.fromString s of
+        Ok validPassword ->
+            V.succeed validPassword
+
+        Err Password.Blank ->
+            V.fail "password can't be blank"
 
         Err (Password.TooShort expectedLength) ->
             V.fail <| passwordTooShortMessage expectedLength
@@ -80,6 +102,11 @@ passwordTooShortMessage expectedLength =
             }
         , " long"
         ]
+
+
+tags : OrderedSet Tag -> V.Validation (List Tag)
+tags =
+    V.succeed << OrderedSet.toList
 
 
 username : String -> V.Validation Username

@@ -1,5 +1,6 @@
 module View.TagInput exposing (TagInput, view)
 
+import Data.Tag as Tag exposing (Tag)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
@@ -12,11 +13,11 @@ type alias TagInput msg =
     { name : String
     , placeholder : String
     , tag : String
-    , tags : OrderedSet String
+    , tags : OrderedSet Tag
     , isDisabled : Bool
     , onInput : String -> msg
-    , onEnter : String -> msg
-    , onRemove : String -> msg
+    , onEnter : Tag -> msg
+    , onRemove : Tag -> msg
     }
 
 
@@ -36,7 +37,7 @@ view { name, placeholder, tag, tags, isDisabled, onInput, onEnter, onRemove } =
                 ]
                 [ ( isDisabled, HA.disabled True )
                 , ( isEnabled, HE.onInput onInput )
-                , ( isEnabled, onEnterKeyUp (onEnter tag) )
+                , ( isEnabled, onEnterKey tag onEnter )
                 ]
     in
     H.fieldset
@@ -46,7 +47,7 @@ view { name, placeholder, tag, tags, isDisabled, onInput, onEnter, onRemove } =
         ]
 
 
-viewTags : Bool -> (String -> msg) -> List String -> H.Html msg
+viewTags : Bool -> (Tag -> msg) -> List Tag -> H.Html msg
 viewTags isEnabled onRemove =
     List.map
         (\tag ->
@@ -59,24 +60,35 @@ viewTags isEnabled onRemove =
                         ]
                     )
                     []
-                , H.text tag
+                , H.text <| Tag.toString tag
                 ]
         )
         >> H.div [ HA.class "tag-list" ]
 
 
-onEnterKeyUp : msg -> H.Attribute msg
-onEnterKeyUp msg =
+onEnterKey : String -> (Tag -> msg) -> H.Attribute msg
+onEnterKey input toMsg =
     let
         enterKeyDecoder =
             HE.keyCode
                 |> JD.andThen
                     (\keyCode ->
                         if keyCode == 13 then
-                            JD.succeed msg
+                            case Tag.fromString input of
+                                Just tag ->
+                                    JD.succeed <| toMsg tag
+
+                                Nothing ->
+                                    JD.fail <| "invalid tag: \"" ++ input ++ "\""
 
                         else
                             JD.fail <| "ignored keyCode: " ++ String.fromInt keyCode
                     )
+                |> JD.map alwaysPreventDefault
     in
-    HE.on "keyup" enterKeyDecoder
+    HE.preventDefaultOn "keydown" enterKeyDecoder
+
+
+alwaysPreventDefault : msg -> ( msg, Bool )
+alwaysPreventDefault msg =
+    ( msg, True )

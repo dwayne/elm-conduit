@@ -1,19 +1,20 @@
-module View.Editor exposing (Editor, view)
+module View.Editor exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
 import View.AuthErrors as AuthErrors
-import View.EditorForm as EditorForm exposing (EditorForm)
+import View.EditorForm as EditorForm
 
 
-type alias Editor msg =
-    { form : EditorForm msg
+type alias ViewOptions msg =
+    { classNames : String
     , errorMessages : List String
+    , form : EditorForm.ViewOptions msg
     }
 
 
-view : String -> Editor msg -> H.Html msg
-view classNames { form, errorMessages } =
+view : ViewOptions msg -> H.Html msg
+view { classNames, errorMessages, form } =
     H.div
         [ HA.class classNames ]
         [ AuthErrors.view errorMessages

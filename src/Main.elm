@@ -11,6 +11,7 @@ import Data.User exposing (User)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Json.Decode as JD
+import Page.Editor as EditorPage
 import Page.Home as HomePage
 import Page.Login as LoginPage
 import Page.Register as RegisterPage
@@ -74,7 +75,7 @@ type Page
     | Login LoginPage.Model
     | Register RegisterPage.Model
     | Settings SettingsPage.Model
-    | Editor
+    | Editor EditorPage.Model
     | Article
     | Profile
     | NotFound
@@ -282,10 +283,10 @@ getPageFromRoute apiUrl viewer route =
                     )
 
         Route.CreateArticle ->
-            ( Editor, Cmd.none )
+            ( Editor EditorPage.init, Cmd.none )
 
         Route.EditArticle _ ->
-            ( Editor, Cmd.none )
+            ( Editor EditorPage.init, Cmd.none )
 
         Route.Article _ ->
             ( Article, Cmd.none )
@@ -315,6 +316,7 @@ type PageMsg
     | ChangedLoginPage LoginPage.Msg
     | ChangedRegisterPage RegisterPage.Msg
     | ChangedSettingsPage SettingsPage.Msg
+    | ChangedEditorPage EditorPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -490,6 +492,9 @@ updatePage msg model =
 
                 ChangedSettingsPage pageMsg ->
                     updateSettingsPage pageMsg subModel
+
+                ChangedEditorPage pageMsg ->
+                    updateEditorPage pageMsg subModel
     in
     withSuccessModel
         { onSuccess = updatePageHelper >> Tuple.mapFirst Success
@@ -592,6 +597,33 @@ updateSettingsPage pageMsg subModel =
             ( subModel, Cmd.none )
 
 
+updateEditorPage : EditorPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
+updateEditorPage pageMsg subModel =
+    case subModel.page of
+        Editor pageModel ->
+            case subModel.viewer of
+                Viewer.User user ->
+                    let
+                        ( newPageModel, newPageCmd ) =
+                            EditorPage.update
+                                { apiUrl = subModel.apiUrl
+                                , token = user.token
+                                , onChange = ChangedPage << ChangedEditorPage
+                                }
+                                pageMsg
+                                pageModel
+                    in
+                    ( { subModel | page = Editor newPageModel }
+                    , newPageCmd
+                    )
+
+                Viewer.Guest ->
+                    ( subModel, Cmd.none )
+
+        _ ->
+            ( subModel, Cmd.none )
+
+
 
 -- VIEW
 
@@ -648,6 +680,18 @@ viewSuccessPage { url, zone, viewer, page } =
                         { user = user
                         , onLogout = LoggedOut
                         , onChange = ChangedPage << ChangedSettingsPage
+                        }
+                        model
+
+        Editor model ->
+            case viewer of
+                Viewer.Guest ->
+                    H.text "You are not allowed to view this page."
+
+                Viewer.User user ->
+                    EditorPage.view
+                        { user = user
+                        , onChange = ChangedPage << ChangedEditorPage
                         }
                         model
 
