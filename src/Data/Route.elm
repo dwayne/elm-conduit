@@ -1,6 +1,7 @@
 module Data.Route exposing
     ( Route(..)
     , fromUrl
+    , redirectToArticle
     , redirectToHome
     , toString
     )
@@ -59,6 +60,11 @@ usernameParser =
 redirectToHome : BN.Key -> Cmd msg
 redirectToHome key =
     replaceUrl key Home
+
+
+redirectToArticle : BN.Key -> Slug -> Cmd msg
+redirectToArticle key =
+    replaceUrl key << Article
 
 
 replaceUrl : BN.Key -> Route -> Cmd msg

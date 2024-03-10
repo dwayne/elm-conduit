@@ -4,6 +4,7 @@ import Api
 import Api.GetUser as GetUser
 import Browser as B
 import Browser.Navigation as BN
+import Data.Article exposing (Article)
 import Data.Config as Config
 import Data.Route as Route exposing (Route)
 import Data.Token exposing (Token)
@@ -67,6 +68,7 @@ type alias SuccessModel =
     , zone : Time.Zone
     , viewer : Viewer
     , page : Page
+    , maybeArticle : Maybe Article
     }
 
 
@@ -214,7 +216,7 @@ initSuccess { apiUrl, url, key, maybeZone, viewer } =
                     ( givenZone, Cmd.none )
 
         ( page, pageCmd ) =
-            getPageFromUrl apiUrl viewer url
+            getPageFromUrl apiUrl viewer Nothing url
     in
     ( Success
         { apiUrl = apiUrl
@@ -223,6 +225,7 @@ initSuccess { apiUrl, url, key, maybeZone, viewer } =
         , zone = zone
         , viewer = viewer
         , page = page
+        , maybeArticle = Nothing
         }
     , Cmd.batch
         [ zoneCmd
@@ -236,18 +239,18 @@ getZone =
     Task.perform GotZone Time.here
 
 
-getPageFromUrl : String -> Viewer -> Url -> ( Page, Cmd Msg )
-getPageFromUrl apiUrl viewer url =
+getPageFromUrl : String -> Viewer -> Maybe Article -> Url -> ( Page, Cmd Msg )
+getPageFromUrl apiUrl viewer maybeArticle url =
     case Route.fromUrl url of
         Just route ->
-            getPageFromRoute apiUrl viewer route
+            getPageFromRoute apiUrl viewer maybeArticle route
 
         Nothing ->
             ( NotFound, Cmd.none )
 
 
-getPageFromRoute : String -> Viewer -> Route -> ( Page, Cmd Msg )
-getPageFromRoute apiUrl viewer route =
+getPageFromRoute : String -> Viewer -> Maybe Article -> Route -> ( Page, Cmd Msg )
+getPageFromRoute apiUrl viewer maybeArticle route =
     case route of
         Route.Home ->
             let
@@ -283,13 +286,53 @@ getPageFromRoute apiUrl viewer route =
                     )
 
         Route.CreateArticle ->
-            ( Editor EditorPage.init, Cmd.none )
+            case viewer of
+                Viewer.Guest ->
+                    ( NotFound, Cmd.none )
+
+                Viewer.User user ->
+                    ( Editor EditorPage.init, Cmd.none )
 
         Route.EditArticle _ ->
-            ( Editor EditorPage.init, Cmd.none )
+            case viewer of
+                Viewer.Guest ->
+                    ( NotFound, Cmd.none )
 
-        Route.Article _ ->
-            ( Article, Cmd.none )
+                Viewer.User user ->
+                    ( Editor EditorPage.init, Cmd.none )
+
+        Route.Article slug ->
+            case viewer of
+                Viewer.Guest ->
+                    ( NotFound, Cmd.none )
+
+                Viewer.User user ->
+                    case maybeArticle of
+                        Just article ->
+                            --
+                            -- TODO: Load the article page with the cached article.
+                            --
+                            -- This is a newly created article to which we've been redirected.
+                            --
+                            --( Article <| ArticlePage.initFromArticle article
+                            --, Task.dispatch UsedCachedArticle
+                            --)
+                            --
+                            ( Article, Cmd.none )
+
+                        Nothing ->
+                            --
+                            -- TODO: Load the article normally.
+                            --
+                            --let
+                            --    ( model, cmd ) =
+                            --        ArticlePage.initFromSlug slug
+                            --in
+                            --( Article model
+                            --, cmd
+                            --)
+                            --
+                            ( Article, Cmd.none )
 
         Route.Profile _ _ ->
             ( Profile, Cmd.none )
@@ -308,6 +351,7 @@ type Msg
     | LoggedIn User
     | LoggedOut
     | UpdatedUser User
+    | CreatedArticle Article
     | ChangedPage PageMsg
 
 
@@ -350,6 +394,9 @@ update msg model =
 
         UpdatedUser user ->
             updateUser user model
+
+        CreatedArticle article ->
+            showArticle article model
 
         ChangedPage pageMsg ->
             updatePage pageMsg model
@@ -409,7 +456,7 @@ changeUrl url model =
             \subModel ->
                 let
                     ( page, cmd ) =
-                        getPageFromUrl subModel.apiUrl subModel.viewer url
+                        getPageFromUrl subModel.apiUrl subModel.viewer subModel.maybeArticle url
                 in
                 ( Success { subModel | url = url, page = page }
                 , cmd
@@ -470,6 +517,19 @@ updateUser user model =
             \subModel ->
                 ( Success { subModel | viewer = Viewer.User user }
                 , Port.Action.saveToken user.token
+                )
+        , default = ( model, Cmd.none )
+        }
+        model
+
+
+showArticle : Article -> Model -> ( Model, Cmd Msg )
+showArticle article model =
+    withSuccessModel
+        { onSuccess =
+            \subModel ->
+                ( Success { subModel | maybeArticle = Just article }
+                , Route.redirectToArticle subModel.key article.slug
                 )
         , default = ( model, Cmd.none )
         }
@@ -608,6 +668,7 @@ updateEditorPage pageMsg subModel =
                             EditorPage.update
                                 { apiUrl = subModel.apiUrl
                                 , token = user.token
+                                , onCreate = CreatedArticle
                                 , onChange = ChangedPage << ChangedEditorPage
                                 }
                                 pageMsg

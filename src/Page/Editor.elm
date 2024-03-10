@@ -9,7 +9,8 @@ module Page.Editor exposing
     )
 
 import Api
-import Api.UpdateUser as UpdateUser
+import Api.CreateArticle as CreateArticle
+import Data.Article exposing (Article)
 import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
 import Data.Tag as Tag exposing (Tag)
@@ -69,11 +70,13 @@ type Msg
     | EnteredTag Tag
     | RemovedTag Tag
     | SubmittedForm
+    | GotCreateArticleResponse (Result (Api.Error (List String)) Article)
 
 
 type alias UpdateOptions msg =
     { apiUrl : String
     , token : Token
+    , onCreate : Article -> msg
     , onChange : Msg -> msg
     }
 
@@ -117,7 +120,16 @@ update options msg model =
                     { onSuccess =
                         \{ title, description, body, tags } ->
                             ( { model | errorMessages = [], isDisabled = True }
-                            , Cmd.none
+                            , CreateArticle.createArticle
+                                options.apiUrl
+                                { token = options.token
+                                , title = title
+                                , description = description
+                                , body = body
+                                , tags = tags
+                                , onResponse = GotCreateArticleResponse
+                                }
+                                |> Cmd.map options.onChange
                             )
                     , onFailure =
                         \errorMessages ->
@@ -125,6 +137,29 @@ update options msg model =
                             , Cmd.none
                             )
                     }
+
+        GotCreateArticleResponse result ->
+            case result of
+                Ok article ->
+                    ( init
+                    , Task.dispatch (options.onCreate article)
+                    )
+
+                Err err ->
+                    let
+                        newModel =
+                            { model | isDisabled = False }
+                    in
+                    case err of
+                        Api.UserError errorMessages ->
+                            ( { newModel | errorMessages = errorMessages }
+                            , Cmd.none
+                            )
+
+                        _ ->
+                            ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
+                            , Cmd.none
+                            )
 
 
 type alias ValidatedFields =
