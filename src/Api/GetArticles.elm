@@ -1,7 +1,5 @@
 module Api.GetArticles exposing
-    ( Article
-    , Articles
-    , Author
+    ( Articles
     , Options
     , byTag
     , fromUsersYouFollow
@@ -10,6 +8,7 @@ module Api.GetArticles exposing
     )
 
 import Api
+import Data.Article as Article exposing (Article)
 import Data.Limit as Limit exposing (Limit)
 import Data.Offset as Offset exposing (Offset)
 import Data.Pager exposing (Page)
@@ -122,48 +121,8 @@ type alias Articles =
     }
 
 
-type alias Article =
-    { slug : Slug
-    , title : String
-    , description : String
-    , body : String
-    , tags : List Tag
-    , createdAt : Timestamp
-    , isFavourite : Bool
-    , totalFavourites : Total
-    , author : Author
-    }
-
-
-type alias Author =
-    { username : Username
-    , imageUrl : Url
-    }
-
-
 decoder : JD.Decoder Articles
 decoder =
     JD.map2 Articles
-        (JD.field "articles" <| JD.list articleDecoder)
+        (JD.field "articles" <| JD.list Article.decoder)
         (JD.field "articlesCount" Total.decoder)
-
-
-articleDecoder : JD.Decoder Article
-articleDecoder =
-    JD.succeed Article
-        |> JD.required "slug" Slug.decoder
-        |> JD.required "title" JD.string
-        |> JD.required "description" JD.string
-        |> JD.required "body" JD.string
-        |> JD.required "tagList" (JD.list Tag.decoder)
-        |> JD.required "createdAt" Timestamp.decoder
-        |> JD.required "favorited" JD.bool
-        |> JD.required "favoritesCount" Total.decoder
-        |> JD.required "author" authorDecoder
-
-
-authorDecoder : JD.Decoder Author
-authorDecoder =
-    JD.map2 Author
-        (JD.field "username" Username.decoder)
-        (JD.field "image" JD.url)

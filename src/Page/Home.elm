@@ -13,6 +13,7 @@ import Api
 import Api.GetArticles as GetArticles
 import Api.GetTags as GetTags
 import Api.ToggleFavourite as ToggleFavourite
+import Data.Article exposing (Article)
 import Data.Limit as Limit
 import Data.Offset as Offset
 import Data.PageNumber as PageNumber exposing (PageNumber)
@@ -52,7 +53,7 @@ type alias Model =
 
 
 type alias Feed =
-    { remoteDataArticles : RemoteData () (List GetArticles.Article)
+    { remoteDataArticles : RemoteData () (List Article)
     , currentPageNumber : PageNumber
     , pager : Pager
     }
@@ -66,7 +67,7 @@ feedInit =
     }
 
 
-feedSetRemoteDataArticles : RemoteData () (List GetArticles.Article) -> Feed -> Feed
+feedSetRemoteDataArticles : RemoteData () (List Article) -> Feed -> Feed
 feedSetRemoteDataArticles remoteDataArticles feed =
     { feed | remoteDataArticles = remoteDataArticles }
 
@@ -445,7 +446,7 @@ view { zone, viewer, onChange } model =
         |> H.map onChange
 
 
-viewArticlePreview : Viewer -> Time.Zone -> Maybe Slug -> GetArticles.Article -> H.Html Msg
+viewArticlePreview : Viewer -> Time.Zone -> Maybe Slug -> Article -> H.Html Msg
 viewArticlePreview viewer zone togglingFavourite { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
     ArticlePreview.view
         { role =
