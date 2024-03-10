@@ -12,6 +12,8 @@ import Data.User exposing (User)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Json.Decode as JD
+import Lib.Either as Either
+import Page.Article as ArticlePage
 import Page.Editor as EditorPage
 import Page.Home as HomePage
 import Page.Login as LoginPage
@@ -78,7 +80,7 @@ type Page
     | Register RegisterPage.Model
     | Settings SettingsPage.Model
     | Editor EditorPage.Model
-    | Article
+    | Article ArticlePage.Model
     | Profile
     | NotFound
 
@@ -307,32 +309,25 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                     ( NotFound, Cmd.none )
 
                 Viewer.User user ->
-                    case maybeArticle of
-                        Just article ->
-                            --
-                            -- TODO: Load the article page with the cached article.
-                            --
-                            -- This is a newly created article to which we've been redirected.
-                            --
-                            --( Article <| ArticlePage.initFromArticle article
-                            --, Task.dispatch UsedCachedArticle
-                            --)
-                            --
-                            ( Article, Cmd.none )
+                    let
+                        ( model, cmd ) =
+                            ArticlePage.init
+                                { apiUrl = apiUrl
+                                , eitherSlugOrArticle =
+                                    case maybeArticle of
+                                        Just article ->
+                                            if article.slug == slug then
+                                                Either.Right article
 
-                        Nothing ->
-                            --
-                            -- TODO: Load the article normally.
-                            --
-                            --let
-                            --    ( model, cmd ) =
-                            --        ArticlePage.initFromSlug slug
-                            --in
-                            --( Article model
-                            --, cmd
-                            --)
-                            --
-                            ( Article, Cmd.none )
+                                            else
+                                                Either.Left slug
+
+                                        Nothing ->
+                                            Either.Left slug
+                                , onChange = ChangedPage << ChangedArticlePage
+                                }
+                    in
+                    ( Article model, cmd )
 
         Route.Profile _ _ ->
             ( Profile, Cmd.none )
@@ -361,6 +356,7 @@ type PageMsg
     | ChangedRegisterPage RegisterPage.Msg
     | ChangedSettingsPage SettingsPage.Msg
     | ChangedEditorPage EditorPage.Msg
+    | ChangedArticlePage ArticlePage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -555,6 +551,9 @@ updatePage msg model =
 
                 ChangedEditorPage pageMsg ->
                     updateEditorPage pageMsg subModel
+
+                ChangedArticlePage pageMsg ->
+                    updateArticlePage pageMsg subModel
     in
     withSuccessModel
         { onSuccess = updatePageHelper >> Tuple.mapFirst Success
@@ -685,6 +684,31 @@ updateEditorPage pageMsg subModel =
             ( subModel, Cmd.none )
 
 
+updateArticlePage : ArticlePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
+updateArticlePage pageMsg subModel =
+    case subModel.page of
+        Article pageModel ->
+            case subModel.viewer of
+                Viewer.User user ->
+                    let
+                        ( newPageModel, newPageCmd ) =
+                            ArticlePage.update
+                                { onChange = ChangedPage << ChangedArticlePage
+                                }
+                                pageMsg
+                                pageModel
+                    in
+                    ( { subModel | page = Article newPageModel }
+                    , newPageCmd
+                    )
+
+                Viewer.Guest ->
+                    ( subModel, Cmd.none )
+
+        _ ->
+            ( subModel, Cmd.none )
+
+
 
 -- VIEW
 
@@ -753,6 +777,19 @@ viewSuccessPage { url, zone, viewer, page } =
                     EditorPage.view
                         { user = user
                         , onChange = ChangedPage << ChangedEditorPage
+                        }
+                        model
+
+        Article model ->
+            case viewer of
+                Viewer.Guest ->
+                    H.text "You are not allowed to view this page."
+
+                Viewer.User user ->
+                    ArticlePage.view
+                        { zone = zone
+                        , user = user
+                        , onChange = ChangedPage << ChangedArticlePage
                         }
                         model
 

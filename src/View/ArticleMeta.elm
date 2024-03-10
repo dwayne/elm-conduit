@@ -1,60 +1,71 @@
 module View.ArticleMeta exposing
-    ( ArticleMeta
+    ( AuthorOptions
     , GuestOptions
-    , OwnerOptions
     , Role(..)
+    , ViewOptions
     , view
     )
 
+import Data.Route as Route
+import Data.Slug exposing (Slug)
+import Data.Timestamp as Timestamp exposing (Timestamp)
+import Data.Total as Total exposing (Total)
+import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Time
+import Url exposing (Url)
 import View.FavouriteButton as FavouriteButton
 import View.FollowButton as FollowButton
 
 
-type alias ArticleMeta msg =
-    { name : String
-    , imageUrl : String
-    , date : String
+type alias ViewOptions msg =
+    { username : Username
+    , imageUrl : Url
+    , zone : Time.Zone
+    , createdAt : Timestamp
     , role : Role msg
     }
 
 
 type Role msg
     = Guest (GuestOptions msg)
-    | Owner (OwnerOptions msg)
+    | Author (AuthorOptions msg)
 
 
 type alias GuestOptions msg =
     { isDisabled : Bool
     , isFollowed : Bool
-    , totalFollowers : Int
     , onFollow : msg
     , onUnfollow : msg
     , isFavourite : Bool
-    , totalFavourites : Int
+    , totalFavourites : Total
     , onFavourite : msg
     , onUnfavourite : msg
     }
 
 
-type alias OwnerOptions msg =
+type alias AuthorOptions msg =
     { isDisabled : Bool
-    , onDelete : msg
+    , slug : Slug
+    , onDelete : Slug -> msg
     }
 
 
-view : ArticleMeta msg -> H.Html msg
-view { name, imageUrl, date, role } =
+view : ViewOptions msg -> H.Html msg
+view { username, imageUrl, zone, createdAt, role } =
     let
+        profileUrl =
+            Route.toString <| Route.Profile False username
+
         buttons =
             case role of
-                Guest { isDisabled, isFollowed, totalFollowers, onFollow, onUnfollow, isFavourite, totalFavourites, onFavourite, onUnfavourite } ->
+                Guest { isDisabled, isFollowed, onFollow, onUnfollow, isFavourite, totalFavourites, onFavourite, onUnfavourite } ->
                     [ FollowButton.view
-                        { name = name
+                        { username = username
                         , isFollowed = isFollowed
-                        , maybeTotalFollowers = Just totalFollowers
+                        , maybeTotalFollowers = Nothing
                         , isDisabled = isDisabled
                         , onFollow = onFollow
                         , onUnfollow = onUnfollow
@@ -69,10 +80,10 @@ view { name, imageUrl, date, role } =
                         }
                     ]
 
-                Owner { isDisabled, onDelete } ->
+                Author { isDisabled, slug, onDelete } ->
                     [ H.a
                         [ HA.class "btn btn-sm btn-outline-secondary"
-                        , HA.href "./editor.html"
+                        , HA.href <| Route.toString <| Route.EditArticle slug
                         ]
                         [ H.i [ HA.class "ion-edit" ] []
                         , H.text "\u{00A0} Edit Article"
@@ -84,7 +95,7 @@ view { name, imageUrl, date, role } =
                             HA.disabled True
 
                           else
-                            HE.onClick onDelete
+                            HE.onClick <| onDelete slug
                         ]
                         [ H.i [ HA.class "ion-trash-a" ] []
                         , H.text "\u{00A0} Delete Article"
@@ -94,18 +105,18 @@ view { name, imageUrl, date, role } =
     H.div [ HA.class "article-meta" ] <|
         List.append
             [ H.a
-                [ HA.href "./profile.html" ]
-                [ H.img [ HA.src imageUrl ] [] ]
+                [ HA.href profileUrl ]
+                [ H.img [ HA.src <| Url.toString imageUrl ] [] ]
             , H.div
                 [ HA.class "info" ]
                 [ H.a
                     [ HA.class "author"
-                    , HA.href "./profile.html"
+                    , HA.href profileUrl
                     ]
-                    [ H.text name ]
+                    [ H.text <| Username.toString username ]
                 , H.span
                     [ HA.class "date" ]
-                    [ H.text date ]
+                    [ H.text <| Timestamp.toString zone createdAt ]
                 ]
             ]
             buttons

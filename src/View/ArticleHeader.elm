@@ -1,20 +1,23 @@
-module View.ArticleHeader exposing
-    ( ArticleHeader
-    , view
-    )
+module View.ArticleHeader exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
-import View.ArticleMeta as ArticleMeta exposing (ArticleMeta)
+import View.ArticleMeta as ArticleMeta
 
 
-type alias ArticleHeader msg =
+
+--
+-- TODO: Place ArticleMeta code into this module.
+--
+
+
+type alias ViewOptions msg =
     { title : String
-    , meta : ArticleMeta msg
+    , meta : ArticleMeta.ViewOptions msg
     }
 
 
-view : ArticleHeader msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { title, meta } =
     H.div
         [ HA.class "banner" ]

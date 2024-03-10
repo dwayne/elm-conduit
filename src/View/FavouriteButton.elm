@@ -1,20 +1,21 @@
-module View.FavouriteButton exposing (FavouriteButton, view)
+module View.FavouriteButton exposing (ViewOptions, view)
 
+import Data.Total as Total exposing (Total)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 
 
-type alias FavouriteButton msg =
+type alias ViewOptions msg =
     { isFavourite : Bool
-    , totalFavourites : Int
+    , totalFavourites : Total
     , isDisabled : Bool
     , onFavourite : msg
     , onUnfavourite : msg
     }
 
 
-view : FavouriteButton msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { isFavourite, totalFavourites, isDisabled, onFavourite, onUnfavourite } =
     let
         ( action, buttonClass, onClick ) =
@@ -45,5 +46,5 @@ view { isFavourite, totalFavourites, isDisabled, onFavourite, onUnfavourite } =
         , H.text <| "\u{00A0} " ++ action ++ " Article "
         , H.span
             [ HA.class "counter" ]
-            [ H.text <| "(" ++ String.fromInt totalFavourites ++ ")" ]
+            [ H.text <| "(" ++ Total.toString totalFavourites ++ ")" ]
         ]
