@@ -3,13 +3,16 @@ module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOption
 import Api
 import Api.GetArticle as GetArticle
 import Data.Article exposing (Article)
+import Data.Route as Route
 import Data.Slug exposing (Slug)
 import Data.User exposing (User)
+import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
 import Lib.Either as Either exposing (Either)
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Time
+import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
 import View.Navigation as Navigation
@@ -102,58 +105,122 @@ update options msg model =
 
 type alias ViewOptions msg =
     { zone : Time.Zone
-    , user : User
+    , viewer : Viewer
     , onChange : Msg -> msg
     }
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, user, onChange } { remoteDataArticle, isDisabled } =
-    H.div []
-        [ Navigation.view
-            { role =
-                Navigation.user
-                    { username = user.username
-                    , imageUrl = user.imageUrl
+view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
+    case viewer of
+        Viewer.Guest ->
+            H.div []
+                [ Navigation.view
+                    { role = Navigation.guest
                     }
-            }
-        , H.div [ HA.class "article-page" ] <|
-            case remoteDataArticle of
-                RemoteData.Loading ->
-                    [ H.text "Loading..." ]
+                , H.div [ HA.class "article-page" ] <|
+                    case remoteDataArticle of
+                        RemoteData.Loading ->
+                            [ H.text "" ]
 
-                RemoteData.Success article ->
-                    [ ArticleHeader.view
-                        { title = article.title
-                        , meta =
+                        RemoteData.Success article ->
+                            [ ArticleHeader.view
+                                { title = article.title
+                                , meta =
+                                    { username = article.author.username
+                                    , imageUrl = article.author.imageUrl
+                                    , zone = zone
+                                    , createdAt = article.createdAt
+                                    , role = ArticleMeta.Guest
+                                    }
+                                }
+                            , H.div
+                                [ HA.class "container page" ]
+                                [ ArticleContent.view
+                                    { description = article.description
+                                    , body = article.body
+                                    , tags = article.tags
+                                    }
+                                , H.hr [] []
+                                , H.div
+                                    [ HA.class "article-actions" ]
+                                    [ H.p []
+                                        [ H.a
+                                            [ HA.href <| Route.toString Route.Login ]
+                                            [ H.text "Sign in" ]
+                                        , H.text " or "
+                                        , H.a
+                                            [ HA.href <| Route.toString Route.Register ]
+                                            [ H.text "Sign up" ]
+                                        , H.text " to add comments on this article."
+                                        ]
+                                    ]
+                                ]
+                            ]
+
+                        RemoteData.Failure _ ->
+                            [ H.div
+                                [ HA.class "container page" ]
+                                [ H.text "Sorry, but we are unable to load the article." ]
+                            ]
+                ]
+                |> H.map onChange
+
+        Viewer.User user ->
+            --
+            -- TODO: Implement the user's view.
+            --
+            H.div []
+                [ Navigation.view
+                    { role =
+                        Navigation.user
                             { username = user.username
                             , imageUrl = user.imageUrl
-                            , zone = zone
-                            , createdAt = article.createdAt
-                            , role =
-                                if user.username == article.author.username then
-                                    ArticleMeta.Author
-                                        { isDisabled = isDisabled
-                                        , slug = article.slug
-                                        , onDelete = always NoOp
-                                        }
-
-                                else
-                                    ArticleMeta.Guest
-                                        { isDisabled = isDisabled
-                                        , isFollowed = False
-                                        , onFollow = NoOp
-                                        , onUnfollow = NoOp
-                                        , isFavourite = article.isFavourite
-                                        , totalFavourites = article.totalFavourites
-                                        , onFavourite = NoOp
-                                        , onUnfavourite = NoOp
-                                        }
                             }
-                        }
-                    ]
+                    }
+                , H.div [ HA.class "article-page" ] <|
+                    case remoteDataArticle of
+                        RemoteData.Loading ->
+                            --
+                            -- TODO: Handle loading.
+                            --
+                            [ H.text "Loading..." ]
 
-                RemoteData.Failure _ ->
-                    [ H.text "Unable to load the article." ]
-        ]
-        |> H.map onChange
+                        RemoteData.Success article ->
+                            [ ArticleHeader.view
+                                { title = article.title
+                                , meta =
+                                    { username = article.author.username
+                                    , imageUrl = article.author.imageUrl
+                                    , zone = zone
+                                    , createdAt = article.createdAt
+                                    , role =
+                                        if user.username == article.author.username then
+                                            ArticleMeta.Author
+                                                { isDisabled = isDisabled
+                                                , slug = article.slug
+                                                , onDelete = always NoOp
+                                                }
+
+                                        else
+                                            ArticleMeta.User
+                                                { isDisabled = isDisabled
+                                                , isFollowed = False
+                                                , onFollow = NoOp
+                                                , onUnfollow = NoOp
+                                                , isFavourite = article.isFavourite
+                                                , totalFavourites = article.totalFavourites
+                                                , onFavourite = NoOp
+                                                , onUnfavourite = NoOp
+                                                }
+                                    }
+                                }
+                            ]
+
+                        RemoteData.Failure _ ->
+                            --
+                            -- TODO: Handle failure.
+                            --
+                            [ H.text "Unable to load the article." ]
+                ]
+                |> H.map onChange

@@ -304,30 +304,25 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                     ( Editor EditorPage.init, Cmd.none )
 
         Route.Article slug ->
-            case viewer of
-                Viewer.Guest ->
-                    ( NotFound, Cmd.none )
+            let
+                ( model, cmd ) =
+                    ArticlePage.init
+                        { apiUrl = apiUrl
+                        , eitherSlugOrArticle =
+                            case maybeArticle of
+                                Just article ->
+                                    if article.slug == slug then
+                                        Either.Right article
 
-                Viewer.User user ->
-                    let
-                        ( model, cmd ) =
-                            ArticlePage.init
-                                { apiUrl = apiUrl
-                                , eitherSlugOrArticle =
-                                    case maybeArticle of
-                                        Just article ->
-                                            if article.slug == slug then
-                                                Either.Right article
+                                    else
+                                        Either.Left slug
 
-                                            else
-                                                Either.Left slug
-
-                                        Nothing ->
-                                            Either.Left slug
-                                , onChange = ChangedPage << ChangedArticlePage
-                                }
-                    in
-                    ( Article model, cmd )
+                                Nothing ->
+                                    Either.Left slug
+                        , onChange = ChangedPage << ChangedArticlePage
+                        }
+            in
+            ( Article model, cmd )
 
         Route.Profile _ _ ->
             ( Profile, Cmd.none )
@@ -688,22 +683,17 @@ updateArticlePage : ArticlePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
 updateArticlePage pageMsg subModel =
     case subModel.page of
         Article pageModel ->
-            case subModel.viewer of
-                Viewer.User user ->
-                    let
-                        ( newPageModel, newPageCmd ) =
-                            ArticlePage.update
-                                { onChange = ChangedPage << ChangedArticlePage
-                                }
-                                pageMsg
-                                pageModel
-                    in
-                    ( { subModel | page = Article newPageModel }
-                    , newPageCmd
-                    )
-
-                Viewer.Guest ->
-                    ( subModel, Cmd.none )
+            let
+                ( newPageModel, newPageCmd ) =
+                    ArticlePage.update
+                        { onChange = ChangedPage << ChangedArticlePage
+                        }
+                        pageMsg
+                        pageModel
+            in
+            ( { subModel | page = Article newPageModel }
+            , newPageCmd
+            )
 
         _ ->
             ( subModel, Cmd.none )
@@ -781,17 +771,12 @@ viewSuccessPage { url, zone, viewer, page } =
                         model
 
         Article model ->
-            case viewer of
-                Viewer.Guest ->
-                    H.text "You are not allowed to view this page."
-
-                Viewer.User user ->
-                    ArticlePage.view
-                        { zone = zone
-                        , user = user
-                        , onChange = ChangedPage << ChangedArticlePage
-                        }
-                        model
+            ArticlePage.view
+                { zone = zone
+                , viewer = viewer
+                , onChange = ChangedPage << ChangedArticlePage
+                }
+                model
 
         _ ->
             H.text <| "url = " ++ Url.toString url

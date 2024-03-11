@@ -18,18 +18,18 @@ type alias ViewOptions msg =
 view : ViewOptions msg -> H.Html msg
 view { isFavourite, totalFavourites, isDisabled, onFavourite, onUnfavourite } =
     let
-        ( action, buttonClass, onClick ) =
+        { action, buttonClass, onClick } =
             if isFavourite then
-                ( "Unfavourite"
-                , "btn-primary"
-                , onUnfavourite
-                )
+                { action = "Unfavourite"
+                , buttonClass = "btn-primary"
+                , onClick = onUnfavourite
+                }
 
             else
-                ( "Favourite"
-                , "btn-outline-primary"
-                , onFavourite
-                )
+                { action = "Favourite"
+                , buttonClass = "btn-outline-primary"
+                , onClick = onFavourite
+                }
     in
     H.button
         [ HA.class "btn btn-sm"

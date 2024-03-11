@@ -1,5 +1,6 @@
 module View.ArticleContent exposing (ArticleContent, view)
 
+import Data.Tag as Tag exposing (Tag)
 import Html as H
 import Html.Attributes as HA
 import Markdown
@@ -8,7 +9,7 @@ import Markdown
 type alias ArticleContent =
     { description : String
     , body : String
-    , tags : List String
+    , tags : List Tag
     }
 
 
@@ -30,12 +31,12 @@ viewMarkdown =
     Markdown.toHtml []
 
 
-viewTags : List String -> H.Html msg
+viewTags : List Tag -> H.Html msg
 viewTags =
     List.map
         (\tag ->
             H.li
                 [ HA.class "tag-default tag-pill tag-outline" ]
-                [ H.text tag ]
+                [ H.text <| Tag.toString tag ]
         )
         >> H.ul [ HA.class "tag-list" ]

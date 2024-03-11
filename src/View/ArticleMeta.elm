@@ -1,6 +1,5 @@
 module View.ArticleMeta exposing
     ( AuthorOptions
-    , GuestOptions
     , Role(..)
     , ViewOptions
     , view
@@ -30,11 +29,12 @@ type alias ViewOptions msg =
 
 
 type Role msg
-    = Guest (GuestOptions msg)
+    = Guest
+    | User (UserOptions msg)
     | Author (AuthorOptions msg)
 
 
-type alias GuestOptions msg =
+type alias UserOptions msg =
     { isDisabled : Bool
     , isFollowed : Bool
     , onFollow : msg
@@ -61,7 +61,10 @@ view { username, imageUrl, zone, createdAt, role } =
 
         buttons =
             case role of
-                Guest { isDisabled, isFollowed, onFollow, onUnfollow, isFavourite, totalFavourites, onFavourite, onUnfavourite } ->
+                Guest ->
+                    []
+
+                User { isDisabled, isFollowed, onFollow, onUnfollow, isFavourite, totalFavourites, onFavourite, onUnfavourite } ->
                     [ FollowButton.view
                         { username = username
                         , isFollowed = isFollowed
@@ -70,7 +73,7 @@ view { username, imageUrl, zone, createdAt, role } =
                         , onFollow = onFollow
                         , onUnfollow = onUnfollow
                         }
-                    , H.text "\u{00A0}\u{00A0}"
+                    , viewSpace
                     , FavouriteButton.view
                         { isFavourite = isFavourite
                         , totalFavourites = totalFavourites
@@ -88,7 +91,7 @@ view { username, imageUrl, zone, createdAt, role } =
                         [ H.i [ HA.class "ion-edit" ] []
                         , H.text "\u{00A0} Edit Article"
                         ]
-                    , H.text "\u{00A0}\u{00A0}"
+                    , viewSpace
                     , H.button
                         [ HA.class "btn btn-sm btn-outline-danger"
                         , if isDisabled then
@@ -120,3 +123,8 @@ view { username, imageUrl, zone, createdAt, role } =
                 ]
             ]
             buttons
+
+
+viewSpace : H.Html msg
+viewSpace =
+    H.text "\u{00A0}\u{00A0}"
