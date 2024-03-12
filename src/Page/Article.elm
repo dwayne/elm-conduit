@@ -2,9 +2,11 @@ module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOption
 
 import Api
 import Api.GetArticle as GetArticle
+import Api.ToggleFavourite as ToggleFavourite
 import Data.Article exposing (Article)
 import Data.Route as Route
 import Data.Slug exposing (Slug)
+import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
@@ -70,10 +72,13 @@ init { apiUrl, viewer, eitherSlugOrArticle, onChange } =
 type Msg
     = NoOp
     | GotGetArticleResponse (Result (Api.Error ()) Article)
+    | ToggledFavourite Token Slug Bool
+    | GotToggleFavouriteResponse (Result (Api.Error ()) ToggleFavourite.TotalFavourites)
 
 
 type alias UpdateOptions msg =
-    { onChange : Msg -> msg
+    { apiUrl : String
+    , onChange : Msg -> msg
     }
 
 
@@ -97,6 +102,44 @@ update options msg model =
                     -- For e.g. Did we not find the article or was it a network failure?
                     --
                     ( { model | remoteDataArticle = RemoteData.Failure () }
+                    , Cmd.none
+                    )
+
+        ToggledFavourite token slug isFavourite ->
+            ( { model | isDisabled = True }
+            , ToggleFavourite.toggleFavourite
+                options.apiUrl
+                { token = token
+                , slug = slug
+                , isFavourite = isFavourite
+                , onResponse = GotToggleFavouriteResponse
+                }
+                |> Cmd.map options.onChange
+            )
+
+        GotToggleFavouriteResponse result ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            case result of
+                Ok { isFavourite, totalFavourites } ->
+                    ( { newModel
+                        | remoteDataArticle =
+                            RemoteData.map
+                                (\article ->
+                                    { article
+                                        | isFavourite = isFavourite
+                                        , totalFavourites = totalFavourites
+                                    }
+                                )
+                                newModel.remoteDataArticle
+                      }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( newModel
                     , Cmd.none
                     )
 
@@ -154,10 +197,13 @@ view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
                                             , onUnfollow = NoOp
                                             , isFavourite = article.isFavourite
                                             , totalFavourites = article.totalFavourites
-                                            , onFavourite = NoOp
-                                            , onUnfavourite = NoOp
+                                            , onFavourite = toToggledFavouriteMsg True
+                                            , onUnfavourite = toToggledFavouriteMsg False
                                             }
                                 }
+
+                            toToggledFavouriteMsg =
+                                ToggledFavourite user.token article.slug
                         in
                         [ ArticleHeader.view
                             { title = article.title

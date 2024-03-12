@@ -687,7 +687,8 @@ updateArticlePage pageMsg subModel =
             let
                 ( newPageModel, newPageCmd ) =
                     ArticlePage.update
-                        { onChange = ChangedPage << ChangedArticlePage
+                        { apiUrl = subModel.apiUrl
+                        , onChange = ChangedPage << ChangedArticlePage
                         }
                         pageMsg
                         pageModel
