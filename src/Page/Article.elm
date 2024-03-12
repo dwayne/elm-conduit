@@ -30,13 +30,14 @@ type alias Model =
 
 type alias InitOptions msg =
     { apiUrl : String
+    , viewer : Viewer
     , eitherSlugOrArticle : Either Slug Article
     , onChange : Msg -> msg
     }
 
 
 init : InitOptions msg -> ( Model, Cmd msg )
-init { apiUrl, eitherSlugOrArticle, onChange } =
+init { apiUrl, viewer, eitherSlugOrArticle, onChange } =
     let
         ( remoteDataArticle, cmd ) =
             case eitherSlugOrArticle of
@@ -44,7 +45,8 @@ init { apiUrl, eitherSlugOrArticle, onChange } =
                     ( RemoteData.Loading
                     , GetArticle.getArticle
                         apiUrl
-                        { slug = slug
+                        { maybeToken = Viewer.toToken viewer
+                        , slug = slug
                         , onResponse = GotGetArticleResponse
                         }
                     )
@@ -120,9 +122,6 @@ view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
                 }
 
         Viewer.User user ->
-            --
-            -- TODO: Implement the user's view.
-            --
             H.div []
                 [ Navigation.view
                     { role =
@@ -131,50 +130,55 @@ view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
                             , imageUrl = user.imageUrl
                             }
                     }
-                , H.div [ HA.class "article-page" ] <|
-                    case remoteDataArticle of
-                        RemoteData.Loading ->
-                            --
-                            -- TODO: Handle loading.
-                            --
-                            [ H.text "Loading..." ]
+                , viewArticle
+                    (\article ->
+                        let
+                            articleMetaViewOptions =
+                                { username = article.author.username
+                                , imageUrl = article.author.imageUrl
+                                , zone = zone
+                                , createdAt = article.createdAt
+                                , role =
+                                    if user.username == article.author.username then
+                                        ArticleMeta.Author
+                                            { isDisabled = isDisabled
+                                            , slug = article.slug
+                                            , onDelete = always NoOp
+                                            }
 
-                        RemoteData.Success article ->
-                            [ ArticleHeader.view
-                                { title = article.title
-                                , meta =
-                                    { username = article.author.username
-                                    , imageUrl = article.author.imageUrl
-                                    , zone = zone
-                                    , createdAt = article.createdAt
-                                    , role =
-                                        if user.username == article.author.username then
-                                            ArticleMeta.Author
-                                                { isDisabled = isDisabled
-                                                , slug = article.slug
-                                                , onDelete = always NoOp
-                                                }
-
-                                        else
-                                            ArticleMeta.User
-                                                { isDisabled = isDisabled
-                                                , isFollowed = False
-                                                , onFollow = NoOp
-                                                , onUnfollow = NoOp
-                                                , isFavourite = article.isFavourite
-                                                , totalFavourites = article.totalFavourites
-                                                , onFavourite = NoOp
-                                                , onUnfavourite = NoOp
-                                                }
-                                    }
+                                    else
+                                        ArticleMeta.User
+                                            { isDisabled = isDisabled
+                                            , isFollowed = False
+                                            , onFollow = NoOp
+                                            , onUnfollow = NoOp
+                                            , isFavourite = article.isFavourite
+                                            , totalFavourites = article.totalFavourites
+                                            , onFavourite = NoOp
+                                            , onUnfavourite = NoOp
+                                            }
                                 }
+                        in
+                        [ ArticleHeader.view
+                            { title = article.title
+                            , meta = articleMetaViewOptions
+                            }
+                        , H.div
+                            [ HA.class "container page" ]
+                            [ ArticleContent.view
+                                { description = article.description
+                                , body = article.body
+                                , tags = article.tags
+                                }
+                            , H.hr [] []
+                            , H.div
+                                [ HA.class "article-actions" ]
+                                [ ArticleMeta.view articleMetaViewOptions
+                                ]
                             ]
-
-                        RemoteData.Failure _ ->
-                            --
-                            -- TODO: Handle failure.
-                            --
-                            [ H.text "Unable to load the article." ]
+                        ]
+                    )
+                    remoteDataArticle
                 ]
                 |> H.map onChange
 
@@ -189,58 +193,58 @@ viewArticleAsGuest { zone, remoteDataArticle } =
         [ Navigation.view
             { role = Navigation.guest
             }
-        , H.div [ HA.class "article-page" ] <|
-            viewArticle
-                (\article ->
-                    [ ArticleHeader.view
-                        { title = article.title
-                        , meta =
-                            { username = article.author.username
-                            , imageUrl = article.author.imageUrl
-                            , zone = zone
-                            , createdAt = article.createdAt
-                            , role = ArticleMeta.Guest
-                            }
+        , viewArticle
+            (\article ->
+                [ ArticleHeader.view
+                    { title = article.title
+                    , meta =
+                        { username = article.author.username
+                        , imageUrl = article.author.imageUrl
+                        , zone = zone
+                        , createdAt = article.createdAt
+                        , role = ArticleMeta.Guest
                         }
+                    }
+                , H.div
+                    [ HA.class "container page" ]
+                    [ ArticleContent.view
+                        { description = article.description
+                        , body = article.body
+                        , tags = article.tags
+                        }
+                    , H.hr [] []
                     , H.div
-                        [ HA.class "container page" ]
-                        [ ArticleContent.view
-                            { description = article.description
-                            , body = article.body
-                            , tags = article.tags
-                            }
-                        , H.hr [] []
-                        , H.div
-                            [ HA.class "article-actions" ]
-                            [ H.p []
-                                [ H.a
-                                    [ HA.href <| Route.toString Route.Login ]
-                                    [ H.text "Sign in" ]
-                                , H.text " or "
-                                , H.a
-                                    [ HA.href <| Route.toString Route.Register ]
-                                    [ H.text "Sign up" ]
-                                , H.text " to add comments on this article."
-                                ]
+                        [ HA.class "article-actions" ]
+                        [ H.p []
+                            [ H.a
+                                [ HA.href <| Route.toString Route.Login ]
+                                [ H.text "Sign in" ]
+                            , H.text " or "
+                            , H.a
+                                [ HA.href <| Route.toString Route.Register ]
+                                [ H.text "Sign up" ]
+                            , H.text " to add comments on this article."
                             ]
                         ]
                     ]
-                )
-                remoteDataArticle
+                ]
+            )
+            remoteDataArticle
         ]
 
 
-viewArticle : (Article -> List (H.Html msg)) -> RemoteData () Article -> List (H.Html msg)
+viewArticle : (Article -> List (H.Html msg)) -> RemoteData () Article -> H.Html msg
 viewArticle toHtml remoteDataArticle =
-    case remoteDataArticle of
-        RemoteData.Loading ->
-            viewLoading
+    H.div [ HA.class "article-page" ] <|
+        case remoteDataArticle of
+            RemoteData.Loading ->
+                viewLoading
 
-        RemoteData.Success article ->
-            toHtml article
+            RemoteData.Success article ->
+                toHtml article
 
-        RemoteData.Failure _ ->
-            viewFailure
+            RemoteData.Failure _ ->
+                viewFailure
 
 
 viewLoading : List (H.Html msg)

@@ -308,6 +308,7 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                 ( model, cmd ) =
                     ArticlePage.init
                         { apiUrl = apiUrl
+                        , viewer = viewer
                         , eitherSlugOrArticle =
                             case maybeArticle of
                                 Just article ->
