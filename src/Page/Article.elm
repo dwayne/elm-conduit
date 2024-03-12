@@ -114,57 +114,10 @@ view : ViewOptions msg -> Model -> H.Html msg
 view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
     case viewer of
         Viewer.Guest ->
-            H.div []
-                [ Navigation.view
-                    { role = Navigation.guest
-                    }
-                , H.div [ HA.class "article-page" ] <|
-                    case remoteDataArticle of
-                        RemoteData.Loading ->
-                            [ H.text "" ]
-
-                        RemoteData.Success article ->
-                            [ ArticleHeader.view
-                                { title = article.title
-                                , meta =
-                                    { username = article.author.username
-                                    , imageUrl = article.author.imageUrl
-                                    , zone = zone
-                                    , createdAt = article.createdAt
-                                    , role = ArticleMeta.Guest
-                                    }
-                                }
-                            , H.div
-                                [ HA.class "container page" ]
-                                [ ArticleContent.view
-                                    { description = article.description
-                                    , body = article.body
-                                    , tags = article.tags
-                                    }
-                                , H.hr [] []
-                                , H.div
-                                    [ HA.class "article-actions" ]
-                                    [ H.p []
-                                        [ H.a
-                                            [ HA.href <| Route.toString Route.Login ]
-                                            [ H.text "Sign in" ]
-                                        , H.text " or "
-                                        , H.a
-                                            [ HA.href <| Route.toString Route.Register ]
-                                            [ H.text "Sign up" ]
-                                        , H.text " to add comments on this article."
-                                        ]
-                                    ]
-                                ]
-                            ]
-
-                        RemoteData.Failure _ ->
-                            [ H.div
-                                [ HA.class "container page" ]
-                                [ H.text "Sorry, but we are unable to load the article." ]
-                            ]
-                ]
-                |> H.map onChange
+            viewArticleAsGuest
+                { zone = zone
+                , remoteDataArticle = remoteDataArticle
+                }
 
         Viewer.User user ->
             --
@@ -224,3 +177,80 @@ view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
                             [ H.text "Unable to load the article." ]
                 ]
                 |> H.map onChange
+
+
+viewArticleAsGuest :
+    { zone : Time.Zone
+    , remoteDataArticle : RemoteData () Article
+    }
+    -> H.Html msg
+viewArticleAsGuest { zone, remoteDataArticle } =
+    H.div []
+        [ Navigation.view
+            { role = Navigation.guest
+            }
+        , H.div [ HA.class "article-page" ] <|
+            viewArticle
+                (\article ->
+                    [ ArticleHeader.view
+                        { title = article.title
+                        , meta =
+                            { username = article.author.username
+                            , imageUrl = article.author.imageUrl
+                            , zone = zone
+                            , createdAt = article.createdAt
+                            , role = ArticleMeta.Guest
+                            }
+                        }
+                    , H.div
+                        [ HA.class "container page" ]
+                        [ ArticleContent.view
+                            { description = article.description
+                            , body = article.body
+                            , tags = article.tags
+                            }
+                        , H.hr [] []
+                        , H.div
+                            [ HA.class "article-actions" ]
+                            [ H.p []
+                                [ H.a
+                                    [ HA.href <| Route.toString Route.Login ]
+                                    [ H.text "Sign in" ]
+                                , H.text " or "
+                                , H.a
+                                    [ HA.href <| Route.toString Route.Register ]
+                                    [ H.text "Sign up" ]
+                                , H.text " to add comments on this article."
+                                ]
+                            ]
+                        ]
+                    ]
+                )
+                remoteDataArticle
+        ]
+
+
+viewArticle : (Article -> List (H.Html msg)) -> RemoteData () Article -> List (H.Html msg)
+viewArticle toHtml remoteDataArticle =
+    case remoteDataArticle of
+        RemoteData.Loading ->
+            viewLoading
+
+        RemoteData.Success article ->
+            toHtml article
+
+        RemoteData.Failure _ ->
+            viewFailure
+
+
+viewLoading : List (H.Html msg)
+viewLoading =
+    [ H.text "" ]
+
+
+viewFailure : List (H.Html msg)
+viewFailure =
+    [ H.div
+        [ HA.class "container page" ]
+        [ H.text "Sorry, but we are unable to load the article." ]
+    ]
