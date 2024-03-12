@@ -3,11 +3,13 @@ module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOption
 import Api
 import Api.GetArticle as GetArticle
 import Api.ToggleFavourite as ToggleFavourite
+import Api.ToggleFollow as ToggleFollow
 import Data.Article exposing (Article)
 import Data.Route as Route
 import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
+import Data.Username exposing (Username)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
@@ -72,6 +74,8 @@ init { apiUrl, viewer, eitherSlugOrArticle, onChange } =
 type Msg
     = NoOp
     | GotGetArticleResponse (Result (Api.Error ()) Article)
+    | ToggledFollow Token Username Bool
+    | GotToggleFollowResponse (Result (Api.Error ()) Bool)
     | ToggledFavourite Token Slug Bool
     | GotToggleFavouriteResponse (Result (Api.Error ()) ToggleFavourite.TotalFavourites)
 
@@ -102,6 +106,48 @@ update options msg model =
                     -- For e.g. Did we not find the article or was it a network failure?
                     --
                     ( { model | remoteDataArticle = RemoteData.Failure () }
+                    , Cmd.none
+                    )
+
+        ToggledFollow token username isFollowing ->
+            ( { model | isDisabled = True }
+            , ToggleFollow.toggleFollow
+                options.apiUrl
+                { token = token
+                , username = username
+                , isFollowing = isFollowing
+                , onResponse = GotToggleFollowResponse
+                }
+                |> Cmd.map options.onChange
+            )
+
+        GotToggleFollowResponse result ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            case result of
+                Ok isFollowing ->
+                    ( { newModel
+                        | remoteDataArticle =
+                            RemoteData.map
+                                (\article ->
+                                    let
+                                        author =
+                                            article.author
+
+                                        newAuthor =
+                                            { author | isFollowing = isFollowing }
+                                    in
+                                    { article | author = newAuthor }
+                                )
+                                newModel.remoteDataArticle
+                      }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( newModel
                     , Cmd.none
                     )
 
@@ -192,15 +238,18 @@ view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
                                     else
                                         ArticleMeta.User
                                             { isDisabled = isDisabled
-                                            , isFollowed = False
-                                            , onFollow = NoOp
-                                            , onUnfollow = NoOp
+                                            , isFollowing = article.author.isFollowing
+                                            , onFollow = toToggledFollowMsg True
+                                            , onUnfollow = toToggledFollowMsg False
                                             , isFavourite = article.isFavourite
                                             , totalFavourites = article.totalFavourites
                                             , onFavourite = toToggledFavouriteMsg True
                                             , onUnfavourite = toToggledFavouriteMsg False
                                             }
                                 }
+
+                            toToggledFollowMsg =
+                                ToggledFollow user.token article.author.username
 
                             toToggledFavouriteMsg =
                                 ToggledFavourite user.token article.slug

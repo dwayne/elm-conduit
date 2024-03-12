@@ -9,7 +9,7 @@ import Html.Events as HE
 
 type alias ViewOptions msg =
     { username : Username
-    , isFollowed : Bool
+    , isFollowing : Bool
     , maybeTotalFollowers : Maybe Total
     , isDisabled : Bool
     , onFollow : msg
@@ -18,10 +18,10 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> H.Html msg
-view { username, isFollowed, maybeTotalFollowers, isDisabled, onFollow, onUnfollow } =
+view { username, isFollowing, maybeTotalFollowers, isDisabled, onFollow, onUnfollow } =
     let
         { action, buttonClass, iconClass, onClick } =
-            if isFollowed then
+            if isFollowing then
                 { action = "Unfollow"
                 , buttonClass = "btn-secondary"
                 , iconClass = "ion-minus-round"

@@ -1,0 +1,43 @@
+module Api.ToggleFollow exposing (toggleFollow)
+
+import Api
+import Data.Token as Token exposing (Token)
+import Data.Username as Username exposing (Username)
+import Http
+import Json.Decode as JD
+
+
+type alias Options msg =
+    { token : Token
+    , username : Username
+    , isFollowing : Bool
+    , onResponse : Result (Api.Error ()) Bool -> msg
+    }
+
+
+toggleFollow : String -> Options msg -> Cmd msg
+toggleFollow baseUrl { token, username, isFollowing, onResponse } =
+    Api.request
+        { method =
+            if isFollowing then
+                Api.POST
+
+            else
+                Api.DELETE
+        , maybeToken = Just token
+        , url =
+            Api.buildUrl
+                baseUrl
+                [ "profiles", Username.toString username, "follow" ]
+                []
+                []
+        , body = Http.emptyBody
+        , onResponse = onResponse
+        , decoder = decoder
+        , errorsDecoder = Api.emptyErrorsDecoder
+        }
+
+
+decoder : JD.Decoder Bool
+decoder =
+    JD.at [ "profile", "following" ] JD.bool

@@ -36,7 +36,7 @@ type Role msg
 
 type alias UserOptions msg =
     { isDisabled : Bool
-    , isFollowed : Bool
+    , isFollowing : Bool
     , onFollow : msg
     , onUnfollow : msg
     , isFavourite : Bool
@@ -64,10 +64,10 @@ view { username, imageUrl, zone, createdAt, role } =
                 Guest ->
                     []
 
-                User { isDisabled, isFollowed, onFollow, onUnfollow, isFavourite, totalFavourites, onFavourite, onUnfavourite } ->
+                User { isDisabled, isFollowing, onFollow, onUnfollow, isFavourite, totalFavourites, onFavourite, onUnfavourite } ->
                     [ FollowButton.view
                         { username = username
-                        , isFollowed = isFollowed
+                        , isFollowing = isFollowing
                         , maybeTotalFollowers = Nothing
                         , isDisabled = isDisabled
                         , onFollow = onFollow

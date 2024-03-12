@@ -27,6 +27,7 @@ type alias Article =
 type alias Author =
     { username : Username
     , imageUrl : Url
+    , isFollowing : Bool
     }
 
 
@@ -46,6 +47,7 @@ decoder =
 
 authorDecoder : JD.Decoder Author
 authorDecoder =
-    JD.map2 Author
+    JD.map3 Author
         (JD.field "username" Username.decoder)
         (JD.field "image" JD.url)
+        (JD.field "following" JD.bool)
