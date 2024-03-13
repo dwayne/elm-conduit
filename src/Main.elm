@@ -293,15 +293,37 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                     ( NotFound, Cmd.none )
 
                 Viewer.User user ->
-                    ( Editor EditorPage.init, Cmd.none )
+                    let
+                        ( model, cmd ) =
+                            EditorPage.init
+                                { apiUrl = apiUrl
+                                , token = user.token
+                                , maybeSlug = Nothing
+                                , onChange = ChangedPage << ChangedEditorPage
+                                }
+                    in
+                    ( Editor model
+                    , cmd
+                    )
 
-        Route.EditArticle _ ->
+        Route.EditArticle slug ->
             case viewer of
                 Viewer.Guest ->
                     ( NotFound, Cmd.none )
 
                 Viewer.User user ->
-                    ( Editor EditorPage.init, Cmd.none )
+                    let
+                        ( model, cmd ) =
+                            EditorPage.init
+                                { apiUrl = apiUrl
+                                , token = user.token
+                                , maybeSlug = Just slug
+                                , onChange = ChangedPage << ChangedEditorPage
+                                }
+                    in
+                    ( Editor model
+                    , cmd
+                    )
 
         Route.Article slug ->
             let
@@ -312,6 +334,12 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                         , eitherSlugOrArticle =
                             case maybeArticle of
                                 Just article ->
+                                    --
+                                    -- TODO: Remove the article from the cache.
+                                    --
+                                    -- Dispatch a message to signal the
+                                    -- cache to be cleared.
+                                    --
                                     if article.slug == slug then
                                         Either.Right article
 
@@ -342,7 +370,7 @@ type Msg
     | LoggedIn User
     | LoggedOut
     | UpdatedUser User
-    | CreatedArticle Article
+    | PublishedArticle Article
     | DeletedArticle
     | ChangedPage PageMsg
 
@@ -388,7 +416,7 @@ update msg model =
         UpdatedUser user ->
             updateUser user model
 
-        CreatedArticle article ->
+        PublishedArticle article ->
             showArticle article model
 
         DeletedArticle ->
@@ -680,7 +708,7 @@ updateEditorPage pageMsg subModel =
                             EditorPage.update
                                 { apiUrl = subModel.apiUrl
                                 , token = user.token
-                                , onCreate = CreatedArticle
+                                , onPublish = PublishedArticle
                                 , onChange = ChangedPage << ChangedEditorPage
                                 }
                                 pageMsg
