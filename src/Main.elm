@@ -343,6 +343,7 @@ type Msg
     | LoggedOut
     | UpdatedUser User
     | CreatedArticle Article
+    | DeletedArticle
     | ChangedPage PageMsg
 
 
@@ -389,6 +390,9 @@ update msg model =
 
         CreatedArticle article ->
             showArticle article model
+
+        DeletedArticle ->
+            handleDeletedArticle model
 
         ChangedPage pageMsg ->
             updatePage pageMsg model
@@ -522,6 +526,19 @@ showArticle article model =
             \subModel ->
                 ( Success { subModel | maybeArticle = Just article }
                 , Route.redirectToArticle subModel.key article.slug
+                )
+        , default = ( model, Cmd.none )
+        }
+        model
+
+
+handleDeletedArticle : Model -> ( Model, Cmd Msg )
+handleDeletedArticle model =
+    withSuccessModel
+        { onSuccess =
+            \subModel ->
+                ( Success subModel
+                , Route.redirectToHome subModel.key
                 )
         , default = ( model, Cmd.none )
         }
@@ -688,6 +705,7 @@ updateArticlePage pageMsg subModel =
                 ( newPageModel, newPageCmd ) =
                     ArticlePage.update
                         { apiUrl = subModel.apiUrl
+                        , onDelete = DeletedArticle
                         , onChange = ChangedPage << ChangedArticlePage
                         }
                         pageMsg

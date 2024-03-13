@@ -2,6 +2,7 @@ module Api exposing
     ( Error(..)
     , Method(..)
     , buildUrl
+    , delete
     , emptyErrorsDecoder
     , expectJson
     , formErrorsDecoder
@@ -15,6 +16,7 @@ import Data.Token as Token exposing (Token)
 import Dict exposing (Dict)
 import Http
 import Json.Decode as JD
+import Lib.Either as Either exposing (Either)
 import Lib.Function exposing (flip)
 import Url.Builder as UB
 
@@ -33,7 +35,7 @@ get { maybeToken, url, onResponse, decoder } =
         , url = url
         , body = Http.emptyBody
         , onResponse = onResponse
-        , decoder = decoder
+        , eitherDefaultOrDecoder = Either.Right decoder
         , errorsDecoder = emptyErrorsDecoder
         }
 
@@ -54,7 +56,7 @@ post { maybeToken, url, body, onResponse, decoder, errorsDecoder } =
         , url = url
         , body = body
         , onResponse = onResponse
-        , decoder = decoder
+        , eitherDefaultOrDecoder = Either.Right decoder
         , errorsDecoder = errorsDecoder
         }
 
@@ -75,8 +77,26 @@ put { token, url, body, onResponse, decoder, errorsDecoder } =
         , url = url
         , body = body
         , onResponse = onResponse
-        , decoder = decoder
+        , eitherDefaultOrDecoder = Either.Right decoder
         , errorsDecoder = errorsDecoder
+        }
+
+
+delete :
+    { token : Token
+    , url : String
+    , onResponse : Result (Error ()) () -> msg
+    }
+    -> Cmd msg
+delete { token, url, onResponse } =
+    request
+        { method = DELETE
+        , maybeToken = Just token
+        , url = url
+        , body = Http.emptyBody
+        , onResponse = onResponse
+        , eitherDefaultOrDecoder = Either.Left ()
+        , errorsDecoder = emptyErrorsDecoder
         }
 
 
@@ -93,11 +113,11 @@ request :
     , url : String
     , body : Http.Body
     , onResponse : Result (Error e) a -> msg
-    , decoder : JD.Decoder a
+    , eitherDefaultOrDecoder : Either a (JD.Decoder a)
     , errorsDecoder : JD.Decoder e
     }
     -> Cmd msg
-request { method, maybeToken, url, body, onResponse, decoder, errorsDecoder } =
+request { method, maybeToken, url, body, onResponse, eitherDefaultOrDecoder, errorsDecoder } =
     Http.request
         { method =
             case method of
@@ -121,7 +141,7 @@ request { method, maybeToken, url, body, onResponse, decoder, errorsDecoder } =
                     [ Token.toAuthorizationHeader token ]
         , url = url
         , body = body
-        , expect = expectJson onResponse decoder errorsDecoder
+        , expect = expectJson onResponse eitherDefaultOrDecoder errorsDecoder
         , timeout = Just oneMinute
         , tracker = Nothing
         }
@@ -151,8 +171,8 @@ type Error e
     | UserError e
 
 
-expectJson : (Result (Error e) a -> msg) -> JD.Decoder a -> JD.Decoder e -> Http.Expect msg
-expectJson toMsg decoder errorsDecoder =
+expectJson : (Result (Error e) a -> msg) -> Either a (JD.Decoder a) -> JD.Decoder e -> Http.Expect msg
+expectJson toMsg eitherDefaultOrDecoder errorsDecoder =
     Http.expectStringResponse toMsg <|
         \response ->
             case response of
@@ -192,12 +212,17 @@ expectJson toMsg decoder errorsDecoder =
                                 Err (BadStatus statusCode)
 
                 Http.GoodStatus_ { statusCode } body ->
-                    case JD.decodeString decoder body of
-                        Ok value ->
-                            Ok value
+                    case eitherDefaultOrDecoder of
+                        Either.Left default ->
+                            Ok default
 
-                        Err err ->
-                            Err (BadBody statusCode <| JD.errorToString err)
+                        Either.Right decoder ->
+                            case JD.decodeString decoder body of
+                                Ok value ->
+                                    Ok value
+
+                                Err err ->
+                                    Err (BadBody statusCode <| JD.errorToString err)
 
 
 emptyErrorsDecoder : JD.Decoder ()

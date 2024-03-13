@@ -5,6 +5,7 @@ import Data.Token as Token exposing (Token)
 import Data.Username as Username exposing (Username)
 import Http
 import Json.Decode as JD
+import Lib.Either as Either
 
 
 type alias Options msg =
@@ -33,7 +34,7 @@ toggleFollow baseUrl { token, username, isFollowing, onResponse } =
                 []
         , body = Http.emptyBody
         , onResponse = onResponse
-        , decoder = decoder
+        , eitherDefaultOrDecoder = Either.Right decoder
         , errorsDecoder = Api.emptyErrorsDecoder
         }
 

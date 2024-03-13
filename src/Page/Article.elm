@@ -1,6 +1,7 @@
 module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
+import Api.DeleteArticle as DeleteArticle
 import Api.GetArticle as GetArticle
 import Api.ToggleFavourite as ToggleFavourite
 import Api.ToggleFollow as ToggleFollow
@@ -15,6 +16,7 @@ import Html as H
 import Html.Attributes as HA
 import Lib.Either as Either exposing (Either)
 import Lib.RemoteData as RemoteData exposing (RemoteData)
+import Lib.Task as Task
 import Time
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
@@ -78,10 +80,13 @@ type Msg
     | GotToggleFollowResponse (Result (Api.Error ()) Bool)
     | ToggledFavourite Token Slug Bool
     | GotToggleFavouriteResponse (Result (Api.Error ()) ToggleFavourite.TotalFavourites)
+    | ClickedDeleteArticle Token Slug
+    | GotDeleteArticleResponse (Result (Api.Error ()) ())
 
 
 type alias UpdateOptions msg =
     { apiUrl : String
+    , onDelete : msg
     , onChange : Msg -> msg
     }
 
@@ -189,6 +194,29 @@ update options msg model =
                     , Cmd.none
                     )
 
+        ClickedDeleteArticle token slug ->
+            ( { model | isDisabled = True }
+            , DeleteArticle.deleteArticle
+                options.apiUrl
+                { token = token
+                , slug = slug
+                , onResponse = GotDeleteArticleResponse
+                }
+                |> Cmd.map options.onChange
+            )
+
+        GotDeleteArticleResponse result ->
+            case result of
+                Ok () ->
+                    ( model
+                    , Task.dispatch options.onDelete
+                    )
+
+                Err _ ->
+                    ( { model | isDisabled = False }
+                    , Cmd.none
+                    )
+
 
 
 -- VIEW
@@ -232,7 +260,7 @@ view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
                                         ArticleMeta.Author
                                             { isDisabled = isDisabled
                                             , slug = article.slug
-                                            , onDelete = always NoOp
+                                            , onDelete = ClickedDeleteArticle user.token
                                             }
 
                                     else

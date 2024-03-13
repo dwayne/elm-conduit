@@ -9,6 +9,7 @@ import Data.Token as Token exposing (Token)
 import Data.Total as Total exposing (Total)
 import Http
 import Json.Decode as JD
+import Lib.Either as Either
 
 
 type alias Options msg =
@@ -37,7 +38,7 @@ toggleFavourite baseUrl { token, slug, isFavourite, onResponse } =
                 []
         , body = Http.emptyBody
         , onResponse = onResponse
-        , decoder = decoder
+        , eitherDefaultOrDecoder = Either.Right decoder
         , errorsDecoder = Api.emptyErrorsDecoder
         }
 
