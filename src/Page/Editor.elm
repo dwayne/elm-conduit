@@ -12,7 +12,7 @@ import Api
 import Api.CreateArticle as CreateArticle
 import Api.GetArticle as GetArticle
 import Api.UpdateArticle as UpdateArticle
-import Data.Article exposing (Article)
+import Data.Article as Article exposing (Article)
 import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
 import Data.Slug exposing (Slug)
@@ -53,10 +53,7 @@ type alias Model =
 
 type Action
     = Create
-    | Edit
-        { slug : Slug
-        , remoteData : RemoteData () ()
-        }
+    | Edit (RemoteData () Slug)
 
 
 type alias InitOptions msg =
@@ -84,11 +81,7 @@ init { apiUrl, token, maybeSlug, onChange } =
             )
 
         Just slug ->
-            ( { action =
-                    Edit
-                        { slug = slug
-                        , remoteData = RemoteData.Loading
-                        }
+            ( { action = Edit RemoteData.Loading
               , title = ""
               , description = ""
               , body = ""
@@ -105,6 +98,19 @@ init { apiUrl, token, maybeSlug, onChange } =
                 }
                 |> Cmd.map onChange
             )
+
+
+resetModel : Model -> Model
+resetModel model =
+    { model
+        | title = ""
+        , description = ""
+        , body = ""
+        , tag = ""
+        , tags = OrderedSet.empty
+        , errorMessages = []
+        , isDisabled = False
+    }
 
 
 
@@ -135,43 +141,25 @@ update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
         GotGetArticleResponse result ->
-            --
-            -- TODO: Simplify.
-            --
-            case model.action of
-                Edit editModel ->
-                    case editModel.remoteData of
-                        RemoteData.Loading ->
-                            case result of
-                                Ok article ->
-                                    let
-                                        newEditModel =
-                                            { editModel | remoteData = RemoteData.Success () }
-                                    in
-                                    ( { model
-                                        | action = Edit newEditModel
-                                        , title = article.title
-                                        , description = article.description
-                                        , body = article.body
-                                        , tags = OrderedSet.fromList article.tags
-                                      }
-                                    , Cmd.none
-                                    )
+            ( case model.action of
+                Edit RemoteData.Loading ->
+                    case result of
+                        Ok article ->
+                            { model
+                                | action = Edit <| RemoteData.Success article.slug
+                                , title = article.title
+                                , description = article.description
+                                , body = article.body
+                                , tags = OrderedSet.fromList article.tags
+                            }
 
-                                Err _ ->
-                                    let
-                                        newEditModel =
-                                            { editModel | remoteData = RemoteData.Failure () }
-                                    in
-                                    ( { model | action = Edit newEditModel }
-                                    , Cmd.none
-                                    )
+                        Err _ ->
+                            { model | action = Edit <| RemoteData.Failure () }
 
-                        _ ->
-                            ( model, Cmd.none )
-
-                Create ->
-                    ( model, Cmd.none )
+                _ ->
+                    model
+            , Cmd.none
+            )
 
         ChangedTitle title ->
             ( { model | title = title }
@@ -207,7 +195,7 @@ update options msg model =
             validate model
                 |> V.withValidation
                     { onSuccess =
-                        \{ title, description, body, tags } ->
+                        \articleFields ->
                             ( { model | errorMessages = [], isDisabled = True }
                             , let
                                 cmd =
@@ -216,10 +204,7 @@ update options msg model =
                                             CreateArticle.createArticle
                                                 options.apiUrl
                                                 { token = options.token
-                                                , title = title
-                                                , description = description
-                                                , body = body
-                                                , tags = tags
+                                                , articleFields = articleFields
                                                 , onResponse = GotPublishArticleResponse
                                                 }
 
@@ -228,10 +213,7 @@ update options msg model =
                                                 options.apiUrl
                                                 { token = options.token
                                                 , slug = slug
-                                                , title = title
-                                                , description = description
-                                                , body = body
-                                                , tags = tags
+                                                , articleFields = articleFields
                                                 , onResponse = GotPublishArticleResponse
                                                 }
                               in
@@ -245,51 +227,61 @@ update options msg model =
                     }
 
         GotPublishArticleResponse result ->
-            case result of
-                Ok article ->
-                    --
-                    -- TODO: Add a resetModel function.
-                    --
-                    ( { model
-                        | title = ""
-                        , description = ""
-                        , body = ""
-                        , tag = ""
-                        , tags = OrderedSet.empty
-                        , errorMessages = []
-                        , isDisabled = False
-                      }
+            handleFormResponse
+                (\article ->
+                    ( resetModel model
                     , Task.dispatch (options.onPublish article)
                     )
-
-                Err err ->
-                    let
-                        newModel =
-                            { model | isDisabled = False }
-                    in
-                    case err of
-                        Api.UserError errorMessages ->
-                            ( { newModel | errorMessages = errorMessages }
-                            , Cmd.none
-                            )
-
-                        _ ->
-                            ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
-                            , Cmd.none
-                            )
+                )
+                model
+                result
 
 
-type alias ValidatedFields =
-    { title : NonEmptyString
-    , description : NonEmptyString
-    , body : NonEmptyString
-    , tags : List Tag
+
+--
+-- TODO: Extract FormModel and handleFormResponse into Api.
+--
+
+
+type alias FormModel model =
+    --
+    -- TODO: Find out what type of record this is called.
+    --
+    -- I know what I'm saying is that I want to accept records
+    -- that contain the fields errorMessages and isDisabled.
+    --
+    { model
+        | errorMessages : List String
+        , isDisabled : Bool
     }
 
 
-validate : Model -> V.Validation ValidatedFields
+handleFormResponse : (a -> ( FormModel model, Cmd msg )) -> FormModel model -> Result (Api.Error (List String)) a -> ( FormModel model, Cmd msg )
+handleFormResponse onOk model result =
+    case result of
+        Ok a ->
+            onOk a
+
+        Err err ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            case err of
+                Api.UserError errorMessages ->
+                    ( { newModel | errorMessages = errorMessages }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
+                    , Cmd.none
+                    )
+
+
+validate : Model -> V.Validation Article.Fields
 validate { title, description, body, tags } =
-    V.succeed ValidatedFields
+    V.succeed Article.Fields
         |> V.apply (V.nonEmptyString "title" title)
         |> V.apply (V.nonEmptyString "description" description)
         |> V.apply (V.nonEmptyString "body" body)
@@ -307,14 +299,27 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { user, onChange } { action, title, description, body, tag, tags, errorMessages, isDisabled } =
+view { user, onChange } =
+    viewHelper user >> H.map onChange
+
+
+viewHelper : User -> Model -> H.Html Msg
+viewHelper user { action, title, description, body, tag, tags, errorMessages, isDisabled } =
+    let
+        userDetails =
+            { username = user.username
+            , imageUrl = user.imageUrl
+            }
+    in
     H.div []
         [ Navigation.view
             { role =
-                Navigation.newArticle
-                    { username = user.username
-                    , imageUrl = user.imageUrl
-                    }
+                case action of
+                    Create ->
+                        Navigation.newArticle userDetails
+
+                    Edit _ ->
+                        Navigation.user userDetails
             }
         , H.div
             [ HA.class "editor-page" ]
@@ -345,7 +350,7 @@ view { user, onChange } { action, title, description, body, tag, tags, errorMess
                                         , onSubmit = SubmittedForm maybeSlug
                                         }
                                     }
-                        , onFailure = H.text "Sorry, but we are unable to load the article."
+                        , onFailure = H.text "Unable to load the article."
                         }
                         action
                     ]
@@ -353,7 +358,6 @@ view { user, onChange } { action, title, description, body, tag, tags, errorMess
             ]
         , Footer.view
         ]
-        |> H.map onChange
 
 
 withAction :
@@ -368,15 +372,12 @@ withAction { onLoading, onSuccess, onFailure } action =
         Create ->
             onSuccess Nothing
 
-        Edit { slug, remoteData } ->
-            --
-            -- TODO: Use the remoteDataSlug idea instead.
-            --
-            case remoteData of
+        Edit remoteDataSlug ->
+            case remoteDataSlug of
                 RemoteData.Loading ->
                     onLoading
 
-                RemoteData.Success () ->
+                RemoteData.Success slug ->
                     onSuccess (Just slug)
 
                 RemoteData.Failure () ->

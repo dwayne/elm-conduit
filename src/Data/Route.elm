@@ -24,7 +24,8 @@ type Route
     | CreateArticle
     | EditArticle Slug
     | Article Slug
-    | Profile Bool Username
+    | Profile Username
+    | Favourites Username
 
 
 fromUrl : Url -> Maybe Route
@@ -42,8 +43,8 @@ routeParser =
         , UP.map CreateArticle (UP.s "editor")
         , UP.map EditArticle (UP.s "editor" </> slugParser)
         , UP.map Article (UP.s "article" </> slugParser)
-        , UP.map (Profile False) (UP.s "profile" </> usernameParser)
-        , UP.map (Profile True) (UP.s "profile" </> usernameParser </> UP.s "favourites")
+        , UP.map Profile (UP.s "profile" </> usernameParser)
+        , UP.map Favourites (UP.s "profile" </> usernameParser </> UP.s "favourites")
         ]
 
 
@@ -96,9 +97,8 @@ toString route =
         Article slug ->
             UB.absolute [ "article", Slug.toString slug ] []
 
-        Profile isFavourite username ->
-            if isFavourite then
-                UB.absolute [ "profile", Username.toString username, "favourites" ] []
+        Profile username ->
+            UB.absolute [ "profile", Username.toString username ] []
 
-            else
-                UB.absolute [ "profile", Username.toString username ] []
+        Favourites username ->
+            UB.absolute [ "profile", Username.toString username, "favourites" ] []

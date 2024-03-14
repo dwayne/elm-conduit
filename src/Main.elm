@@ -7,6 +7,7 @@ import Browser.Navigation as BN
 import Data.Article exposing (Article)
 import Data.Config as Config
 import Data.Route as Route exposing (Route)
+import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Viewer as Viewer exposing (Viewer)
@@ -87,53 +88,6 @@ type Page
 
 type Error
     = BadConfig JD.Error
-
-
-withModel :
-    { onLoadingUser : LoadingUserModel -> a
-    , onSuccess : SuccessModel -> a
-    , onFailure : Error -> a
-    }
-    -> Model
-    -> a
-withModel { onLoadingUser, onSuccess, onFailure } model =
-    case model of
-        LoadingUser subModel ->
-            onLoadingUser subModel
-
-        Success subModel ->
-            onSuccess subModel
-
-        Failure error ->
-            onFailure error
-
-
-withLoadingUserModel :
-    { onLoadingUser : LoadingUserModel -> a
-    , default : a
-    }
-    -> Model
-    -> a
-withLoadingUserModel { onLoadingUser, default } =
-    withModel
-        { onLoadingUser = onLoadingUser
-        , onSuccess = always default
-        , onFailure = always default
-        }
-
-
-withSuccessModel :
-    { onSuccess : SuccessModel -> a
-    , default : a
-    }
-    -> Model
-    -> a
-withSuccessModel { onSuccess, default } =
-    withModel
-        { onLoadingUser = always default
-        , onSuccess = onSuccess
-        , onFailure = always default
-        }
 
 
 init : Flags -> Url -> BN.Key -> ( Model, Cmd Msg )
@@ -272,11 +226,8 @@ getPageFromRoute apiUrl viewer maybeArticle route =
             ( Register RegisterPage.init, Cmd.none )
 
         Route.Settings ->
-            case viewer of
-                Viewer.Guest ->
-                    ( NotFound, Cmd.none )
-
-                Viewer.User user ->
+            withAuthForPage
+                (\user ->
                     ( Settings <|
                         SettingsPage.init
                             { imageUrl = user.imageUrl
@@ -286,44 +237,14 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                             }
                     , Cmd.none
                     )
+                )
+                viewer
 
         Route.CreateArticle ->
-            case viewer of
-                Viewer.Guest ->
-                    ( NotFound, Cmd.none )
-
-                Viewer.User user ->
-                    let
-                        ( model, cmd ) =
-                            EditorPage.init
-                                { apiUrl = apiUrl
-                                , token = user.token
-                                , maybeSlug = Nothing
-                                , onChange = ChangedPage << ChangedEditorPage
-                                }
-                    in
-                    ( Editor model
-                    , cmd
-                    )
+            getEditorPage apiUrl viewer Nothing
 
         Route.EditArticle slug ->
-            case viewer of
-                Viewer.Guest ->
-                    ( NotFound, Cmd.none )
-
-                Viewer.User user ->
-                    let
-                        ( model, cmd ) =
-                            EditorPage.init
-                                { apiUrl = apiUrl
-                                , token = user.token
-                                , maybeSlug = Just slug
-                                , onChange = ChangedPage << ChangedEditorPage
-                                }
-                    in
-                    ( Editor model
-                    , cmd
-                    )
+            getEditorPage apiUrl viewer <| Just slug
 
         Route.Article slug ->
             let
@@ -353,8 +274,31 @@ getPageFromRoute apiUrl viewer maybeArticle route =
             in
             ( Article model, cmd )
 
-        Route.Profile _ _ ->
+        Route.Profile _ ->
             ( Profile, Cmd.none )
+
+        Route.Favourites _ ->
+            ( Profile, Cmd.none )
+
+
+getEditorPage : String -> Viewer -> Maybe Slug -> ( Page, Cmd Msg )
+getEditorPage apiUrl viewer maybeSlug =
+    withAuthForPage
+        (\user ->
+            let
+                ( model, cmd ) =
+                    EditorPage.init
+                        { apiUrl = apiUrl
+                        , token = user.token
+                        , maybeSlug = maybeSlug
+                        , onChange = ChangedPage << ChangedEditorPage
+                        }
+            in
+            ( Editor model
+            , cmd
+            )
+        )
+        viewer
 
 
 
@@ -456,14 +400,13 @@ handleUserResponse result model =
 
 
 pushUrl : Url -> Model -> ( Model, Cmd msg )
-pushUrl url model =
-    ( model
-    , withSuccessModel
-        { onSuccess = \{ key } -> BN.pushUrl key (Url.toString url)
-        , default = Cmd.none
-        }
-        model
-    )
+pushUrl url =
+    withSuccessModel
+        (\subModel ->
+            ( subModel
+            , BN.pushUrl subModel.key (Url.toString url)
+            )
+        )
 
 
 loadUrl : String -> Model -> ( Model, Cmd msg )
@@ -474,20 +417,17 @@ loadUrl url model =
 
 
 changeUrl : Url -> Model -> ( Model, Cmd Msg )
-changeUrl url model =
+changeUrl url =
     withSuccessModel
-        { onSuccess =
-            \subModel ->
-                let
-                    ( page, cmd ) =
-                        getPageFromUrl subModel.apiUrl subModel.viewer subModel.maybeArticle url
-                in
-                ( Success { subModel | url = url, page = page }
-                , cmd
-                )
-        , default = ( model, Cmd.none )
-        }
-        model
+        (\subModel ->
+            let
+                ( page, cmd ) =
+                    getPageFromUrl subModel.apiUrl subModel.viewer subModel.maybeArticle url
+            in
+            ( { subModel | url = url, page = page }
+            , cmd
+            )
+        )
 
 
 setZone : Time.Zone -> Model -> ( Model, Cmd msg )
@@ -503,80 +443,65 @@ setZone zone model =
 
 
 loginUser : User -> Model -> ( Model, Cmd Msg )
-loginUser user model =
+loginUser user =
     withSuccessModel
-        { onSuccess =
-            \subModel ->
-                ( Success { subModel | viewer = Viewer.User user }
-                , Cmd.batch
-                    [ Port.Action.saveToken user.token
-                    , Route.redirectToHome subModel.key
-                    ]
-                )
-        , default = ( model, Cmd.none )
-        }
-        model
+        (\subModel ->
+            ( { subModel | viewer = Viewer.User user }
+            , Cmd.batch
+                [ Port.Action.saveToken user.token
+                , Route.redirectToHome subModel.key
+                ]
+            )
+        )
 
 
 logout : Model -> ( Model, Cmd Msg )
-logout model =
+logout =
     withSuccessModel
-        { onSuccess =
-            \subModel ->
-                ( Success { subModel | viewer = Viewer.Guest }
-                , Cmd.batch
-                    [ Port.Action.deleteToken
-                    , Route.redirectToHome subModel.key
-                    ]
-                )
-        , default = ( model, Cmd.none )
-        }
-        model
+        (\subModel ->
+            ( { subModel | viewer = Viewer.Guest }
+            , Cmd.batch
+                [ Port.Action.deleteToken
+                , Route.redirectToHome subModel.key
+                ]
+            )
+        )
 
 
 updateUser : User -> Model -> ( Model, Cmd Msg )
-updateUser user model =
+updateUser user =
     withSuccessModel
-        { onSuccess =
-            \subModel ->
-                ( Success { subModel | viewer = Viewer.User user }
-                , Port.Action.saveToken user.token
-                )
-        , default = ( model, Cmd.none )
-        }
-        model
+        (\subModel ->
+            ( { subModel | viewer = Viewer.User user }
+            , Port.Action.saveToken user.token
+            )
+        )
 
 
 showArticle : Article -> Model -> ( Model, Cmd Msg )
-showArticle article model =
+showArticle article =
     withSuccessModel
-        { onSuccess =
-            \subModel ->
-                ( Success { subModel | maybeArticle = Just article }
-                , Route.redirectToArticle subModel.key article.slug
-                )
-        , default = ( model, Cmd.none )
-        }
-        model
+        (\subModel ->
+            ( { subModel | maybeArticle = Just article }
+            , Route.redirectToArticle subModel.key article.slug
+            )
+        )
 
 
 handleDeletedArticle : Model -> ( Model, Cmd Msg )
-handleDeletedArticle model =
+handleDeletedArticle =
     withSuccessModel
-        { onSuccess =
-            \subModel ->
-                ( Success subModel
-                , Route.redirectToHome subModel.key
-                )
-        , default = ( model, Cmd.none )
-        }
-        model
+        (\subModel ->
+            ( subModel
+            , Route.redirectToHome subModel.key
+            )
+        )
 
 
 updatePage : PageMsg -> Model -> ( Model, Cmd Msg )
-updatePage msg model =
-    let
-        updatePageHelper subModel =
+updatePage msg =
+    withSuccessModel
+        (\subModel ->
             case msg of
                 ChangedHomePage pageMsg ->
                     updateHomePage pageMsg subModel
@@ -595,12 +520,7 @@ updatePage msg model =
 
                 ChangedArticlePage pageMsg ->
                     updateArticlePage pageMsg subModel
-    in
-    withSuccessModel
-        { onSuccess = updatePageHelper >> Tuple.mapFirst Success
-        , default = ( model, Cmd.none )
-        }
-        model
+        )
 
 
 updateHomePage : HomePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
@@ -673,8 +593,8 @@ updateSettingsPage : SettingsPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg
 updateSettingsPage pageMsg subModel =
     case subModel.page of
         Settings pageModel ->
-            case subModel.viewer of
-                Viewer.User user ->
+            withAuthForUpdate
+                (\user ->
                     let
                         ( newPageModel, newPageCmd ) =
                             SettingsPage.update
@@ -689,9 +609,8 @@ updateSettingsPage pageMsg subModel =
                     ( { subModel | page = Settings newPageModel }
                     , newPageCmd
                     )
-
-                Viewer.Guest ->
-                    ( subModel, Cmd.none )
+                )
+                subModel
 
         _ ->
             ( subModel, Cmd.none )
@@ -701,8 +620,8 @@ updateEditorPage : EditorPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
 updateEditorPage pageMsg subModel =
     case subModel.page of
         Editor pageModel ->
-            case subModel.viewer of
-                Viewer.User user ->
+            withAuthForUpdate
+                (\user ->
                     let
                         ( newPageModel, newPageCmd ) =
                             EditorPage.update
@@ -717,9 +636,8 @@ updateEditorPage pageMsg subModel =
                     ( { subModel | page = Editor newPageModel }
                     , newPageCmd
                     )
-
-                Viewer.Guest ->
-                    ( subModel, Cmd.none )
+                )
+                subModel
 
         _ ->
             ( subModel, Cmd.none )
@@ -794,29 +712,27 @@ viewSuccessPage { url, zone, viewer, page } =
                 model
 
         Settings model ->
-            case viewer of
-                Viewer.Guest ->
-                    H.text "You are not allowed to view this page."
-
-                Viewer.User user ->
+            withAuthForView
+                (\user ->
                     SettingsPage.view
                         { user = user
                         , onLogout = LoggedOut
                         , onChange = ChangedPage << ChangedSettingsPage
                         }
                         model
+                )
+                viewer
 
         Editor model ->
-            case viewer of
-                Viewer.Guest ->
-                    H.text "You are not allowed to view this page."
-
-                Viewer.User user ->
+            withAuthForView
+                (\user ->
                     EditorPage.view
                         { user = user
                         , onChange = ChangedPage << ChangedEditorPage
                         }
                         model
+                )
+                viewer
 
         Article model ->
             ArticlePage.view
@@ -838,3 +754,87 @@ viewFailurePage (BadConfig error) =
         , H.p [] [ H.text "An unexpected configuration error occurred." ]
         , H.p [] [ H.text <| JD.errorToString error ]
         ]
+
+
+
+-- HELPERS
+
+
+withModel :
+    { onLoadingUser : LoadingUserModel -> a
+    , onSuccess : SuccessModel -> a
+    , onFailure : Error -> a
+    }
+    -> Model
+    -> a
+withModel { onLoadingUser, onSuccess, onFailure } model =
+    case model of
+        LoadingUser subModel ->
+            onLoadingUser subModel
+
+        Success subModel ->
+            onSuccess subModel
+
+        Failure error ->
+            onFailure error
+
+
+withLoadingUserModel :
+    { onLoadingUser : LoadingUserModel -> a
+    , default : a
+    }
+    -> Model
+    -> a
+withLoadingUserModel { onLoadingUser, default } =
+    withModel
+        { onLoadingUser = onLoadingUser
+        , onSuccess = always default
+        , onFailure = always default
+        }
+
+
+withSuccessModel : (SuccessModel -> ( SuccessModel, Cmd msg )) -> Model -> ( Model, Cmd msg )
+withSuccessModel onSuccess model =
+    let
+        default =
+            ( model, Cmd.none )
+    in
+    withModel
+        { onLoadingUser = always default
+        , onSuccess = Tuple.mapFirst Success << onSuccess
+        , onFailure = always default
+        }
+        model
+
+
+withAuthForPage : (User -> ( Page, Cmd Msg )) -> Viewer -> ( Page, Cmd Msg )
+withAuthForPage toPage viewer =
+    case viewer of
+        Viewer.Guest ->
+            --
+            -- TODO: Decide whether or not we need a NotAuthorized page.
+            --
+            ( NotFound, Cmd.none )
+
+        Viewer.User user ->
+            toPage user
+
+
+withAuthForUpdate : (User -> ( SuccessModel, Cmd Msg )) -> SuccessModel -> ( SuccessModel, Cmd Msg )
+withAuthForUpdate toModel subModel =
+    case subModel.viewer of
+        Viewer.Guest ->
+            ( subModel, Cmd.none )
+
+        Viewer.User user ->
+            toModel user
+
+
+withAuthForView : (User -> H.Html msg) -> Viewer -> H.Html msg
+withAuthForView toView viewer =
+    case viewer of
+        Viewer.Guest ->
+            H.text "You are not allowed to view this page."
+
+        Viewer.User user ->
+            toView user

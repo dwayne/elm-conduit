@@ -14,57 +14,26 @@ import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 type alias Options msg =
     { token : Token
     , slug : Slug
-    , title : NonEmptyString
-    , description : NonEmptyString
-    , body : NonEmptyString
-    , tags : List Tag
+    , articleFields : Article.Fields
     , onResponse : Result (Api.Error (List String)) Article -> msg
     }
 
 
 updateArticle : String -> Options msg -> Cmd msg
-updateArticle baseUrl { token, slug, title, description, body, tags, onResponse } =
+updateArticle baseUrl { token, slug, articleFields, onResponse } =
     Api.put
         { token = token
         , url = Api.buildUrl baseUrl [ "articles", Slug.toString slug ] [] []
-        , body =
-            Http.jsonBody <|
-                encodeInput
-                    { title = title
-                    , description = description
-                    , body = body
-                    , tags = tags
-                    }
+        , body = Http.jsonBody <| encodeInput articleFields
         , onResponse = onResponse
         , decoder = decoder
-        , errorsDecoder =
-            Api.formErrorsDecoder
-                [ "title"
-                , "description"
-                , "body"
-                , "tagList"
-                ]
+        , errorsDecoder = Api.formErrorsDecoder Article.fieldNames
         }
 
 
-encodeInput :
-    { title : NonEmptyString
-    , description : NonEmptyString
-    , body : NonEmptyString
-    , tags : List Tag
-    }
-    -> JE.Value
-encodeInput { title, description, body, tags } =
-    JE.object
-        [ ( "article"
-          , JE.object
-                [ ( "title", NonEmptyString.encode title )
-                , ( "description", NonEmptyString.encode description )
-                , ( "body", NonEmptyString.encode body )
-                , ( "tagList", JE.list Tag.encode tags )
-                ]
-          )
-        ]
+encodeInput : Article.Fields -> JE.Value
+encodeInput fields =
+    JE.object [ ( "article", Article.encode fields ) ]
 
 
 decoder : JD.Decoder Article

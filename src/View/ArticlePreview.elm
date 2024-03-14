@@ -40,7 +40,7 @@ view : ViewOptions msg -> H.Html msg
 view { role, username, imageUrl, zone, timestamp, totalFavourites, isFavourite, slug, title, description, tags } =
     let
         profileHref =
-            Route.toString <| Route.Profile False username
+            Route.toString <| Route.Profile username
     in
     H.div
         [ HA.class "article-preview" ]

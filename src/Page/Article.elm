@@ -379,5 +379,5 @@ viewFailure : List (H.Html msg)
 viewFailure =
     [ H.div
         [ HA.class "container page" ]
-        [ H.text "Sorry, but we are unable to load the article." ]
+        [ H.text "Unable to load the article." ]
     ]

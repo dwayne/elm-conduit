@@ -185,7 +185,7 @@ userNavLinks maybeItem { username, imageUrl } =
       )
     , ( maybeItem == Just Profile
       , Image
-            { route = Route.Profile False username
+            { route = Route.Profile username
             , username = username
             , imageUrl = imageUrl
             }

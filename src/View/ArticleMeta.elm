@@ -57,7 +57,7 @@ view : ViewOptions msg -> H.Html msg
 view { username, imageUrl, zone, createdAt, role } =
     let
         profileUrl =
-            Route.toString <| Route.Profile False username
+            Route.toString <| Route.Profile username
 
         buttons =
             case role of

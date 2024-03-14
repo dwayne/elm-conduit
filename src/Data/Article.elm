@@ -1,4 +1,4 @@
-module Data.Article exposing (Article, Author, decoder)
+module Data.Article exposing (Article, Author, Fields, decoder, encode, fieldNames)
 
 import Data.Slug as Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
@@ -7,7 +7,9 @@ import Data.Total as Total exposing (Total)
 import Data.Username as Username exposing (Username)
 import Json.Decode as JD
 import Json.Decode.Pipeline as JD
+import Json.Encode as JE
 import Lib.Json.Decode as JD
+import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 import Url exposing (Url)
 
 
@@ -29,6 +31,33 @@ type alias Author =
     , imageUrl : Url
     , isFollowing : Bool
     }
+
+
+type alias Fields =
+    { title : NonEmptyString
+    , description : NonEmptyString
+    , body : NonEmptyString
+    , tags : List Tag
+    }
+
+
+encode : Fields -> JE.Value
+encode { title, description, body, tags } =
+    JE.object
+        [ ( "title", NonEmptyString.encode title )
+        , ( "description", NonEmptyString.encode description )
+        , ( "body", NonEmptyString.encode body )
+        , ( "tagList", JE.list Tag.encode tags )
+        ]
+
+
+fieldNames : List String
+fieldNames =
+    [ "title"
+    , "description"
+    , "body"
+    , "tagList"
+    ]
 
 
 decoder : JD.Decoder Article
