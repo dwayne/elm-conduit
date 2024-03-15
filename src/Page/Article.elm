@@ -1,13 +1,19 @@
 module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
+--
+-- TODO: Refactor once every feature of the page is completed.
+--
+
 import Api
 import Api.CreateComment as CreateComment
 import Api.DeleteArticle as DeleteArticle
 import Api.GetArticle as GetArticle
+import Api.GetComments as GetComments
 import Api.ToggleFavourite as ToggleFavourite
 import Api.ToggleFollow as ToggleFollow
 import Data.Article exposing (Article)
 import Data.Comment exposing (Comment)
+import Data.Comments as Comments exposing (Comments)
 import Data.Route as Route
 import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
@@ -24,6 +30,7 @@ import Time
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
+import View.Comment as Comment
 import View.CommentForm as CommentForm
 import View.Navigation as Navigation
 
@@ -34,6 +41,7 @@ import View.Navigation as Navigation
 
 type alias Model =
     { remoteDataArticle : RemoteData () Article
+    , remoteDataComments : RemoteData () Comments
     , comment : String
     , isDisabled : Bool
     }
@@ -50,24 +58,41 @@ type alias InitOptions msg =
 init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, viewer, eitherSlugOrArticle, onChange } =
     let
+        maybeToken =
+            Viewer.toToken viewer
+
         ( remoteDataArticle, cmd ) =
             case eitherSlugOrArticle of
                 Either.Left slug ->
                     ( RemoteData.Loading
-                    , GetArticle.getArticle
-                        apiUrl
-                        { maybeToken = Viewer.toToken viewer
-                        , slug = slug
-                        , onResponse = GotGetArticleResponse
-                        }
+                    , Cmd.batch
+                        [ GetArticle.getArticle
+                            apiUrl
+                            { maybeToken = maybeToken
+                            , slug = slug
+                            , onResponse = GotGetArticleResponse
+                            }
+                        , GetComments.getComments
+                            apiUrl
+                            { maybeToken = maybeToken
+                            , slug = slug
+                            , onResponse = GotGetCommentsResponse
+                            }
+                        ]
                     )
 
                 Either.Right article ->
                     ( RemoteData.Success article
-                    , Cmd.none
+                    , GetComments.getComments
+                        apiUrl
+                        { maybeToken = maybeToken
+                        , slug = article.slug
+                        , onResponse = GotGetCommentsResponse
+                        }
                     )
     in
     ( { remoteDataArticle = remoteDataArticle
+      , remoteDataComments = RemoteData.Loading
       , comment = ""
       , isDisabled = False
       }
@@ -82,6 +107,7 @@ init { apiUrl, viewer, eitherSlugOrArticle, onChange } =
 type Msg
     = NoOp
     | GotGetArticleResponse (Result (Api.Error ()) Article)
+    | GotGetCommentsResponse (Result (Api.Error ()) Comments)
     | ToggledFollow Token Username Bool
     | GotToggleFollowResponse (Result (Api.Error ()) Bool)
     | ToggledFavourite Token Slug Bool
@@ -91,6 +117,7 @@ type Msg
     | ChangedComment String
     | SubmittedComment Token Slug
     | GotCreateCommentResponse (Result (Api.Error ()) Comment)
+    | ClickedDeleteComment Int
 
 
 type alias UpdateOptions msg =
@@ -120,6 +147,23 @@ update options msg model =
                     -- For e.g. Did we not find the article or was it a network failure?
                     --
                     ( { model | remoteDataArticle = RemoteData.Failure () }
+                    , Cmd.none
+                    )
+
+        GotGetCommentsResponse result ->
+            case result of
+                Ok comments ->
+                    ( { model | remoteDataComments = RemoteData.Success comments }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    --
+                    -- TODO: Figure out what caused the error.
+                    --
+                    -- For e.g. Was it a network failure?
+                    --
+                    ( { model | remoteDataComments = RemoteData.Failure () }
                     , Cmd.none
                     )
 
@@ -266,6 +310,15 @@ update options msg model =
                     , Cmd.none
                     )
 
+        ClickedDeleteComment id ->
+            --
+            -- TODO: Implement comment deletion.
+            --
+            -- We want to be able to disable the corresponding comment when it is being deleted.
+            --
+            ( model, Cmd.none )
+                |> Debug.log ("You're trying to delete comment with id: " ++ Debug.toString id)
+
 
 
 -- VIEW
@@ -279,7 +332,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataArticle, comment, isDisabled } =
+view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment, isDisabled } =
     case viewer of
         Viewer.Guest ->
             viewArticleAsGuest
@@ -351,14 +404,18 @@ view { zone, viewer, onChange } { remoteDataArticle, comment, isDisabled } =
                                 [ HA.class "row" ]
                                 [ H.div
                                     [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
-                                    [ CommentForm.view
+                                    ([ CommentForm.view
                                         { comment = comment
                                         , imageUrl = user.imageUrl
                                         , isDisabled = isDisabled
                                         , onInputComment = ChangedComment
                                         , onSubmit = SubmittedComment user.token article.slug
                                         }
-                                    ]
+                                     ]
+                                        ++ viewComments
+                                            (List.map (viewComment zone user.username) << Comments.toList)
+                                            remoteDataComments
+                                    )
                                 ]
                             ]
                         ]
@@ -423,23 +480,46 @@ viewArticle toHtml remoteDataArticle =
     H.div [ HA.class "article-page" ] <|
         case remoteDataArticle of
             RemoteData.Loading ->
-                viewLoading
+                []
 
             RemoteData.Success article ->
                 toHtml article
 
-            RemoteData.Failure _ ->
-                viewFailure
+            RemoteData.Failure () ->
+                [ H.div
+                    [ HA.class "container page" ]
+                    [ H.text "Unable to load the article." ]
+                ]
 
 
-viewLoading : List (H.Html msg)
-viewLoading =
-    [ H.text "" ]
+viewComments : (Comments -> List (H.Html msg)) -> RemoteData () Comments -> List (H.Html msg)
+viewComments toHtml remoteDataComments =
+    case remoteDataComments of
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success comments ->
+            toHtml comments
+
+        RemoteData.Failure () ->
+            [ H.text "Unable to load comments." ]
 
 
-viewFailure : List (H.Html msg)
-viewFailure =
-    [ H.div
-        [ HA.class "container page" ]
-        [ H.text "Unable to load the article." ]
-    ]
+viewComment : Time.Zone -> Username -> Comment -> H.Html Msg
+viewComment zone username { id, createdAt, body, commenter } =
+    Comment.view
+        { body = body
+        , username = commenter.username
+        , imageUrl = commenter.imageUrl
+        , zone = zone
+        , timestamp = createdAt
+        , maybeDelete =
+            if username == commenter.username then
+                Just
+                    { isDisabled = False -- FIXME
+                    , onDelete = ClickedDeleteComment id
+                    }
+
+            else
+                Nothing
+        }

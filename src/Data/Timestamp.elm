@@ -1,5 +1,6 @@
 module Data.Timestamp exposing
     ( Timestamp
+    , compare
     , decoder
     , fromString
     , toString
@@ -23,6 +24,18 @@ fromString =
 decoder : JD.Decoder Timestamp
 decoder =
     JD.map Timestamp Iso8601.decoder
+
+
+compare : Timestamp -> Timestamp -> Order
+compare (Timestamp posix1) (Timestamp posix2) =
+    let
+        millis1 =
+            Time.posixToMillis posix1
+
+        millis2 =
+            Time.posixToMillis posix2
+    in
+    Basics.compare millis1 millis2
 
 
 toString : Time.Zone -> Timestamp -> String

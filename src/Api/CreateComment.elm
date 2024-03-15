@@ -22,12 +22,7 @@ createComment : String -> Options msg -> Cmd msg
 createComment baseUrl { token, slug, comment, onResponse } =
     Api.post
         { maybeToken = Just token
-        , url =
-            Api.buildUrl
-                baseUrl
-                [ "articles", Slug.toString slug, "comments" ]
-                []
-                []
+        , url = Api.buildUrl baseUrl [ "articles", Slug.toString slug, "comments" ] [] []
         , body = Http.jsonBody <| encodeInput comment
         , onResponse = onResponse
         , decoder = decoder

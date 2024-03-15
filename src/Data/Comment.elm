@@ -1,4 +1,4 @@
-module Data.Comment exposing (Comment, decoder)
+module Data.Comment exposing (Comment, compare, decoder)
 
 import Data.Timestamp as Timestamp exposing (Timestamp)
 import Data.Username as Username exposing (Username)
@@ -33,3 +33,8 @@ decoder =
                 (JD.field "username" Username.decoder)
                 (JD.field "image" JD.url)
         )
+
+
+compare : Comment -> Comment -> Order
+compare comment1 comment2 =
+    Timestamp.compare comment1.createdAt comment2.createdAt
