@@ -1,39 +1,34 @@
-module View.CommentForm exposing (CommentForm, Status(..), view)
+module View.CommentForm exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Url exposing (Url)
 
 
-type alias CommentForm msg =
+type alias ViewOptions msg =
     { comment : String
-    , imageUrl : String
-    , status : Status
+    , imageUrl : Url
+    , isDisabled : Bool
     , onInputComment : String -> msg
     , onSubmit : msg
     }
 
 
-type Status
-    = Invalid
-    | Valid
-    | Loading
-
-
-view : CommentForm msg -> H.Html msg
-view { comment, imageUrl, status, onInputComment, onSubmit } =
+view : ViewOptions msg -> H.Html msg
+view ({ comment, imageUrl, isDisabled, onInputComment, onSubmit } as options) =
     let
-        isFormDisabled =
-            status == Invalid || status == Loading
+        isButtonDisabled =
+            isEmptyComment || isDisabled
 
-        isFieldDisabled =
-            status == Loading
+        isEmptyComment =
+            String.isEmpty <| String.trim comment
 
         baseAttrs =
             [ HA.class "card comment-form" ]
 
         optionalAttrs =
-            if isFormDisabled then
+            if isDisabled then
                 []
 
             else
@@ -50,7 +45,7 @@ view { comment, imageUrl, status, onInputComment, onSubmit } =
                 , HA.placeholder "Write a comment..."
                 , HA.rows 3
                 , HA.value comment
-                , if isFieldDisabled then
+                , if isDisabled then
                     HA.disabled True
 
                   else
@@ -62,13 +57,13 @@ view { comment, imageUrl, status, onInputComment, onSubmit } =
             [ HA.class "card-footer" ]
             [ H.img
                 [ HA.class "comment-author-img"
-                , HA.src imageUrl
+                , HA.src <| Url.toString imageUrl
                 ]
                 []
             , H.button
                 [ HA.class "btn btn-sm btn-primary"
                 , HA.type_ "submit"
-                , HA.disabled isFormDisabled
+                , HA.disabled isButtonDisabled
                 ]
                 [ H.text "Post Comment" ]
             ]

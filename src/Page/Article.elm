@@ -1,11 +1,13 @@
 module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
+import Api.CreateComment as CreateComment
 import Api.DeleteArticle as DeleteArticle
 import Api.GetArticle as GetArticle
 import Api.ToggleFavourite as ToggleFavourite
 import Api.ToggleFollow as ToggleFollow
 import Data.Article exposing (Article)
+import Data.Comment exposing (Comment)
 import Data.Route as Route
 import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
@@ -15,12 +17,14 @@ import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
 import Lib.Either as Either exposing (Either)
+import Lib.NonEmptyString as NonEmptyString
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Lib.Task as Task
 import Time
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
+import View.CommentForm as CommentForm
 import View.Navigation as Navigation
 
 
@@ -30,6 +34,7 @@ import View.Navigation as Navigation
 
 type alias Model =
     { remoteDataArticle : RemoteData () Article
+    , comment : String
     , isDisabled : Bool
     }
 
@@ -63,6 +68,7 @@ init { apiUrl, viewer, eitherSlugOrArticle, onChange } =
                     )
     in
     ( { remoteDataArticle = remoteDataArticle
+      , comment = ""
       , isDisabled = False
       }
     , Cmd.map onChange cmd
@@ -82,6 +88,9 @@ type Msg
     | GotToggleFavouriteResponse (Result (Api.Error ()) ToggleFavourite.TotalFavourites)
     | ClickedDeleteArticle Token Slug
     | GotDeleteArticleResponse (Result (Api.Error ()) ())
+    | ChangedComment String
+    | SubmittedComment Token Slug
+    | GotCreateCommentResponse (Result (Api.Error ()) Comment)
 
 
 type alias UpdateOptions msg =
@@ -217,6 +226,46 @@ update options msg model =
                     , Cmd.none
                     )
 
+        ChangedComment comment ->
+            ( { model | comment = comment }
+            , Cmd.none
+            )
+
+        SubmittedComment token slug ->
+            case NonEmptyString.fromString model.comment of
+                Just comment ->
+                    ( { model | isDisabled = True }
+                    , CreateComment.createComment
+                        options.apiUrl
+                        { token = token
+                        , slug = slug
+                        , comment = comment
+                        , onResponse = GotCreateCommentResponse
+                        }
+                        |> Cmd.map options.onChange
+                    )
+
+                Nothing ->
+                    ( model
+                    , Cmd.none
+                    )
+
+        GotCreateCommentResponse result ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            case result of
+                Ok _ ->
+                    ( { newModel | comment = "" }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( newModel
+                    , Cmd.none
+                    )
+
 
 
 -- VIEW
@@ -230,7 +279,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
+view { zone, viewer, onChange } { remoteDataArticle, comment, isDisabled } =
     case viewer of
         Viewer.Guest ->
             viewArticleAsGuest
@@ -297,6 +346,19 @@ view { zone, viewer, onChange } { remoteDataArticle, isDisabled } =
                             , H.div
                                 [ HA.class "article-actions" ]
                                 [ ArticleMeta.view articleMetaViewOptions
+                                ]
+                            , H.div
+                                [ HA.class "row" ]
+                                [ H.div
+                                    [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
+                                    [ CommentForm.view
+                                        { comment = comment
+                                        , imageUrl = user.imageUrl
+                                        , isDisabled = isDisabled
+                                        , onInputComment = ChangedComment
+                                        , onSubmit = SubmittedComment user.token article.slug
+                                        }
+                                    ]
                                 ]
                             ]
                         ]
