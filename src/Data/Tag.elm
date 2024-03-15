@@ -12,24 +12,27 @@ import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 
 
 type Tag
-    = Tag NonEmptyString
+    = Tag String
 
 
 fromString : String -> Maybe Tag
 fromString =
-    Maybe.map Tag << NonEmptyString.fromString
+    Maybe.map (Tag << NonEmptyString.toString) << NonEmptyString.fromString
 
 
 decoder : JD.Decoder Tag
 decoder =
-    JD.map Tag NonEmptyString.decoder
+    --
+    -- Unfortunately the backend allows the tag to be blank.
+    --
+    JD.map Tag JD.string
 
 
 encode : Tag -> JE.Value
-encode (Tag tag) =
-    NonEmptyString.encode tag
+encode =
+    JE.string << toString
 
 
 toString : Tag -> String
 toString (Tag tag) =
-    NonEmptyString.toString tag
+    tag
