@@ -1,11 +1,11 @@
-module View.Textarea exposing (Textarea, view)
+module View.Textarea exposing (ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 
 
-type alias Textarea msg =
+type alias ViewOptions msg =
     { name : String
     , placeholder : String
     , rows : Int
@@ -15,7 +15,7 @@ type alias Textarea msg =
     }
 
 
-view : Textarea msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { name, placeholder, rows, value, isDisabled, onInput } =
     H.fieldset
         [ HA.class "form-group" ]

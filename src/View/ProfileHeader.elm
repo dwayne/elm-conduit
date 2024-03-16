@@ -1,9 +1,4 @@
-module View.ProfileHeader exposing
-    ( GuestOptions
-    , ProfileHeader
-    , Role(..)
-    , view
-    )
+module View.ProfileHeader exposing (GuestOptions, Role(..), ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
@@ -11,7 +6,7 @@ import Html.Events as HE
 import View.FollowButton as FollowButton exposing (FollowButton)
 
 
-type alias ProfileHeader msg =
+type alias ViewOptions msg =
     { name : String
     , imageUrl : String
     , bio : String
@@ -32,7 +27,7 @@ type alias GuestOptions msg =
     }
 
 
-view : ProfileHeader msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { name, imageUrl, bio, role } =
     H.div
         [ HA.class "user-info" ]

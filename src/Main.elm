@@ -651,7 +651,7 @@ updateArticlePage pageMsg subModel =
                 ( newPageModel, newPageCmd ) =
                     ArticlePage.update
                         { apiUrl = subModel.apiUrl
-                        , onDelete = DeletedArticle
+                        , onDeleteArticle = DeletedArticle
                         , onChange = ChangedPage << ChangedArticlePage
                         }
                         pageMsg

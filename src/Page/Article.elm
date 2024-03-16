@@ -1,8 +1,13 @@
-module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
-
---
--- TODO: Refactor once every feature of the page is completed.
---
+module Page.Article exposing
+    ( InitOptions
+    , Model
+    , Msg
+    , UpdateOptions
+    , ViewOptions
+    , init
+    , update
+    , view
+    )
 
 import Api
 import Api.CreateComment as CreateComment
@@ -106,8 +111,7 @@ init { apiUrl, viewer, eitherSlugOrArticle, onChange } =
 
 
 type Msg
-    = NoOp
-    | GotGetArticleResponse (Result (Api.Error ()) Article)
+    = GotGetArticleResponse (Result (Api.Error ()) Article)
     | GotGetCommentsResponse (Result (Api.Error ()) Comments)
     | ToggledFollow Token Username Bool
     | GotToggleFollowResponse (Result (Api.Error ()) Bool)
@@ -124,14 +128,7 @@ type Msg
 
 type alias UpdateOptions msg =
     { apiUrl : String
-
-    --
-    -- TODO: We can either delete the article or one of its comments.
-    --
-    -- We should be clear that this handler is for the article
-    -- and rename it to onDeleteArticle.
-    --
-    , onDelete : msg
+    , onDeleteArticle : msg
     , onChange : Msg -> msg
     }
 
@@ -139,42 +136,25 @@ type alias UpdateOptions msg =
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
         GotGetArticleResponse result ->
-            case result of
-                Ok article ->
-                    ( { model | remoteDataArticle = RemoteData.Success article }
-                    , Cmd.none
-                    )
-
-                Err _ ->
-                    --
-                    -- TODO: Figure out what caused the error.
-                    --
-                    -- For e.g. Did we not find the article or was it a network failure?
-                    --
-                    ( { model | remoteDataArticle = RemoteData.Failure () }
-                    , Cmd.none
-                    )
+            ( { model
+                | remoteDataArticle =
+                    result
+                        |> Result.map RemoteData.Success
+                        |> Result.withDefault (RemoteData.Failure ())
+              }
+            , Cmd.none
+            )
 
         GotGetCommentsResponse result ->
-            case result of
-                Ok comments ->
-                    ( { model | remoteDataComments = RemoteData.Success comments }
-                    , Cmd.none
-                    )
-
-                Err _ ->
-                    --
-                    -- TODO: Figure out what caused the error.
-                    --
-                    -- For e.g. Was it a network failure?
-                    --
-                    ( { model | remoteDataComments = RemoteData.Failure () }
-                    , Cmd.none
-                    )
+            ( { model
+                | remoteDataComments =
+                    result
+                        |> Result.map RemoteData.Success
+                        |> Result.withDefault (RemoteData.Failure ())
+              }
+            , Cmd.none
+            )
 
         ToggledFollow token username isFollowing ->
             ( { model | isDisabled = True }
@@ -193,30 +173,17 @@ update options msg model =
                 newModel =
                     { model | isDisabled = False }
             in
-            case result of
-                Ok isFollowing ->
-                    ( { newModel
-                        | remoteDataArticle =
-                            RemoteData.map
-                                (\article ->
-                                    let
-                                        author =
-                                            article.author
-
-                                        newAuthor =
-                                            { author | isFollowing = isFollowing }
-                                    in
-                                    { article | author = newAuthor }
-                                )
-                                newModel.remoteDataArticle
-                      }
-                    , Cmd.none
+            ( result
+                |> Result.map
+                    (\isFollowing ->
+                        { newModel
+                            | remoteDataArticle =
+                                RemoteData.map (toggleFollowAuthor isFollowing) newModel.remoteDataArticle
+                        }
                     )
-
-                Err _ ->
-                    ( newModel
-                    , Cmd.none
-                    )
+                |> Result.withDefault newModel
+            , Cmd.none
+            )
 
         ToggledFavourite token slug isFavourite ->
             ( { model | isDisabled = True }
@@ -235,26 +202,17 @@ update options msg model =
                 newModel =
                     { model | isDisabled = False }
             in
-            case result of
-                Ok { isFavourite, totalFavourites } ->
-                    ( { newModel
-                        | remoteDataArticle =
-                            RemoteData.map
-                                (\article ->
-                                    { article
-                                        | isFavourite = isFavourite
-                                        , totalFavourites = totalFavourites
-                                    }
-                                )
-                                newModel.remoteDataArticle
-                      }
-                    , Cmd.none
+            ( result
+                |> Result.map
+                    (\totalFavourites ->
+                        { newModel
+                            | remoteDataArticle =
+                                RemoteData.map (toggleFavoriteArticle totalFavourites) newModel.remoteDataArticle
+                        }
                     )
-
-                Err _ ->
-                    ( newModel
-                    , Cmd.none
-                    )
+                |> Result.withDefault newModel
+            , Cmd.none
+            )
 
         ClickedDeleteArticle token slug ->
             ( { model | isDisabled = True }
@@ -268,16 +226,11 @@ update options msg model =
             )
 
         GotDeleteArticleResponse result ->
-            case result of
-                Ok () ->
-                    ( model
-                    , Task.dispatch options.onDelete
-                    )
-
-                Err _ ->
-                    ( { model | isDisabled = False }
-                    , Cmd.none
-                    )
+            ( { model | isDisabled = False }
+            , result
+                |> Result.map (always <| Task.dispatch options.onDeleteArticle)
+                |> Result.withDefault Cmd.none
+            )
 
         ChangedComment comment ->
             ( { model | comment = comment }
@@ -345,19 +298,37 @@ update options msg model =
                 newModel =
                     { model | isDisabled = False }
             in
-            case result of
-                Ok id ->
-                    ( { newModel
-                        | remoteDataComments =
-                            RemoteData.map (Comments.remove id) newModel.remoteDataComments
-                      }
-                    , Cmd.none
+            ( result
+                |> Result.map
+                    (\id ->
+                        { newModel
+                            | remoteDataComments =
+                                RemoteData.map (Comments.remove id) newModel.remoteDataComments
+                        }
                     )
+                |> Result.withDefault newModel
+            , Cmd.none
+            )
 
-                Err _ ->
-                    ( newModel
-                    , Cmd.none
-                    )
+
+toggleFollowAuthor : Bool -> Article -> Article
+toggleFollowAuthor isFollowing article =
+    let
+        author =
+            article.author
+
+        newAuthor =
+            { author | isFollowing = isFollowing }
+    in
+    { article | author = newAuthor }
+
+
+toggleFavoriteArticle : ToggleFavourite.TotalFavourites -> Article -> Article
+toggleFavoriteArticle { isFavourite, totalFavourites } article =
+    { article
+        | isFavourite = isFavourite
+        , totalFavourites = totalFavourites
+    }
 
 
 
@@ -381,97 +352,14 @@ view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment
                 }
 
         Viewer.User user ->
-            H.div []
-                [ Navigation.view
-                    { role =
-                        Navigation.user
-                            { username = user.username
-                            , imageUrl = user.imageUrl
-                            }
-                    }
-                , viewArticle
-                    (\article ->
-                        let
-                            articleMetaViewOptions =
-                                { username = article.author.username
-                                , imageUrl = article.author.imageUrl
-                                , zone = zone
-                                , createdAt = article.createdAt
-                                , role =
-                                    if user.username == article.author.username then
-                                        ArticleMeta.Author
-                                            { isDisabled = isDisabled
-                                            , slug = article.slug
-                                            , onDelete = ClickedDeleteArticle user.token
-                                            }
-
-                                    else
-                                        ArticleMeta.User
-                                            { isDisabled = isDisabled
-                                            , isFollowing = article.author.isFollowing
-                                            , onFollow = toToggledFollowMsg True
-                                            , onUnfollow = toToggledFollowMsg False
-                                            , isFavourite = article.isFavourite
-                                            , totalFavourites = article.totalFavourites
-                                            , onFavourite = toToggledFavouriteMsg True
-                                            , onUnfavourite = toToggledFavouriteMsg False
-                                            }
-                                }
-
-                            toToggledFollowMsg =
-                                ToggledFollow user.token article.author.username
-
-                            toToggledFavouriteMsg =
-                                ToggledFavourite user.token article.slug
-                        in
-                        [ ArticleHeader.view
-                            { title = article.title
-                            , meta = articleMetaViewOptions
-                            }
-                        , H.div
-                            [ HA.class "container page" ]
-                            [ ArticleContent.view
-                                { description = article.description
-                                , body = article.body
-                                , tags = article.tags
-                                }
-                            , H.hr [] []
-                            , H.div
-                                [ HA.class "article-actions" ]
-                                [ ArticleMeta.view articleMetaViewOptions
-                                ]
-                            , H.div
-                                [ HA.class "row" ]
-                                [ H.div
-                                    [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
-                                    ([ CommentForm.view
-                                        { comment = comment
-                                        , imageUrl = user.imageUrl
-                                        , isDisabled = isDisabled
-                                        , onInputComment = ChangedComment
-                                        , onSubmit = SubmittedComment user.token article.slug
-                                        }
-                                     ]
-                                        ++ viewComments
-                                            (List.map
-                                                (viewComment
-                                                    { zone = zone
-                                                    , username = user.username
-                                                    , token = user.token
-                                                    , slug = article.slug
-                                                    , isDisabled = isDisabled
-                                                    }
-                                                )
-                                                << Comments.toList
-                                            )
-                                            remoteDataComments
-                                    )
-                                ]
-                            ]
-                        ]
-                    )
-                    remoteDataArticle
-                ]
+            viewArticleAsUser
+                { zone = zone
+                , user = user
+                , remoteDataArticle = remoteDataArticle
+                , remoteDataComments = remoteDataComments
+                , comment = comment
+                , isDisabled = isDisabled
+                }
                 |> H.map onChange
 
 
@@ -517,6 +405,109 @@ viewArticleAsGuest { zone, remoteDataArticle } =
                                 [ H.text "Sign up" ]
                             , H.text " to add comments on this article."
                             ]
+                        ]
+                    ]
+                ]
+            )
+            remoteDataArticle
+        ]
+
+
+viewArticleAsUser :
+    { zone : Time.Zone
+    , user : User
+    , remoteDataArticle : RemoteData () Article
+    , remoteDataComments : RemoteData () Comments
+    , comment : String
+    , isDisabled : Bool
+    }
+    -> H.Html Msg
+viewArticleAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
+    H.div []
+        [ Navigation.view
+            { role =
+                Navigation.user
+                    { username = user.username
+                    , imageUrl = user.imageUrl
+                    }
+            }
+        , viewArticle
+            (\article ->
+                let
+                    articleMetaViewOptions =
+                        { username = article.author.username
+                        , imageUrl = article.author.imageUrl
+                        , zone = zone
+                        , createdAt = article.createdAt
+                        , role =
+                            if user.username == article.author.username then
+                                ArticleMeta.Author
+                                    { isDisabled = isDisabled
+                                    , slug = article.slug
+                                    , onDelete = ClickedDeleteArticle user.token
+                                    }
+
+                            else
+                                ArticleMeta.User
+                                    { isDisabled = isDisabled
+                                    , isFollowing = article.author.isFollowing
+                                    , onFollow = toToggledFollowMsg True
+                                    , onUnfollow = toToggledFollowMsg False
+                                    , isFavourite = article.isFavourite
+                                    , totalFavourites = article.totalFavourites
+                                    , onFavourite = toToggledFavouriteMsg True
+                                    , onUnfavourite = toToggledFavouriteMsg False
+                                    }
+                        }
+
+                    toToggledFollowMsg =
+                        ToggledFollow user.token article.author.username
+
+                    toToggledFavouriteMsg =
+                        ToggledFavourite user.token article.slug
+                in
+                [ ArticleHeader.view
+                    { title = article.title
+                    , meta = articleMetaViewOptions
+                    }
+                , H.div
+                    [ HA.class "container page" ]
+                    [ ArticleContent.view
+                        { description = article.description
+                        , body = article.body
+                        , tags = article.tags
+                        }
+                    , H.hr [] []
+                    , H.div
+                        [ HA.class "article-actions" ]
+                        [ ArticleMeta.view articleMetaViewOptions
+                        ]
+                    , H.div
+                        [ HA.class "row" ]
+                        [ H.div
+                            [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
+                            ([ CommentForm.view
+                                { comment = comment
+                                , imageUrl = user.imageUrl
+                                , isDisabled = isDisabled
+                                , onInputComment = ChangedComment
+                                , onSubmit = SubmittedComment user.token article.slug
+                                }
+                             ]
+                                ++ viewComments
+                                    (List.map
+                                        (viewComment
+                                            { zone = zone
+                                            , username = user.username
+                                            , token = user.token
+                                            , slug = article.slug
+                                            , isDisabled = isDisabled
+                                            }
+                                        )
+                                        << Comments.toList
+                                    )
+                                    remoteDataComments
+                            )
                         ]
                     ]
                 ]

@@ -1,11 +1,11 @@
-module View.Tabs exposing (Tab, Tabs, view)
+module View.Tabs exposing (Tab, ViewOptions, view)
 
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 
 
-type alias Tabs tab msg =
+type alias ViewOptions tab msg =
     { name : String
     , tabs : List (Tab tab)
     , activeTab : tab
@@ -20,7 +20,7 @@ type alias Tab tab =
     }
 
 
-view : Tabs tab msg -> H.Html msg
+view : ViewOptions tab msg -> H.Html msg
 view { name, tabs, activeTab, isDisabled, onSwitch } =
     let
         className =

@@ -1,4 +1,4 @@
-module View.TagInput exposing (TagInput, view)
+module View.TagInput exposing (ViewOptions, view)
 
 import Data.Tag as Tag exposing (Tag)
 import Html as H
@@ -9,7 +9,7 @@ import Lib.Html.Attributes as HA
 import Lib.OrderedSet as OrderedSet exposing (OrderedSet)
 
 
-type alias TagInput msg =
+type alias ViewOptions msg =
     { name : String
     , placeholder : String
     , tag : String
@@ -21,7 +21,7 @@ type alias TagInput msg =
     }
 
 
-view : TagInput msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { name, placeholder, tag, tags, isDisabled, onInput, onEnter, onRemove } =
     let
         isEnabled =

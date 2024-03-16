@@ -1,4 +1,4 @@
-module View.Comment exposing (Comment, DeleteOptions, view)
+module View.Comment exposing (DeleteOptions, ViewOptions, view)
 
 import Data.Route as Route
 import Data.Timestamp as Timestamp exposing (Timestamp)
@@ -12,7 +12,7 @@ import Time
 import Url exposing (Url)
 
 
-type alias Comment msg =
+type alias ViewOptions msg =
     { body : NonEmptyString
     , username : Username
     , imageUrl : Url
@@ -28,7 +28,7 @@ type alias DeleteOptions msg =
     }
 
 
-view : Comment msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { body, username, imageUrl, zone, timestamp, maybeDelete } =
     let
         profileUrl =

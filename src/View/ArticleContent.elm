@@ -1,4 +1,4 @@
-module View.ArticleContent exposing (ArticleContent, view)
+module View.ArticleContent exposing (ViewOptions, view)
 
 import Data.Tag as Tag exposing (Tag)
 import Html as H
@@ -6,14 +6,14 @@ import Html.Attributes as HA
 import Markdown
 
 
-type alias ArticleContent =
+type alias ViewOptions =
     { description : String
     , body : String
     , tags : List Tag
     }
 
 
-view : ArticleContent -> H.Html msg
+view : ViewOptions -> H.Html msg
 view { description, body, tags } =
     H.div
         [ HA.class "row article-content" ]

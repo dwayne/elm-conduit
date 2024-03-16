@@ -5,12 +5,6 @@ import Html.Attributes as HA
 import View.ArticleMeta as ArticleMeta
 
 
-
---
--- TODO: Place ArticleMeta code into this module.
---
-
-
 type alias ViewOptions msg =
     { title : String
     , meta : ArticleMeta.ViewOptions msg

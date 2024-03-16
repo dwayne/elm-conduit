@@ -1,4 +1,11 @@
-module Page.Register exposing (Model, Msg, ViewOptions, init, update, view)
+module Page.Register exposing
+    ( Model
+    , Msg
+    , ViewOptions
+    , init
+    , update
+    , view
+    )
 
 import Api
 import Api.Register as Register

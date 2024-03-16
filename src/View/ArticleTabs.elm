@@ -1,10 +1,10 @@
-module View.ArticleTabs exposing (ArticleTabs, Tab(..), view)
+module View.ArticleTabs exposing (Tab(..), ViewOptions, view)
 
 import Html as H
 import View.Tabs as Tabs
 
 
-type alias ArticleTabs msg =
+type alias ViewOptions msg =
     { activeTab : Tab
     , isDisabled : Bool
     , onSwitch : Tab -> msg
@@ -16,7 +16,7 @@ type Tab
     | Favourites
 
 
-view : ArticleTabs msg -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { activeTab, isDisabled, onSwitch } =
     Tabs.view
         { name = "articles"
