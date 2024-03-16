@@ -85,17 +85,18 @@ put { token, url, body, onResponse, decoder, errorsDecoder } =
 delete :
     { token : Token
     , url : String
-    , onResponse : Result (Error ()) () -> msg
+    , default : a
+    , onResponse : Result (Error ()) a -> msg
     }
     -> Cmd msg
-delete { token, url, onResponse } =
+delete { token, url, default, onResponse } =
     request
         { method = DELETE
         , maybeToken = Just token
         , url = url
         , body = Http.emptyBody
         , onResponse = onResponse
-        , eitherDefaultOrDecoder = Either.Left ()
+        , eitherDefaultOrDecoder = Either.Left default
         , errorsDecoder = emptyErrorsDecoder
         }
 

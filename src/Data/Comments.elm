@@ -1,4 +1,4 @@
-module Data.Comments exposing (Comments, decoder, toList)
+module Data.Comments exposing (Comments, add, decoder, remove, toList)
 
 import Data.Comment as Comment exposing (Comment)
 import Json.Decode as JD
@@ -23,6 +23,18 @@ sort =
             Comment.compare comment1 comment2
                 |> Basics.reverseOrder
         )
+
+
+add : Comment -> Comments -> Comments
+add comment (Comments comments) =
+    Comments (comment :: comments)
+
+
+remove : Int -> Comments -> Comments
+remove id (Comments comments) =
+    comments
+        |> List.filter (.id >> (/=) id)
+        |> Comments
 
 
 toList : Comments -> List Comment

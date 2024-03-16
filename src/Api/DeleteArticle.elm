@@ -17,5 +17,6 @@ deleteArticle baseUrl { token, slug, onResponse } =
     Api.delete
         { token = token
         , url = Api.buildUrl baseUrl [ "articles", Slug.toString slug ] [] []
+        , default = ()
         , onResponse = onResponse
         }

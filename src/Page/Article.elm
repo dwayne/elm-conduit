@@ -7,6 +7,7 @@ module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOption
 import Api
 import Api.CreateComment as CreateComment
 import Api.DeleteArticle as DeleteArticle
+import Api.DeleteComment as DeleteComment
 import Api.GetArticle as GetArticle
 import Api.GetComments as GetComments
 import Api.ToggleFavourite as ToggleFavourite
@@ -117,11 +118,19 @@ type Msg
     | ChangedComment String
     | SubmittedComment Token Slug
     | GotCreateCommentResponse (Result (Api.Error ()) Comment)
-    | ClickedDeleteComment Int
+    | ClickedDeleteComment Token Slug Int
+    | GotDeleteCommentResponse (Result (Api.Error ()) Int)
 
 
 type alias UpdateOptions msg =
     { apiUrl : String
+
+    --
+    -- TODO: We can either delete the article or one of its comments.
+    --
+    -- We should be clear that this handler is for the article
+    -- and rename it to onDeleteArticle.
+    --
     , onDelete : msg
     , onChange : Msg -> msg
     }
@@ -300,8 +309,17 @@ update options msg model =
                     { model | isDisabled = False }
             in
             case result of
-                Ok _ ->
-                    ( { newModel | comment = "" }
+                Ok comment ->
+                    ( { newModel
+                        | comment = ""
+                        , remoteDataComments =
+                            RemoteData.map (Comments.add comment) newModel.remoteDataComments
+                      }
+                      --
+                      -- IDEA: We can focus the comment form's textarea again at this point.
+                      --
+                      -- It would improve the usability of the comment form.
+                      --
                     , Cmd.none
                     )
 
@@ -310,14 +328,36 @@ update options msg model =
                     , Cmd.none
                     )
 
-        ClickedDeleteComment id ->
-            --
-            -- TODO: Implement comment deletion.
-            --
-            -- We want to be able to disable the corresponding comment when it is being deleted.
-            --
-            ( model, Cmd.none )
-                |> Debug.log ("You're trying to delete comment with id: " ++ Debug.toString id)
+        ClickedDeleteComment token slug id ->
+            ( { model | isDisabled = True }
+            , DeleteComment.deleteComment
+                options.apiUrl
+                { token = token
+                , slug = slug
+                , id = id
+                , onResponse = GotDeleteCommentResponse
+                }
+                |> Cmd.map options.onChange
+            )
+
+        GotDeleteCommentResponse result ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            case result of
+                Ok id ->
+                    ( { newModel
+                        | remoteDataComments =
+                            RemoteData.map (Comments.remove id) newModel.remoteDataComments
+                      }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( newModel
+                    , Cmd.none
+                    )
 
 
 
@@ -413,7 +453,17 @@ view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment
                                         }
                                      ]
                                         ++ viewComments
-                                            (List.map (viewComment zone user.username) << Comments.toList)
+                                            (List.map
+                                                (viewComment
+                                                    { zone = zone
+                                                    , username = user.username
+                                                    , token = user.token
+                                                    , slug = article.slug
+                                                    , isDisabled = isDisabled
+                                                    }
+                                                )
+                                                << Comments.toList
+                                            )
                                             remoteDataComments
                                     )
                                 ]
@@ -505,8 +555,16 @@ viewComments toHtml remoteDataComments =
             [ H.text "Unable to load comments." ]
 
 
-viewComment : Time.Zone -> Username -> Comment -> H.Html Msg
-viewComment zone username { id, createdAt, body, commenter } =
+viewComment :
+    { zone : Time.Zone
+    , username : Username
+    , token : Token
+    , slug : Slug
+    , isDisabled : Bool
+    }
+    -> Comment
+    -> H.Html Msg
+viewComment { zone, username, token, slug, isDisabled } { id, createdAt, body, commenter } =
     Comment.view
         { body = body
         , username = commenter.username
@@ -516,8 +574,8 @@ viewComment zone username { id, createdAt, body, commenter } =
         , maybeDelete =
             if username == commenter.username then
                 Just
-                    { isDisabled = False -- FIXME
-                    , onDelete = ClickedDeleteComment id
+                    { isDisabled = isDisabled
+                    , onDelete = ClickedDeleteComment token slug id
                     }
 
             else

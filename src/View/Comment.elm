@@ -80,7 +80,11 @@ view { body, username, imageUrl, zone, timestamp, maybeDelete } =
                                 ]
                     in
                     H.span attrs
-                        [ H.i [ HA.class "ion-trash-a" ] []
+                        [ H.i
+                            [ HA.class "ion-trash-a"
+                            , HA.classList [ ( "is-disabled", isDisabled ) ]
+                            ]
+                            []
                         ]
 
                 Nothing ->

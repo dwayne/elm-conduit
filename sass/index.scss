@@ -1,3 +1,7 @@
 .sidebar .tag-pill {
   border: 0;
 }
+
+.article-page .card .mod-options i.is-disabled {
+  cursor: not-allowed;
+}
