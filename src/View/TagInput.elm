@@ -35,9 +35,9 @@ view { name, placeholder, tag, tags, isDisabled, onInput, onEnter, onRemove } =
                 , HA.placeholder placeholder
                 , HA.value tag
                 ]
-                [ ( isDisabled, HA.disabled True )
-                , ( isEnabled, HE.onInput onInput )
-                , ( isEnabled, onEnterKey tag onEnter )
+                [ ( HA.disabled True, isDisabled )
+                , ( HE.onInput onInput, isEnabled )
+                , ( onEnterKey tag onEnter, isEnabled )
                 ]
     in
     H.fieldset
@@ -56,7 +56,7 @@ viewTags isEnabled onRemove =
                 [ H.i
                     (HA.attrList
                         [ HA.class "ion-close-round" ]
-                        [ ( isEnabled, HE.onClick (onRemove tag) )
+                        [ ( HE.onClick (onRemove tag), isEnabled )
                         ]
                     )
                     []

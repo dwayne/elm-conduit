@@ -76,7 +76,7 @@ view { body, username, imageUrl, zone, timestamp, maybeDelete } =
                         attrs =
                             HA.attrList
                                 [ HA.class "mod-options" ]
-                                [ ( isEnabled, HE.onClick onDelete )
+                                [ ( HE.onClick onDelete, isEnabled )
                                 ]
                     in
                     H.span attrs

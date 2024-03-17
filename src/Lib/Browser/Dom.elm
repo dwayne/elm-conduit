@@ -1,6 +1,5 @@
 module Lib.Browser.Dom exposing (focus)
 
-
 import Browser.Dom as BD
 import Task
 

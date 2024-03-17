@@ -48,8 +48,8 @@ viewTagList status =
                             attrs =
                                 HA.attrList
                                     [ HA.class "tag-pill tag-default" ]
-                                    [ ( Just tag /= activeTag
-                                      , HE.onClick <| onClick tag
+                                    [ ( HE.onClick <| onClick tag
+                                      , Just tag /= activeTag
                                       )
                                     ]
                         in

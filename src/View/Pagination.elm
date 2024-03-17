@@ -57,8 +57,8 @@ viewPageItem { pageNumber, currentPageNumber, onChangePageNumber } =
         buttonAttrs =
             HA.attrList
                 [ HA.class "page-link" ]
-                [ ( not isActive
-                  , HE.onClick <| onChangePageNumber pageNumber
+                [ ( HE.onClick <| onChangePageNumber pageNumber
+                  , not isActive
                   )
                 ]
     in
