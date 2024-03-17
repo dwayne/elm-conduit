@@ -18,6 +18,7 @@ import Http
 import Json.Decode as JD
 import Lib.Either as Either exposing (Either)
 import Lib.Function exposing (flip)
+import Url exposing (Url)
 import Url.Builder as UB
 
 
@@ -153,10 +154,10 @@ oneMinute =
     1000 * 60
 
 
-buildUrl : String -> List String -> List UB.QueryParameter -> List (Maybe UB.QueryParameter) -> String
+buildUrl : Url -> List String -> List UB.QueryParameter -> List (Maybe UB.QueryParameter) -> String
 buildUrl baseUrl pathSegments requiredParameters optionalParameters =
     UB.crossOrigin
-        baseUrl
+        (Url.toString baseUrl)
         pathSegments
         (requiredParameters ++ List.filterMap identity optionalParameters)
 

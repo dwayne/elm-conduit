@@ -25,7 +25,7 @@ type alias Options msg =
     }
 
 
-updateUser : String -> Options msg -> Cmd msg
+updateUser : Url -> Options msg -> Cmd msg
 updateUser baseUrl { token, imageUrl, username, bio, email, maybePassword, onResponse } =
     Api.put
         { token = token

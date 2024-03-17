@@ -33,6 +33,7 @@ import Lib.NonEmptyString as NonEmptyString
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Lib.Task as Task
 import Time
+import Url exposing (Url)
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
@@ -54,7 +55,7 @@ type alias Model =
 
 
 type alias InitOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , viewer : Viewer
     , eitherSlugOrArticle : Either Slug Article
     , onChange : Msg -> msg
@@ -127,7 +128,7 @@ type Msg
 
 
 type alias UpdateOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , onDeleteArticle : msg
     , onChange : Msg -> msg
     }

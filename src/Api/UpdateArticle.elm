@@ -9,6 +9,7 @@ import Http
 import Json.Decode as JD
 import Json.Encode as JE
 import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -19,7 +20,7 @@ type alias Options msg =
     }
 
 
-updateArticle : String -> Options msg -> Cmd msg
+updateArticle : Url -> Options msg -> Cmd msg
 updateArticle baseUrl { token, slug, articleFields, onResponse } =
     Api.put
         { token = token

@@ -19,7 +19,7 @@ type alias Options msg =
     }
 
 
-login : String -> Options msg -> Cmd msg
+login : Url -> Options msg -> Cmd msg
 login baseUrl { email, password, onResponse } =
     Api.post
         { maybeToken = Nothing

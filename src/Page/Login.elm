@@ -18,6 +18,7 @@ import Html as H
 import Html.Attributes as HA
 import Lib.Task as Task
 import Lib.Validation as V
+import Url exposing (Url)
 import View.Footer as Footer
 import View.Login as Login
 import View.Navigation as Navigation
@@ -49,7 +50,7 @@ init =
 
 
 type alias UpdateOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , onLoggedIn : User -> msg
     , onChange : Msg -> msg
     }

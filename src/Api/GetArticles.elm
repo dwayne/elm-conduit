@@ -59,7 +59,7 @@ byTag maybeToken =
     Global maybeToken << ByTag
 
 
-getArticles : String -> Options msg -> Cmd msg
+getArticles : Url -> Options msg -> Cmd msg
 getArticles baseUrl { request, page, onResponse } =
     case request of
         FromUsersYouFollow token ->
@@ -69,7 +69,7 @@ getArticles baseUrl { request, page, onResponse } =
             getArticlesGlobally baseUrl maybeToken filter page onResponse
 
 
-getArticlesFromUsersYouFollow : String -> Token -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
+getArticlesFromUsersYouFollow : Url -> Token -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
 getArticlesFromUsersYouFollow baseUrl token page onResponse =
     Api.get
         { maybeToken = Just token
@@ -86,7 +86,7 @@ getArticlesFromUsersYouFollow baseUrl token page onResponse =
         }
 
 
-getArticlesGlobally : String -> Maybe Token -> Filter -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
+getArticlesGlobally : Url -> Maybe Token -> Filter -> Page -> (Result (Api.Error ()) Articles -> msg) -> Cmd msg
 getArticlesGlobally baseUrl maybeToken filter page onResponse =
     Api.get
         { maybeToken = maybeToken

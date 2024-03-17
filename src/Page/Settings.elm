@@ -67,7 +67,7 @@ init { imageUrl, username, bio, email } =
 
 
 type alias UpdateOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , token : Token
     , onUpdatedUser : User -> msg
     , onChange : Msg -> msg

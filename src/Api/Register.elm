@@ -21,7 +21,7 @@ type alias Options msg =
     }
 
 
-register : String -> Options msg -> Cmd msg
+register : Url -> Options msg -> Cmd msg
 register baseUrl { username, email, password, onResponse } =
     Api.post
         { maybeToken = Nothing

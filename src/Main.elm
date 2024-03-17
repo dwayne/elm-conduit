@@ -57,7 +57,7 @@ type Model
 
 
 type alias LoadingUserModel =
-    { apiUrl : String
+    { apiUrl : Url
     , url : Url
     , key : BN.Key
     , zone : Time.Zone
@@ -65,7 +65,7 @@ type alias LoadingUserModel =
 
 
 type alias SuccessModel =
-    { apiUrl : String
+    { apiUrl : Url
     , url : Url
     , key : BN.Key
     , zone : Time.Zone
@@ -129,7 +129,7 @@ init flags url key =
 
 
 initLoadingUser :
-    { apiUrl : String
+    { apiUrl : Url
     , url : Url
     , key : BN.Key
     , token : Token
@@ -154,7 +154,7 @@ initLoadingUser { apiUrl, url, key, token } =
 
 
 initSuccess :
-    { apiUrl : String
+    { apiUrl : Url
     , url : Url
     , key : BN.Key
     , maybeZone : Maybe Time.Zone
@@ -195,7 +195,7 @@ getZone =
     Task.perform GotZone Time.here
 
 
-getPageFromUrl : String -> Viewer -> Maybe Article -> Url -> ( Page, Cmd Msg )
+getPageFromUrl : Url -> Viewer -> Maybe Article -> Url -> ( Page, Cmd Msg )
 getPageFromUrl apiUrl viewer maybeArticle url =
     case Route.fromUrl url of
         Just route ->
@@ -205,7 +205,7 @@ getPageFromUrl apiUrl viewer maybeArticle url =
             ( NotFound, Cmd.none )
 
 
-getPageFromRoute : String -> Viewer -> Maybe Article -> Route -> ( Page, Cmd Msg )
+getPageFromRoute : Url -> Viewer -> Maybe Article -> Route -> ( Page, Cmd Msg )
 getPageFromRoute apiUrl viewer maybeArticle route =
     case route of
         Route.Home ->
@@ -281,7 +281,7 @@ getPageFromRoute apiUrl viewer maybeArticle route =
             ( Profile, Cmd.none )
 
 
-getEditorPage : String -> Viewer -> Maybe Slug -> ( Page, Cmd Msg )
+getEditorPage : Url -> Viewer -> Maybe Slug -> ( Page, Cmd Msg )
 getEditorPage apiUrl viewer maybeSlug =
     withAuthForPage
         (\user ->

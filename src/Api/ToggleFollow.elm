@@ -6,6 +6,7 @@ import Data.Username as Username exposing (Username)
 import Http
 import Json.Decode as JD
 import Lib.Either as Either
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -16,7 +17,7 @@ type alias Options msg =
     }
 
 
-toggleFollow : String -> Options msg -> Cmd msg
+toggleFollow : Url -> Options msg -> Cmd msg
 toggleFollow baseUrl { token, username, isFollowing, onResponse } =
     Api.request
         { method =

@@ -3,6 +3,7 @@ module Api.GetTags exposing (Options, Tags, getTags)
 import Api
 import Data.Tag as Tag exposing (Tag)
 import Json.Decode as JD
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -10,7 +11,7 @@ type alias Options msg =
     }
 
 
-getTags : String -> Options msg -> Cmd msg
+getTags : Url -> Options msg -> Cmd msg
 getTags baseUrl { onResponse } =
     Api.get
         { maybeToken = Nothing

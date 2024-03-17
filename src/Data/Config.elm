@@ -2,14 +2,12 @@ module Data.Config exposing (BadToken(..), Config, decoder)
 
 import Data.Token as Token exposing (Token)
 import Json.Decode as JD
+import Lib.Json.Decode as JD
 import Url exposing (Url)
 
 
 type alias Config =
-    --
-    -- TODO: Give apiUrl the Url type.
-    --
-    { apiUrl : String
+    { apiUrl : Url
     , resultMaybeToken : Result BadToken (Maybe Token)
     }
 
@@ -21,7 +19,7 @@ type BadToken
 decoder : JD.Decoder Config
 decoder =
     JD.map2 Config
-        (JD.field "apiUrl" JD.string)
+        (JD.field "apiUrl" JD.url)
         (JD.field "maybeToken" tokenDecoder)
 
 

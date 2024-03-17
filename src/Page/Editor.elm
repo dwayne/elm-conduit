@@ -57,7 +57,7 @@ type Action
 
 
 type alias InitOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , token : Token
     , maybeSlug : Maybe Slug
     , onChange : Msg -> msg
@@ -130,7 +130,7 @@ type Msg
 
 
 type alias UpdateOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , token : Token
     , onPublish : Article -> msg
     , onChange : Msg -> msg

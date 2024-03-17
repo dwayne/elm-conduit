@@ -5,6 +5,7 @@ import Data.Comments as Comments exposing (Comments)
 import Data.Slug as Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Json.Decode as JD
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -14,7 +15,7 @@ type alias Options msg =
     }
 
 
-getComments : String -> Options msg -> Cmd msg
+getComments : Url -> Options msg -> Cmd msg
 getComments baseUrl { maybeToken, slug, onResponse } =
     Api.get
         { maybeToken = maybeToken

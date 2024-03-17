@@ -5,6 +5,7 @@ import Data.Article as Article exposing (Article)
 import Data.Slug as Slug exposing (Slug)
 import Data.Token as Token exposing (Token)
 import Json.Decode as JD
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -14,7 +15,7 @@ type alias Options msg =
     }
 
 
-getArticle : String -> Options msg -> Cmd msg
+getArticle : Url -> Options msg -> Cmd msg
 getArticle baseUrl { maybeToken, slug, onResponse } =
     Api.get
         { maybeToken = maybeToken

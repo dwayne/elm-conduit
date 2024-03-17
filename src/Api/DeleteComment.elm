@@ -3,6 +3,7 @@ module Api.DeleteComment exposing (Options, deleteComment)
 import Api
 import Data.Slug as Slug exposing (Slug)
 import Data.Token as Token exposing (Token)
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -13,7 +14,7 @@ type alias Options msg =
     }
 
 
-deleteComment : String -> Options msg -> Cmd msg
+deleteComment : Url -> Options msg -> Cmd msg
 deleteComment baseUrl { token, slug, id, onResponse } =
     Api.delete
         { token = token

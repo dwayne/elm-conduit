@@ -4,6 +4,7 @@ import Api
 import Data.Token as Token exposing (Token)
 import Data.User as User exposing (User)
 import Json.Decode as JD
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -12,7 +13,7 @@ type alias Options msg =
     }
 
 
-getUser : String -> Options msg -> Cmd msg
+getUser : Url -> Options msg -> Cmd msg
 getUser baseUrl { token, onResponse } =
     Api.get
         { maybeToken = Just token

@@ -30,6 +30,7 @@ import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Lib.Task as Task
 import Time
+import Url exposing (Url)
 import View.ArticlePreview as ArticlePreview
 import View.FeedTabs as FeedTabs
 import View.Footer as Footer
@@ -107,7 +108,7 @@ feedUpdateFavourite { slug, isFavourite, totalFavourites } feed =
 
 
 type alias InitOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , viewer : Viewer
     , onChange : Msg -> msg
     }
@@ -165,7 +166,7 @@ type Msg
 
 
 type alias UpdateOptions msg =
-    { apiUrl : String
+    { apiUrl : Url
     , viewer : Viewer
     , onChange : Msg -> msg
     }
@@ -283,7 +284,7 @@ updateHelper options msg model =
 -- HTTP
 
 
-getArticles : FeedTabs.Tab -> Viewer -> String -> Feed -> Cmd Msg
+getArticles : FeedTabs.Tab -> Viewer -> Url -> Feed -> Cmd Msg
 getArticles tab viewer =
     let
         maybeToken =
@@ -310,7 +311,7 @@ getArticles tab viewer =
             getArticlesByTag maybeToken tag
 
 
-getPersonalArticles : Token -> String -> Feed -> Cmd Msg
+getPersonalArticles : Token -> Url -> Feed -> Cmd Msg
 getPersonalArticles token apiUrl feed =
     GetArticles.getArticles
         apiUrl
@@ -320,7 +321,7 @@ getPersonalArticles token apiUrl feed =
         }
 
 
-getGlobalArticles : Maybe Token -> String -> Feed -> Cmd Msg
+getGlobalArticles : Maybe Token -> Url -> Feed -> Cmd Msg
 getGlobalArticles maybeToken apiUrl feed =
     GetArticles.getArticles
         apiUrl
@@ -330,7 +331,7 @@ getGlobalArticles maybeToken apiUrl feed =
         }
 
 
-getArticlesByTag : Maybe Token -> Tag -> String -> Feed -> Cmd Msg
+getArticlesByTag : Maybe Token -> Tag -> Url -> Feed -> Cmd Msg
 getArticlesByTag maybeToken tag apiUrl feed =
     GetArticles.getArticles
         apiUrl

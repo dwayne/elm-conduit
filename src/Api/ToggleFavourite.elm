@@ -10,6 +10,7 @@ import Data.Total as Total exposing (Total)
 import Http
 import Json.Decode as JD
 import Lib.Either as Either
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -20,7 +21,7 @@ type alias Options msg =
     }
 
 
-toggleFavourite : String -> Options msg -> Cmd msg
+toggleFavourite : Url -> Options msg -> Cmd msg
 toggleFavourite baseUrl { token, slug, isFavourite, onResponse } =
     Api.request
         { method =

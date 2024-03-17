@@ -8,6 +8,7 @@ import Http
 import Json.Decode as JD
 import Json.Encode as JE
 import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
+import Url exposing (Url)
 
 
 type alias Options msg =
@@ -17,7 +18,7 @@ type alias Options msg =
     }
 
 
-createArticle : String -> Options msg -> Cmd msg
+createArticle : Url -> Options msg -> Cmd msg
 createArticle baseUrl { token, articleFields, onResponse } =
     Api.post
         { maybeToken = Just token
