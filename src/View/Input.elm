@@ -5,12 +5,6 @@ import Html.Attributes as HA
 import Html.Events as HE
 
 
-
---
--- TODO: Remove isDisabled field.
---
-
-
 type alias ViewOptions msg =
     { name : String
     , type_ : String
