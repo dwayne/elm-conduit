@@ -28,6 +28,7 @@ import Data.Username exposing (Username)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
+import Lib.Browser.Dom as BD
 import Lib.Either as Either exposing (Either)
 import Lib.NonEmptyString as NonEmptyString
 import Lib.RemoteData as RemoteData exposing (RemoteData)
@@ -123,6 +124,7 @@ type Msg
     | ChangedComment String
     | SubmittedComment Token Slug
     | GotCreateCommentResponse (Result (Api.Error ()) Comment)
+    | FocusedCommentForm
     | ClickedDeleteComment Token Slug Int
     | GotDeleteCommentResponse (Result (Api.Error ()) Int)
 
@@ -269,18 +271,17 @@ update options msg model =
                         , remoteDataComments =
                             RemoteData.map (Comments.add comment) newModel.remoteDataComments
                       }
-                      --
-                      -- IDEA: We can focus the comment form's textarea again at this point.
-                      --
-                      -- It would improve the usability of the comment form.
-                      --
-                    , Cmd.none
+                    , BD.focus commentFormId FocusedCommentForm
+                        |> Cmd.map options.onChange
                     )
 
                 Err _ ->
                     ( newModel
                     , Cmd.none
                     )
+
+        FocusedCommentForm ->
+            ( model, Cmd.none )
 
         ClickedDeleteComment token slug id ->
             ( { model | isDisabled = True }
@@ -310,26 +311,6 @@ update options msg model =
                 |> Result.withDefault newModel
             , Cmd.none
             )
-
-
-toggleFollowAuthor : Bool -> Article -> Article
-toggleFollowAuthor isFollowing article =
-    let
-        author =
-            article.author
-
-        newAuthor =
-            { author | isFollowing = isFollowing }
-    in
-    { article | author = newAuthor }
-
-
-toggleFavoriteArticle : ToggleFavourite.TotalFavourites -> Article -> Article
-toggleFavoriteArticle { isFavourite, totalFavourites } article =
-    { article
-        | isFavourite = isFavourite
-        , totalFavourites = totalFavourites
-    }
 
 
 
@@ -488,7 +469,8 @@ viewArticleAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, 
                         [ H.div
                             [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
                             ([ CommentForm.view
-                                { comment = comment
+                                { htmlId = commentFormId
+                                , comment = comment
                                 , imageUrl = user.imageUrl
                                 , isDisabled = isDisabled
                                 , onInputComment = ChangedComment
@@ -573,3 +555,36 @@ viewComment { zone, username, token, slug, isDisabled } { id, createdAt, body, c
             else
                 Nothing
         }
+
+
+
+-- CONSTANTS
+
+
+commentFormId : String
+commentFormId =
+    "comment-form"
+
+
+
+-- HELPERS
+
+
+toggleFollowAuthor : Bool -> Article -> Article
+toggleFollowAuthor isFollowing article =
+    let
+        author =
+            article.author
+
+        newAuthor =
+            { author | isFollowing = isFollowing }
+    in
+    { article | author = newAuthor }
+
+
+toggleFavoriteArticle : ToggleFavourite.TotalFavourites -> Article -> Article
+toggleFavoriteArticle { isFavourite, totalFavourites } article =
+    { article
+        | isFavourite = isFavourite
+        , totalFavourites = totalFavourites
+    }

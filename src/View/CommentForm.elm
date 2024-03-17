@@ -7,7 +7,8 @@ import Url exposing (Url)
 
 
 type alias ViewOptions msg =
-    { comment : String
+    { htmlId : String
+    , comment : String
     , imageUrl : Url
     , isDisabled : Bool
     , onInputComment : String -> msg
@@ -16,7 +17,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> H.Html msg
-view ({ comment, imageUrl, isDisabled, onInputComment, onSubmit } as options) =
+view ({ htmlId, comment, imageUrl, isDisabled, onInputComment, onSubmit } as options) =
     let
         isButtonDisabled =
             isEmptyComment || isDisabled
@@ -41,7 +42,8 @@ view ({ comment, imageUrl, isDisabled, onInputComment, onSubmit } as options) =
         [ H.div
             [ HA.class "card-block" ]
             [ H.textarea
-                [ HA.class "form-control"
+                [ HA.id htmlId
+                , HA.class "form-control"
                 , HA.placeholder "Write a comment..."
                 , HA.rows 3
                 , HA.value comment
