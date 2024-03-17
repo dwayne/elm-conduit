@@ -119,7 +119,7 @@ view { username, imageUrl, zone, createdAt, role } =
                     [ H.text <| Username.toString username ]
                 , H.span
                     [ HA.class "date" ]
-                    [ H.text <| Timestamp.toString zone createdAt ]
+                    [ H.text <| Timestamp.toDayString zone createdAt ]
                 ]
             ]
             buttons

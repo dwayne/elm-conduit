@@ -18,7 +18,7 @@ type alias ViewOptions msg =
     , username : Username
     , imageUrl : Url
     , zone : Time.Zone
-    , timestamp : Timestamp
+    , createdAt : Timestamp
     , totalFavourites : Total
     , isFavourite : Bool
     , slug : Slug
@@ -37,7 +37,7 @@ type Role msg
 
 
 view : ViewOptions msg -> H.Html msg
-view { role, username, imageUrl, zone, timestamp, totalFavourites, isFavourite, slug, title, description, tags } =
+view { role, username, imageUrl, zone, createdAt, totalFavourites, isFavourite, slug, title, description, tags } =
     let
         profileHref =
             Route.toString <| Route.Profile username
@@ -61,7 +61,7 @@ view { role, username, imageUrl, zone, timestamp, totalFavourites, isFavourite, 
                     [ H.text <| Username.toString username ]
                 , H.span
                     [ HA.class "date" ]
-                    [ H.text <| Timestamp.toString zone timestamp ]
+                    [ H.text <| Timestamp.toDayString zone createdAt ]
                 ]
             , case role of
                 Guest ->

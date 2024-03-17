@@ -17,7 +17,7 @@ type alias ViewOptions msg =
     , username : Username
     , imageUrl : Url
     , zone : Time.Zone
-    , timestamp : Timestamp
+    , createdAt : Timestamp
     , maybeDelete : Maybe (DeleteOptions msg)
     }
 
@@ -29,7 +29,7 @@ type alias DeleteOptions msg =
 
 
 view : ViewOptions msg -> H.Html msg
-view { body, username, imageUrl, zone, timestamp, maybeDelete } =
+view { body, username, imageUrl, zone, createdAt, maybeDelete } =
     let
         profileUrl =
             Route.toString <| Route.Profile username
@@ -63,10 +63,7 @@ view { body, username, imageUrl, zone, timestamp, maybeDelete } =
                 ]
             , H.span
                 [ HA.class "date-posted" ]
-                --
-                -- TODO: Display the timestamp with a time as well, not just the day.
-                --
-                [ H.text <| Timestamp.toString zone timestamp ]
+                [ H.text <| Timestamp.toDayAndTimeString zone createdAt ]
             , case maybeDelete of
                 Just { isDisabled, onDelete } ->
                     let

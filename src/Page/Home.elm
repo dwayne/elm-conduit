@@ -463,7 +463,7 @@ viewArticlePreview viewer zone togglingFavourite { slug, title, description, bod
         , username = author.username
         , imageUrl = author.imageUrl
         , zone = zone
-        , timestamp = createdAt
+        , createdAt = createdAt
         , totalFavourites = totalFavourites
         , isFavourite = isFavourite
         , slug = slug

@@ -544,7 +544,7 @@ viewComment { zone, username, token, slug, isDisabled } { id, createdAt, body, c
         , username = commenter.username
         , imageUrl = commenter.imageUrl
         , zone = zone
-        , timestamp = createdAt
+        , createdAt = createdAt
         , maybeDelete =
             if username == commenter.username then
                 Just
