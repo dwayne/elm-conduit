@@ -1,12 +1,4 @@
-module Page.Settings exposing
-    ( Model
-    , Msg
-    , UpdateOptions
-    , ViewOptions
-    , init
-    , update
-    , view
-    )
+module Page.Settings exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
 import Api.UpdateUser as UpdateUser
@@ -138,8 +130,8 @@ update options msg model =
                     }
 
         GotUpdateUserResponse result ->
-            case result of
-                Ok user ->
+            Api.handleFormResponse
+                (\user ->
                     ( init
                         { imageUrl = user.imageUrl
                         , username = user.username
@@ -148,22 +140,9 @@ update options msg model =
                         }
                     , Task.dispatch (options.onUpdatedUser user)
                     )
-
-                Err err ->
-                    let
-                        newModel =
-                            { model | isDisabled = False }
-                    in
-                    case err of
-                        Api.UserError errorMessages ->
-                            ( { newModel | errorMessages = errorMessages }
-                            , Cmd.none
-                            )
-
-                        _ ->
-                            ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
-                            , Cmd.none
-                            )
+                )
+                model
+                result
 
 
 type alias ValidatedFields =

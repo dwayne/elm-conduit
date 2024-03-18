@@ -1,12 +1,4 @@
-module Page.Editor exposing
-    ( Model
-    , Msg
-    , UpdateOptions
-    , ViewOptions
-    , init
-    , update
-    , view
-    )
+module Page.Editor exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
 import Api.CreateArticle as CreateArticle
@@ -227,7 +219,7 @@ update options msg model =
                     }
 
         GotPublishArticleResponse result ->
-            handleFormResponse
+            Api.handleFormResponse
                 (\article ->
                     ( resetModel model
                     , Task.dispatch (options.onPublish article)
@@ -235,48 +227,6 @@ update options msg model =
                 )
                 model
                 result
-
-
-
---
--- TODO: Extract FormModel and handleFormResponse into Api.
---
-
-
-type alias FormModel model =
-    --
-    -- TODO: Find out what type of record this is called.
-    --
-    -- I know what I'm saying is that I want to accept records
-    -- that contain the fields errorMessages and isDisabled.
-    --
-    { model
-        | errorMessages : List String
-        , isDisabled : Bool
-    }
-
-
-handleFormResponse : (a -> ( FormModel model, Cmd msg )) -> FormModel model -> Result (Api.Error (List String)) a -> ( FormModel model, Cmd msg )
-handleFormResponse onOk model result =
-    case result of
-        Ok a ->
-            onOk a
-
-        Err err ->
-            let
-                newModel =
-                    { model | isDisabled = False }
-            in
-            case err of
-                Api.UserError errorMessages ->
-                    ( { newModel | errorMessages = errorMessages }
-                    , Cmd.none
-                    )
-
-                _ ->
-                    ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
-                    , Cmd.none
-                    )
 
 
 validate : Model -> V.Validation Article.Fields

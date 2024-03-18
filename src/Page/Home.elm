@@ -1,13 +1,4 @@
-module Page.Home exposing
-    ( InitOptions
-    , Model
-    , Msg
-    , UpdateOptions
-    , ViewOptions
-    , init
-    , update
-    , view
-    )
+module Page.Home exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
 import Api.GetArticles as GetArticles

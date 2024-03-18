@@ -1,11 +1,4 @@
-module Page.Register exposing
-    ( Model
-    , Msg
-    , ViewOptions
-    , init
-    , update
-    , view
-    )
+module Page.Register exposing (Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
 import Api.Register as Register
@@ -107,27 +100,14 @@ update options msg model =
                     }
 
         GotRegisterResponse result ->
-            case result of
-                Ok user ->
+            Api.handleFormResponse
+                (\user ->
                     ( init
                     , Task.dispatch (options.onRegistered user)
                     )
-
-                Err err ->
-                    let
-                        newModel =
-                            { model | isDisabled = False }
-                    in
-                    case err of
-                        Api.UserError errorMessages ->
-                            ( { newModel | errorMessages = errorMessages }
-                            , Cmd.none
-                            )
-
-                        _ ->
-                            ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
-                            , Cmd.none
-                            )
+                )
+                model
+                result
 
 
 type alias ValidatedFields =
@@ -155,7 +135,12 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { onChange } { username, email, password, errorMessages, isDisabled } =
+view { onChange } =
+    viewHelper >> H.map onChange
+
+
+viewHelper : Model -> H.Html Msg
+viewHelper { username, email, password, errorMessages, isDisabled } =
     H.div []
         [ Navigation.view { role = Navigation.register }
         , H.div
@@ -183,4 +168,3 @@ view { onChange } { username, email, password, errorMessages, isDisabled } =
             ]
         , Footer.view
         ]
-        |> H.map onChange

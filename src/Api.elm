@@ -1,5 +1,6 @@
 module Api exposing
     ( Error(..)
+    , FormModel
     , Method(..)
     , buildUrl
     , delete
@@ -7,6 +8,7 @@ module Api exposing
     , expectJson
     , formErrorsDecoder
     , get
+    , handleFormResponse
     , post
     , put
     , request
@@ -246,3 +248,36 @@ getErrorMessagesForKey key =
     Dict.get key
         >> Maybe.withDefault []
         >> List.map (\value -> key ++ " " ++ value)
+
+
+type alias FormModel model =
+    { model
+        | errorMessages : List String
+        , isDisabled : Bool
+    }
+
+
+handleFormResponse : (a -> ( FormModel model, Cmd msg )) -> FormModel model -> Result (Error (List String)) a -> ( FormModel model, Cmd msg )
+handleFormResponse onOk model result =
+    --
+    -- Handles form errors returned by the formErrorsDecoder.
+    --
+    case result of
+        Ok a ->
+            onOk a
+
+        Err err ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            case err of
+                UserError errorMessages ->
+                    ( { newModel | errorMessages = errorMessages }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
+                    , Cmd.none
+                    )

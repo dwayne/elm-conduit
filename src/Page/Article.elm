@@ -1,13 +1,4 @@
-module Page.Article exposing
-    ( InitOptions
-    , Model
-    , Msg
-    , UpdateOptions
-    , ViewOptions
-    , init
-    , update
-    , view
-    )
+module Page.Article exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
 import Api.CreateComment as CreateComment

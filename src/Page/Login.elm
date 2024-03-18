@@ -1,12 +1,4 @@
-module Page.Login exposing
-    ( Model
-    , Msg
-    , UpdateOptions
-    , ViewOptions
-    , init
-    , update
-    , view
-    )
+module Page.Login exposing (Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
 import Api.Login as Login
@@ -98,27 +90,14 @@ update options msg model =
                     }
 
         GotLoginResponse result ->
-            case result of
-                Ok user ->
+            Api.handleFormResponse
+                (\user ->
                     ( init
                     , Task.dispatch (options.onLoggedIn user)
                     )
-
-                Err err ->
-                    let
-                        newModel =
-                            { model | isDisabled = False }
-                    in
-                    case err of
-                        Api.UserError errorMessages ->
-                            ( { newModel | errorMessages = errorMessages }
-                            , Cmd.none
-                            )
-
-                        _ ->
-                            ( { newModel | errorMessages = [ "An unexpected error occurred" ] }
-                            , Cmd.none
-                            )
+                )
+                model
+                result
 
 
 type alias ValidatedFields =
@@ -144,7 +123,12 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { onChange } { email, password, errorMessages, isDisabled } =
+view { onChange } =
+    viewHelper >> H.map onChange
+
+
+viewHelper : Model -> H.Html Msg
+viewHelper { email, password, errorMessages, isDisabled } =
     H.div []
         [ Navigation.view { role = Navigation.login }
         , H.div
@@ -170,4 +154,3 @@ view { onChange } { email, password, errorMessages, isDisabled } =
             ]
         , Footer.view
         ]
-        |> H.map onChange
