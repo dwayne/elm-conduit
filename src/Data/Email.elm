@@ -17,9 +17,6 @@ type Email
 
 fromString : String -> Maybe Email
 fromString =
-    --
-    -- TODO: Check that the given string at least looks like an email.
-    --
     Maybe.map Email << NonEmptyString.fromString
 
 

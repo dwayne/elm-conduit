@@ -18,9 +18,6 @@ type Token
 
 fromString : String -> Maybe Token
 fromString =
-    --
-    -- TODO: Check that the given string at least looks like a token.
-    --
     Maybe.map Token << NonEmptyString.fromString
 
 
