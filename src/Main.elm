@@ -84,6 +84,7 @@ type Page
     | Editor EditorPage.Model
     | Article ArticlePage.Model
     | Profile
+    | NotAuthorized
     | NotFound
 
 
@@ -762,8 +763,14 @@ viewSuccessPage { url, zone, viewer, page } =
                 }
                 model
 
-        _ ->
-            H.text <| "url = " ++ Url.toString url
+        Profile ->
+            H.text "You are on the profile page."
+
+        NotAuthorized ->
+            H.text "You are not allowed to view this page."
+
+        NotFound ->
+            H.text "The page you are looking for does not exist."
 
 
 viewFailurePage : Error -> H.Html msg
@@ -831,10 +838,7 @@ withAuthForPage : (User -> ( Page, Cmd Msg )) -> Viewer -> ( Page, Cmd Msg )
 withAuthForPage toPage viewer =
     case viewer of
         Viewer.Guest ->
-            --
-            -- TODO: Decide whether or not we need a NotAuthorized page.
-            --
-            ( NotFound, Cmd.none )
+            ( NotAuthorized, Cmd.none )
 
         Viewer.User user ->
             toPage user
