@@ -14,6 +14,7 @@ import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Json.Decode as JD
 import Lib.Either as Either
+import Lib.Task as Task
 import Page.Article as ArticlePage
 import Page.Editor as EditorPage
 import Page.Home as HomePage
@@ -248,31 +249,36 @@ getPageFromRoute apiUrl viewer maybeArticle route =
 
         Route.Article slug ->
             let
-                ( model, cmd ) =
+                ( eitherSlugOrArticle, usedCmd ) =
+                    case maybeArticle of
+                        Just article ->
+                            ( if article.slug == slug then
+                                Either.Right article
+
+                              else
+                                Either.Left slug
+                            , Task.dispatch UsedArticleCache
+                            )
+
+                        Nothing ->
+                            ( Either.Left slug
+                            , Cmd.none
+                            )
+
+                ( model, initCmd ) =
                     ArticlePage.init
                         { apiUrl = apiUrl
                         , viewer = viewer
-                        , eitherSlugOrArticle =
-                            case maybeArticle of
-                                Just article ->
-                                    --
-                                    -- TODO: Remove the article from the cache.
-                                    --
-                                    -- Dispatch a message to signal the
-                                    -- cache to be cleared.
-                                    --
-                                    if article.slug == slug then
-                                        Either.Right article
-
-                                    else
-                                        Either.Left slug
-
-                                Nothing ->
-                                    Either.Left slug
+                        , eitherSlugOrArticle = eitherSlugOrArticle
                         , onChange = ChangedPage << ChangedArticlePage
                         }
             in
-            ( Article model, cmd )
+            ( Article model
+            , Cmd.batch
+                [ usedCmd
+                , initCmd
+                ]
+            )
 
         Route.Profile _ ->
             ( Profile, Cmd.none )
@@ -315,6 +321,7 @@ type Msg
     | LoggedOut
     | UpdatedUser User
     | PublishedArticle Article
+    | UsedArticleCache
     | DeletedArticle
     | ChangedPage PageMsg
 
@@ -362,6 +369,9 @@ update msg model =
 
         PublishedArticle article ->
             showArticle article model
+
+        UsedArticleCache ->
+            clearArticleCache model
 
         DeletedArticle ->
             handleDeletedArticle model
@@ -484,6 +494,16 @@ showArticle article =
         (\subModel ->
             ( { subModel | maybeArticle = Just article }
             , Route.redirectToArticle subModel.key article.slug
+            )
+        )
+
+
+clearArticleCache : Model -> ( Model, Cmd Msg )
+clearArticleCache =
+    withSuccessModel
+        (\subModel ->
+            ( { subModel | maybeArticle = Nothing }
+            , Cmd.none
             )
         )
 
