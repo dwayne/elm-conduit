@@ -9,14 +9,14 @@ import View.SettingsForm as SettingsForm
 
 type alias ViewOptions msg =
     { classNames : String
-    , errorMessages : List String
     , form : SettingsForm.ViewOptions msg
+    , errorMessages : List String
     , onLogout : msg
     }
 
 
 view : ViewOptions msg -> H.Html msg
-view { classNames, errorMessages, form, onLogout } =
+view { classNames, form, errorMessages, onLogout } =
     H.div
         [ HA.class classNames ]
         [ H.h1

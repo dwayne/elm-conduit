@@ -151,7 +151,6 @@ viewHelper { username, email, password, errorMessages, isDisabled } =
                     [ HA.class "row" ]
                     [ Register.view
                         { classNames = "col-md-6 offset-md-3 col-xs-12"
-                        , errorMessages = errorMessages
                         , form =
                             { username = username
                             , email = email
@@ -162,6 +161,7 @@ viewHelper { username, email, password, errorMessages, isDisabled } =
                             , onInputPassword = ChangedPassword
                             , onSubmit = SubmittedForm
                             }
+                        , errorMessages = errorMessages
                         }
                     ]
                 ]

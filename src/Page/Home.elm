@@ -405,7 +405,7 @@ view { zone, viewer, onChange } model =
                 }
             ]
 
-        sidebarStatus =
+        sidebarViewOptions =
             case model.remoteDataTags of
                 RemoteData.Loading ->
                     Sidebar.Loading
@@ -430,7 +430,7 @@ view { zone, viewer, onChange } model =
                 , viewArticlePreviews
                 , viewPagination
                 ]
-                [ Sidebar.view { status = sidebarStatus }
+                [ Sidebar.view sidebarViewOptions
                 ]
             ]
         , Footer.view
@@ -449,14 +449,14 @@ viewArticlePreview viewer zone togglingFavourite { slug, title, description, bod
                 Viewer.User { token } ->
                     ArticlePreview.User
                         { isLoading = togglingFavourite == Just slug
+                        , totalFavourites = totalFavourites
+                        , isFavourite = isFavourite
                         , onToggleFavourite = ToggledFavourite token slug
                         }
         , username = author.username
         , imageUrl = author.imageUrl
         , zone = zone
         , createdAt = createdAt
-        , totalFavourites = totalFavourites
-        , isFavourite = isFavourite
         , slug = slug
         , title = title
         , description = description

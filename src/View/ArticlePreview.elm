@@ -19,8 +19,6 @@ type alias ViewOptions msg =
     , imageUrl : Url
     , zone : Time.Zone
     , createdAt : Timestamp
-    , totalFavourites : Total
-    , isFavourite : Bool
     , slug : Slug
     , title : String
     , description : String
@@ -32,12 +30,14 @@ type Role msg
     = Guest
     | User
         { isLoading : Bool
+        , totalFavourites : Total
+        , isFavourite : Bool
         , onToggleFavourite : Bool -> msg
         }
 
 
 view : ViewOptions msg -> H.Html msg
-view { role, username, imageUrl, zone, createdAt, totalFavourites, isFavourite, slug, title, description, tags } =
+view { role, username, imageUrl, zone, createdAt, slug, title, description, tags } =
     let
         profileHref =
             Route.toString <| Route.Profile username
@@ -67,7 +67,7 @@ view { role, username, imageUrl, zone, createdAt, totalFavourites, isFavourite, 
                 Guest ->
                     H.text ""
 
-                User { isLoading, onToggleFavourite } ->
+                User { isLoading, totalFavourites, isFavourite, onToggleFavourite } ->
                     H.button
                         [ HA.class "btn btn-sm pull-xs-right"
                         , HA.class <|

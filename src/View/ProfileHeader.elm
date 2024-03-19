@@ -1,26 +1,30 @@
-module View.ProfileHeader exposing (GuestOptions, Role(..), ViewOptions, view)
+module View.ProfileHeader exposing (Role(..), UserOptions, ViewOptions, view)
 
+import Data.Route as Route
+import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
-import View.FollowButton as FollowButton exposing (FollowButton)
+import Url exposing (Url)
+import View.FollowButton as FollowButton
 
 
 type alias ViewOptions msg =
-    { name : String
-    , imageUrl : String
+    { username : Username
+    , imageUrl : Url
     , bio : String
     , role : Role msg
     }
 
 
 type Role msg
-    = Guest (GuestOptions msg)
+    = Guest
+    | User (UserOptions msg)
     | Owner
 
 
-type alias GuestOptions msg =
-    { isFollowed : Bool
+type alias UserOptions msg =
+    { isFollowing : Bool
     , isDisabled : Bool
     , onFollow : msg
     , onUnfollow : msg
@@ -28,7 +32,7 @@ type alias GuestOptions msg =
 
 
 view : ViewOptions msg -> H.Html msg
-view { name, imageUrl, bio, role } =
+view { username, imageUrl, bio, role } =
     H.div
         [ HA.class "user-info" ]
         [ H.div
@@ -39,16 +43,19 @@ view { name, imageUrl, bio, role } =
                     [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
                     [ H.img
                         [ HA.class "user-img"
-                        , HA.src imageUrl
+                        , HA.src <| Url.toString imageUrl
                         ]
                         []
-                    , H.h4 [] [ H.text name ]
+                    , H.h4 [] [ H.text <| Username.toString username ]
                     , H.p [] [ H.text bio ]
                     , case role of
-                        Guest { isFollowed, isDisabled, onFollow, onUnfollow } ->
+                        Guest ->
+                            H.text ""
+
+                        User { isFollowing, isDisabled, onFollow, onUnfollow } ->
                             FollowButton.view
-                                { name = name
-                                , isFollowed = isFollowed
+                                { username = username
+                                , isFollowing = isFollowing
                                 , maybeTotalFollowers = Nothing
                                 , isDisabled = isDisabled
                                 , onFollow = onFollow
@@ -58,7 +65,7 @@ view { name, imageUrl, bio, role } =
                         Owner ->
                             H.a
                                 [ HA.class "btn btn-sm btn-outline-secondary action-btn"
-                                , HA.href "./settings.html"
+                                , HA.href <| Route.toString Route.Settings
                                 ]
                                 [ H.i
                                     [ HA.class "ion-gear-a" ]

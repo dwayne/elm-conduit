@@ -193,7 +193,6 @@ view { user, onLogout, onChange } { imageUrl, username, bio, email, password, er
                     [ HA.class "row" ]
                     [ Settings.view
                         { classNames = "col-md-6 offset-md-3 col-xs-12"
-                        , errorMessages = errorMessages
                         , form =
                             { imageUrl = imageUrl
                             , username = username
@@ -208,6 +207,7 @@ view { user, onLogout, onChange } { imageUrl, username, bio, email, password, er
                             , onInputPassword = onChange << ChangedPassword
                             , onSubmit = onChange SubmittedForm
                             }
+                        , errorMessages = errorMessages
                         , onLogout = onLogout
                         }
                     ]

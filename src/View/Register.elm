@@ -9,13 +9,13 @@ import View.RegisterForm as RegisterForm
 
 type alias ViewOptions msg =
     { classNames : String
-    , errorMessages : List String
     , form : RegisterForm.ViewOptions msg
+    , errorMessages : List String
     }
 
 
 view : ViewOptions msg -> H.Html msg
-view { classNames, errorMessages, form } =
+view { classNames, form, errorMessages } =
     H.div
         [ HA.class classNames ]
         [ H.h1

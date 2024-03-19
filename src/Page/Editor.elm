@@ -283,7 +283,6 @@ viewHelper user { action, title, description, body, tag, tags, errorMessages, is
                             \maybeSlug ->
                                 Editor.view
                                     { classNames = "col-md-10 offset-md-1 col-xs-12"
-                                    , errorMessages = errorMessages
                                     , form =
                                         { title = title
                                         , description = description
@@ -299,6 +298,7 @@ viewHelper user { action, title, description, body, tag, tags, errorMessages, is
                                         , onRemoveTag = RemovedTag
                                         , onSubmit = SubmittedForm maybeSlug
                                         }
+                                    , errorMessages = errorMessages
                                     }
                         , onFailure = H.text "Unable to load the article."
                         }

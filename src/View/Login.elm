@@ -9,13 +9,13 @@ import View.LoginForm as LoginForm
 
 type alias ViewOptions msg =
     { classNames : String
-    , errorMessages : List String
     , form : LoginForm.ViewOptions msg
+    , errorMessages : List String
     }
 
 
 view : ViewOptions msg -> H.Html msg
-view { classNames, errorMessages, form } =
+view { classNames, form, errorMessages } =
     H.div
         [ HA.class classNames ]
         [ H.h1

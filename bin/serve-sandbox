@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+#
+# Usage: serve-sandbox [9001]
+#
+
+set -euo pipefail
+
+port="${1:-9001}"
+
+xdg-open "http://localhost:$port" && \
+  caddy file-server --browse --listen :"$port" --root "${build:?}/sandbox"

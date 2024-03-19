@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+#
+# Usage: build-sandbox
+#
+
+set -euo pipefail
+
+src="${project:?}"
+out="${build:?}/sandbox"
+
+clean () {
+  rm -rf "$out"
+}
+
+prepare () {
+  mkdir -p "$out"
+}
+
+build_images () {
+  cp -r "$src/images" "$out"
+}
+
+build_html () {
+  cp "$src/sandbox/"*.html "$out"
+}
+
+build_css () {
+  sass --embed-sources "$src/sass/index.scss" "$out/index.css"
+}
+
+build_js () {
+  elm make "$src/src/Sandbox.elm" --debug --output "$out/app.js"
+}
+
+clean && prepare && build_images && build_html && build_css && build_js

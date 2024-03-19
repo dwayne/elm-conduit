@@ -26,6 +26,7 @@ import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Lib.Task as Task
 import Time
 import Url exposing (Url)
+import View.ArticleActionsForGuest as ArticleActionsForGuest
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
@@ -366,19 +367,7 @@ viewArticleAsGuest { zone, remoteDataArticle } =
                         , tags = article.tags
                         }
                     , H.hr [] []
-                    , H.div
-                        [ HA.class "article-actions" ]
-                        [ H.p []
-                            [ H.a
-                                [ HA.href <| Route.toString Route.Login ]
-                                [ H.text "Sign in" ]
-                            , H.text " or "
-                            , H.a
-                                [ HA.href <| Route.toString Route.Register ]
-                                [ H.text "Sign up" ]
-                            , H.text " to add comments on this article."
-                            ]
-                        ]
+                    , ArticleActionsForGuest.view
                     ]
                 ]
             )
