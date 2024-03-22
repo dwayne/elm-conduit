@@ -1,13 +1,18 @@
 module Page.Profile exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
+import Api
+import Api.GetProfile as GetProfile
 import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Username exposing (Username)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
+import Html.Attributes as HA
+import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Time
 import Url exposing (Url)
 import View.Navigation as Navigation
+import View.ProfileHeader as ProfileHeader
 
 
 
@@ -15,7 +20,9 @@ import View.Navigation as Navigation
 
 
 type alias Model =
-    {}
+    { remoteDataProfile : RemoteData () GetProfile.Profile
+    , showFavourites : Bool
+    }
 
 
 type alias InitOptions msg =
@@ -28,9 +35,17 @@ type alias InitOptions msg =
 
 
 init : InitOptions msg -> ( Model, Cmd msg )
-init _ =
-    ( {}
-    , Cmd.none
+init { apiUrl, maybeToken, username, showFavourites, onChange } =
+    ( { remoteDataProfile = RemoteData.Loading
+      , showFavourites = showFavourites
+      }
+    , GetProfile.getProfile
+        apiUrl
+        { maybeToken = maybeToken
+        , username = username
+        , onResponse = GotGetProfileResponse
+        }
+        |> Cmd.map onChange
     )
 
 
@@ -40,6 +55,7 @@ init _ =
 
 type Msg
     = NoOp
+    | GotGetProfileResponse (Result (Api.Error ()) GetProfile.Profile)
 
 
 type alias UpdateOptions msg =
@@ -56,6 +72,16 @@ update _ msg model =
             , Cmd.none
             )
 
+        GotGetProfileResponse result ->
+            ( result
+                |> Result.map
+                    (\profile ->
+                        { model | remoteDataProfile = RemoteData.Success profile }
+                    )
+                |> Result.withDefault model
+            , Cmd.none
+            )
+
 
 
 -- VIEW
@@ -69,11 +95,12 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer } _ =
+view { zone, viewer } { remoteDataProfile } =
     case viewer of
         Viewer.Guest ->
             viewAsGuest
                 { zone = zone
+                , remoteDataProfile = remoteDataProfile
                 }
 
         Viewer.User user ->
@@ -85,11 +112,28 @@ view { zone, viewer } _ =
 
 viewAsGuest :
     { zone : Time.Zone
+    , remoteDataProfile : RemoteData () GetProfile.Profile
     }
     -> H.Html msg
-viewAsGuest { zone } =
+viewAsGuest { zone, remoteDataProfile } =
     H.div []
         [ Navigation.view { role = Navigation.guest }
+        , H.div [ HA.class "profile-page" ] <|
+            case remoteDataProfile of
+                RemoteData.Loading ->
+                    []
+
+                RemoteData.Success profile ->
+                    [ ProfileHeader.view
+                        { username = profile.username
+                        , imageUrl = profile.imageUrl
+                        , bio = profile.bio
+                        , role = ProfileHeader.Guest
+                        }
+                    ]
+
+                RemoteData.Failure _ ->
+                    [ H.text "Unable to load the user's profile." ]
         ]
 
 
