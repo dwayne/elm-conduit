@@ -320,13 +320,13 @@ view : ViewOptions msg -> Model -> H.Html msg
 view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment, isDisabled } =
     case viewer of
         Viewer.Guest ->
-            viewArticleAsGuest
+            viewAsGuest
                 { zone = zone
                 , remoteDataArticle = remoteDataArticle
                 }
 
         Viewer.User user ->
-            viewArticleAsUser
+            viewAsUser
                 { zone = zone
                 , user = user
                 , remoteDataArticle = remoteDataArticle
@@ -337,16 +337,14 @@ view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment
                 |> H.map onChange
 
 
-viewArticleAsGuest :
+viewAsGuest :
     { zone : Time.Zone
     , remoteDataArticle : RemoteData () Article
     }
     -> H.Html msg
-viewArticleAsGuest { zone, remoteDataArticle } =
+viewAsGuest { zone, remoteDataArticle } =
     H.div []
-        [ Navigation.view
-            { role = Navigation.guest
-            }
+        [ Navigation.view { role = Navigation.guest }
         , viewArticle
             (\article ->
                 [ ArticleHeader.view
@@ -375,7 +373,7 @@ viewArticleAsGuest { zone, remoteDataArticle } =
         ]
 
 
-viewArticleAsUser :
+viewAsUser :
     { zone : Time.Zone
     , user : User
     , remoteDataArticle : RemoteData () Article
@@ -384,7 +382,7 @@ viewArticleAsUser :
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewArticleAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
+viewAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
     H.div []
         [ Navigation.view
             { role =

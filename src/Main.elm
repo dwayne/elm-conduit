@@ -10,6 +10,7 @@ import Data.Route as Route exposing (Route)
 import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
+import Data.Username exposing (Username)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Json.Decode as JD
@@ -19,6 +20,7 @@ import Page.Article as ArticlePage
 import Page.Editor as EditorPage
 import Page.Home as HomePage
 import Page.Login as LoginPage
+import Page.Profile as ProfilePage
 import Page.Register as RegisterPage
 import Page.Settings as SettingsPage
 import Port.Action
@@ -83,7 +85,7 @@ type Page
     | Settings SettingsPage.Model
     | Editor EditorPage.Model
     | Article ArticlePage.Model
-    | Profile
+    | Profile ProfilePage.Model
     | NotAuthorized
     | NotFound
 
@@ -281,11 +283,11 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                 ]
             )
 
-        Route.Profile _ ->
-            ( Profile, Cmd.none )
+        Route.Profile username ->
+            getProfilePage apiUrl viewer username False
 
-        Route.Favourites _ ->
-            ( Profile, Cmd.none )
+        Route.Favourites username ->
+            getProfilePage apiUrl viewer username True
 
 
 getEditorPage : Url -> Viewer -> Maybe Slug -> ( Page, Cmd Msg )
@@ -306,6 +308,23 @@ getEditorPage apiUrl viewer maybeSlug =
             )
         )
         viewer
+
+
+getProfilePage : Url -> Viewer -> Username -> Bool -> ( Page, Cmd Msg )
+getProfilePage apiUrl viewer username showFavourites =
+    let
+        ( model, cmd ) =
+            ProfilePage.init
+                { apiUrl = apiUrl
+                , maybeToken = Viewer.toToken viewer
+                , username = username
+                , showFavourites = showFavourites
+                , onChange = ChangedPage << ChangedProfilePage
+                }
+    in
+    ( Profile model
+    , cmd
+    )
 
 
 
@@ -334,6 +353,7 @@ type PageMsg
     | ChangedSettingsPage SettingsPage.Msg
     | ChangedEditorPage EditorPage.Msg
     | ChangedArticlePage ArticlePage.Msg
+    | ChangedProfilePage ProfilePage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -541,6 +561,9 @@ updatePage msg =
 
                 ChangedArticlePage pageMsg ->
                     updateArticlePage pageMsg subModel
+
+                ChangedProfilePage pageMsg ->
+                    updateProfilePage pageMsg subModel
         )
 
 
@@ -686,6 +709,27 @@ updateArticlePage pageMsg subModel =
             ( subModel, Cmd.none )
 
 
+updateProfilePage : ProfilePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
+updateProfilePage pageMsg subModel =
+    case subModel.page of
+        Profile pageModel ->
+            let
+                ( newPageModel, newPageCmd ) =
+                    ProfilePage.update
+                        { apiUrl = subModel.apiUrl
+                        , onChange = ChangedPage << ChangedProfilePage
+                        }
+                        pageMsg
+                        pageModel
+            in
+            ( { subModel | page = Profile newPageModel }
+            , newPageCmd
+            )
+
+        _ ->
+            ( subModel, Cmd.none )
+
+
 
 -- VIEW
 
@@ -763,8 +807,13 @@ viewSuccessPage { url, zone, viewer, page } =
                 }
                 model
 
-        Profile ->
-            H.text "You are on the profile page."
+        Profile model ->
+            ProfilePage.view
+                { zone = zone
+                , viewer = viewer
+                , onChange = ChangedPage << ChangedProfilePage
+                }
+                model
 
         NotAuthorized ->
             H.text "You are not allowed to view this page."
