@@ -213,7 +213,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     let
         viewHelper =
             case viewer of
@@ -232,6 +232,7 @@ view { zone, viewer, onChange } { remoteDataProfile, activeTab, remoteDataArticl
                     viewAsUser
                         { zone = zone
                         , user = user
+                        , profileUsername = username
                         , remoteDataProfile = remoteDataProfile
                         , activeTab = activeTab
                         , remoteDataArticles = remoteDataArticles
@@ -284,6 +285,7 @@ viewAsGuest { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPag
 viewAsUser :
     { zone : Time.Zone
     , user : User
+    , profileUsername : Username
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , activeTab : ArticleTabs.Tab
     , remoteDataArticles : RemoteData () (List Article)
@@ -292,14 +294,19 @@ viewAsUser :
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsUser { zone, user, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     H.div []
         [ Navigation.view
             { role =
-                Navigation.profile
-                    { username = user.username
-                    , imageUrl = user.imageUrl
-                    }
+                { username = user.username
+                , imageUrl = user.imageUrl
+                }
+                    |> (if user.username == profileUsername then
+                            Navigation.profile
+
+                        else
+                            Navigation.user
+                       )
             }
         , viewProfilePage
             (\profile ->
