@@ -717,6 +717,7 @@ updateProfilePage pageMsg subModel =
                 ( newPageModel, newPageCmd ) =
                     ProfilePage.update
                         { apiUrl = subModel.apiUrl
+                        , viewer = subModel.viewer
                         , onChange = ChangedPage << ChangedProfilePage
                         }
                         pageMsg

@@ -27,8 +27,9 @@ import View.ProfileHeader as ProfileHeader
 
 
 type alias Model =
-    { remoteDataProfile : RemoteData () GetProfile.Profile
-    , showFavourites : Bool
+    { username : Username
+    , remoteDataProfile : RemoteData () GetProfile.Profile
+    , activeTab : ArticleTabs.Tab
     , remoteDataArticles : RemoteData () (List Article)
     , currentPageNumber : PageNumber
     , pager : Pager
@@ -48,14 +49,22 @@ type alias InitOptions msg =
 init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, maybeToken, username, showFavourites, onChange } =
     let
+        activeTab =
+            if showFavourites then
+                ArticleTabs.Favourites
+
+            else
+                ArticleTabs.Personal
+
         currentPageNumber =
             PageNumber.one
 
         pager =
             Pager.five
     in
-    ( { remoteDataProfile = RemoteData.Loading
-      , showFavourites = showFavourites
+    ( { username = username
+      , remoteDataProfile = RemoteData.Loading
+      , activeTab = activeTab
       , remoteDataArticles = RemoteData.Loading
       , currentPageNumber = currentPageNumber
       , pager = pager
@@ -71,7 +80,7 @@ init { apiUrl, maybeToken, username, showFavourites, onChange } =
             { apiUrl = apiUrl
             , maybeToken = maybeToken
             , username = username
-            , showFavourites = showFavourites
+            , activeTab = activeTab
             , currentPageNumber = currentPageNumber
             , pager = pager
             }
@@ -89,16 +98,18 @@ type Msg
     = NoOp
     | GotGetProfileResponse (Result (Api.Error ()) GetProfile.Profile)
     | GotGetArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
+    | SwitchedArticleTabs ArticleTabs.Tab
 
 
 type alias UpdateOptions msg =
     { apiUrl : Url
+    , viewer : Viewer
     , onChange : Msg -> msg
     }
 
 
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
-update _ msg model =
+update options msg model =
     case msg of
         NoOp ->
             ( model
@@ -128,6 +139,23 @@ update _ msg model =
             , Cmd.none
             )
 
+        SwitchedArticleTabs tab ->
+            ( { model
+                | activeTab = tab
+                , remoteDataArticles = RemoteData.Loading
+              }
+            , getArticles
+                { apiUrl = options.apiUrl
+                , maybeToken = Viewer.toToken options.viewer
+                , username = model.username
+                , activeTab = tab
+                , currentPageNumber = PageNumber.one
+                , pager = model.pager
+                }
+                |> Cmd.map options.onChange
+            )
+
+
 
 -- HTTP
 
@@ -136,20 +164,21 @@ getArticles :
     { apiUrl : Url
     , maybeToken : Maybe Token
     , username : Username
-    , showFavourites : Bool
+    , activeTab : ArticleTabs.Tab
     , currentPageNumber : PageNumber
     , pager : Pager
     }
     -> Cmd Msg
-getArticles { apiUrl, maybeToken, username, showFavourites, currentPageNumber, pager } =
+getArticles { apiUrl, maybeToken, username, activeTab, currentPageNumber, pager } =
     GetArticles.getArticles
         apiUrl
         { request =
-            if showFavourites then
-                GetArticles.byFavourites maybeToken username
+            case activeTab of
+                ArticleTabs.Personal ->
+                    GetArticles.byAuthor maybeToken username
 
-            else
-                GetArticles.byAuthor maybeToken username
+                ArticleTabs.Favourites ->
+                    GetArticles.byFavourites maybeToken username
         , page = Pager.toPage currentPageNumber pager
         , onResponse = GotGetArticlesResponse
         }
@@ -167,7 +196,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+view { zone, viewer, onChange } { remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     let
         viewHelper =
             case viewer of
@@ -175,7 +204,7 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataA
                     viewAsGuest
                         { zone = zone
                         , remoteDataProfile = remoteDataProfile
-                        , showFavourites = showFavourites
+                        , activeTab = activeTab
                         , remoteDataArticles = remoteDataArticles
                         , currentPageNumber = currentPageNumber
                         , pager = pager
@@ -187,7 +216,7 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataA
                         { zone = zone
                         , user = user
                         , remoteDataProfile = remoteDataProfile
-                        , showFavourites = showFavourites
+                        , activeTab = activeTab
                         , remoteDataArticles = remoteDataArticles
                         , currentPageNumber = currentPageNumber
                         , pager = pager
@@ -200,14 +229,14 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataA
 viewAsGuest :
     { zone : Time.Zone
     , remoteDataProfile : RemoteData () GetProfile.Profile
-    , showFavourites : Bool
+    , activeTab : ArticleTabs.Tab
     , remoteDataArticles : RemoteData () (List Article)
     , currentPageNumber : PageNumber
     , pager : Pager
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsGuest { zone, remoteDataProfile, showFavourites, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+viewAsGuest { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     H.div []
         [ Navigation.view { role = Navigation.guest }
         , viewProfilePage
@@ -217,12 +246,12 @@ viewAsGuest { zone, remoteDataProfile, showFavourites, remoteDataArticles, curre
                     , role = ProfileHeader.Guest
                     }
                 , viewRow <|
-                    [ viewArticleTabs
-                        { showFavourites = showFavourites
+                    ArticleTabs.view
+                        { activeTab = activeTab
                         , isDisabled = isDisabled
+                        , onSwitch = SwitchedArticleTabs
                         }
-                    ]
-                        ++ viewArticles
+                        :: viewArticles
                             { zone = zone
                             , remoteDataArticles = remoteDataArticles
                             , currentPageNumber = currentPageNumber
@@ -239,14 +268,14 @@ viewAsUser :
     { zone : Time.Zone
     , user : User
     , remoteDataProfile : RemoteData () GetProfile.Profile
-    , showFavourites : Bool
+    , activeTab : ArticleTabs.Tab
     , remoteDataArticles : RemoteData () (List Article)
     , currentPageNumber : PageNumber
     , pager : Pager
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsUser { zone, user, remoteDataProfile, showFavourites, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+viewAsUser { zone, user, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     H.div []
         [ Navigation.view
             { role =
@@ -276,12 +305,12 @@ viewAsUser { zone, user, remoteDataProfile, showFavourites, remoteDataArticles, 
                                 }
                     }
                 , viewRow <|
-                    [ viewArticleTabs
-                        { showFavourites = showFavourites
+                    ArticleTabs.view
+                        { activeTab = activeTab
                         , isDisabled = isDisabled
+                        , onSwitch = SwitchedArticleTabs
                         }
-                    ]
-                        ++ viewArticles
+                        :: viewArticles
                             { zone = zone
                             , remoteDataArticles = remoteDataArticles
                             , currentPageNumber = currentPageNumber
@@ -330,28 +359,6 @@ viewProfileHeader { profile, role } =
         , imageUrl = profile.imageUrl
         , bio = profile.bio
         , role = role
-        }
-
-
-viewArticleTabs :
-    { showFavourites : Bool
-    , isDisabled : Bool
-    }
-    -> H.Html Msg
-viewArticleTabs { showFavourites, isDisabled } =
-    ArticleTabs.view
-        { activeTab =
-            if showFavourites then
-                ArticleTabs.Favourites
-
-            else
-                ArticleTabs.Personal
-
-        --
-        -- TODO: Implement onSwitch.
-        --
-        , isDisabled = isDisabled
-        , onSwitch = always NoOp
         }
 
 
