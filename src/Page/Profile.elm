@@ -99,6 +99,7 @@ type Msg
     | GotGetProfileResponse (Result (Api.Error ()) GetProfile.Profile)
     | GotGetArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
     | SwitchedArticleTabs ArticleTabs.Tab
+    | ChangedPageNumber PageNumber
 
 
 type alias UpdateOptions msg =
@@ -122,7 +123,7 @@ update options msg model =
                     (\profile ->
                         { model | remoteDataProfile = RemoteData.Success profile }
                     )
-                |> Result.withDefault model
+                |> Result.withDefault { model | remoteDataProfile = RemoteData.Failure () }
             , Cmd.none
             )
 
@@ -135,7 +136,7 @@ update options msg model =
                             , pager = Pager.setTotalPages totalArticles model.pager
                         }
                     )
-                |> Result.withDefault model
+                |> Result.withDefault { model | remoteDataArticles = RemoteData.Failure () }
             , Cmd.none
             )
 
@@ -150,6 +151,22 @@ update options msg model =
                 , username = model.username
                 , activeTab = tab
                 , currentPageNumber = PageNumber.one
+                , pager = model.pager
+                }
+                |> Cmd.map options.onChange
+            )
+
+        ChangedPageNumber pageNumber ->
+            ( { model
+                | remoteDataArticles = RemoteData.Loading
+                , currentPageNumber = pageNumber
+              }
+            , getArticles
+                { apiUrl = options.apiUrl
+                , maybeToken = Viewer.toToken options.viewer
+                , username = model.username
+                , activeTab = model.activeTab
+                , currentPageNumber = pageNumber
                 , pager = model.pager
                 }
                 |> Cmd.map options.onChange
@@ -373,7 +390,7 @@ viewArticles :
 viewArticles { zone, remoteDataArticles, currentPageNumber, pager, toRole } =
     case remoteDataArticles of
         RemoteData.Loading ->
-            []
+            [ ArticlePreview.viewMessage "Loading articles..." ]
 
         RemoteData.Success articles ->
             List.concat
@@ -395,17 +412,13 @@ viewArticles { zone, remoteDataArticles, currentPageNumber, pager, toRole } =
                 , [ Pagination.view
                         { totalPages = Pager.toTotalPages pager
                         , currentPageNumber = currentPageNumber
-
-                        --
-                        -- TODO: Implement onChangePageNumber.
-                        --
-                        , onChangePageNumber = always NoOp
+                        , onChangePageNumber = ChangedPageNumber
                         }
                   ]
                 ]
 
         RemoteData.Failure _ ->
-            [ H.text "Unable to load articles." ]
+            [ ArticlePreview.viewMessage "Unable to load articles." ]
 
 
 viewRow : List (H.Html msg) -> H.Html msg
