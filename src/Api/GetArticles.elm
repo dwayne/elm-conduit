@@ -1,6 +1,9 @@
 module Api.GetArticles exposing
     ( Articles
     , Options
+    , Request
+    , byAuthor
+    , byFavourites
     , byTag
     , fromUsersYouFollow
     , getArticles
@@ -41,7 +44,7 @@ type Filter
     = None
     | ByTag Tag
     | ByAuthor Username
-    | ByFavourite Username
+    | ByFavourites Username
 
 
 fromUsersYouFollow : Token -> Request
@@ -57,6 +60,16 @@ global maybeToken =
 byTag : Maybe Token -> Tag -> Request
 byTag maybeToken =
     Global maybeToken << ByTag
+
+
+byAuthor : Maybe Token -> Username -> Request
+byAuthor maybeToken =
+    Global maybeToken << ByAuthor
+
+
+byFavourites : Maybe Token -> Username -> Request
+byFavourites maybeToken =
+    Global maybeToken << ByFavourites
 
 
 getArticles : Url -> Options msg -> Cmd msg
@@ -107,7 +120,7 @@ getArticlesGlobally baseUrl maybeToken filter page onResponse =
                     ByAuthor username ->
                         Just <| UB.string "author" <| Username.toString username
 
-                    ByFavourite username ->
+                    ByFavourites username ->
                         Just <| UB.string "favorited" <| Username.toString username
                 ]
         , onResponse = onResponse

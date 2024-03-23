@@ -55,7 +55,7 @@ slugParser =
 
 usernameParser : UP.Parser (Username -> a) a
 usernameParser =
-    UP.custom "USERNAME" Username.fromString
+    UP.custom "USERNAME" (Url.percentDecode >> Maybe.andThen Username.fromString)
 
 
 redirectToHome : BN.Key -> Cmd msg

@@ -1,7 +1,11 @@
 module Page.Profile exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptions, init, update, view)
 
 import Api
+import Api.GetArticles as GetArticles
 import Api.GetProfile as GetProfile
+import Data.Article as Article exposing (Article)
+import Data.PageNumber as PageNumber exposing (PageNumber)
+import Data.Pager as Pager exposing (Pager)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Username exposing (Username)
@@ -11,6 +15,7 @@ import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Time
 import Url exposing (Url)
+import View.ArticlePreview as ArticlePreview
 import View.ArticleTabs as ArticleTabs
 import View.Navigation as Navigation
 import View.ProfileHeader as ProfileHeader
@@ -23,6 +28,9 @@ import View.ProfileHeader as ProfileHeader
 type alias Model =
     { remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
+    , remoteDataArticles : RemoteData () GetArticles.Articles
+    , currentPageNumber : PageNumber
+    , pager : Pager
     , isDisabled : Bool
     }
 
@@ -38,16 +46,39 @@ type alias InitOptions msg =
 
 init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, maybeToken, username, showFavourites, onChange } =
+    let
+        currentPageNumber =
+            PageNumber.one
+
+        pager =
+            Pager.new
+    in
     ( { remoteDataProfile = RemoteData.Loading
       , showFavourites = showFavourites
+      , remoteDataArticles = RemoteData.Loading
+      , currentPageNumber = currentPageNumber
+      , pager = pager
       , isDisabled = False
       }
-    , GetProfile.getProfile
-        apiUrl
-        { maybeToken = maybeToken
-        , username = username
-        , onResponse = GotGetProfileResponse
-        }
+    , [ GetProfile.getProfile
+            apiUrl
+            { maybeToken = maybeToken
+            , username = username
+            , onResponse = GotGetProfileResponse
+            }
+      , GetArticles.getArticles
+            apiUrl
+            { request =
+                if showFavourites then
+                    GetArticles.byFavourites maybeToken username
+
+                else
+                    GetArticles.byAuthor maybeToken username
+            , page = Pager.toPage currentPageNumber pager
+            , onResponse = GotGetArticlesResponse
+            }
+      ]
+        |> Cmd.batch
         |> Cmd.map onChange
     )
 
@@ -59,6 +90,7 @@ init { apiUrl, maybeToken, username, showFavourites, onChange } =
 type Msg
     = NoOp
     | GotGetProfileResponse (Result (Api.Error ()) GetProfile.Profile)
+    | GotGetArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
 
 
 type alias UpdateOptions msg =
@@ -85,6 +117,16 @@ update _ msg model =
             , Cmd.none
             )
 
+        GotGetArticlesResponse result ->
+            ( result
+                |> Result.map
+                    (\articles ->
+                        { model | remoteDataArticles = RemoteData.Success articles }
+                    )
+                |> Result.withDefault model
+            , Cmd.none
+            )
+
 
 
 -- VIEW
@@ -98,7 +140,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataProfile, showFavourites, isDisabled } =
+view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataArticles, isDisabled } =
     let
         viewHelper =
             case viewer of
@@ -107,6 +149,7 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites, isDisabled 
                         { zone = zone
                         , remoteDataProfile = remoteDataProfile
                         , showFavourites = showFavourites
+                        , remoteDataArticles = remoteDataArticles
                         , isDisabled = isDisabled
                         }
 
@@ -126,10 +169,11 @@ viewAsGuest :
     { zone : Time.Zone
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
+    , remoteDataArticles : RemoteData () GetArticles.Articles
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsGuest { zone, remoteDataProfile, showFavourites, isDisabled } =
+viewAsGuest { zone, remoteDataProfile, showFavourites, remoteDataArticles, isDisabled } =
     H.div []
         [ Navigation.view { role = Navigation.guest }
         , viewProfilePage
@@ -138,12 +182,28 @@ viewAsGuest { zone, remoteDataProfile, showFavourites, isDisabled } =
                     { profile = profile
                     , role = ProfileHeader.Guest
                     }
-                , viewRow
+                , viewRow <|
                     [ viewArticleTabs
                         { showFavourites = showFavourites
                         , isDisabled = isDisabled
                         }
                     ]
+                        ++ viewArticles
+                            { remoteDataArticles = remoteDataArticles
+                            , viewArticlePreview =
+                                \{ slug, title, description, tags, createdAt, author } ->
+                                    ArticlePreview.view
+                                        { role = ArticlePreview.Guest
+                                        , username = author.username
+                                        , imageUrl = author.imageUrl
+                                        , zone = zone
+                                        , createdAt = createdAt
+                                        , slug = slug
+                                        , title = title
+                                        , description = description
+                                        , tags = tags
+                                        }
+                            }
                 ]
             )
             remoteDataProfile
@@ -247,6 +307,23 @@ viewArticleTabs { showFavourites, isDisabled } =
         , isDisabled = isDisabled
         , onSwitch = always NoOp
         }
+
+
+viewArticles :
+    { remoteDataArticles : RemoteData () GetArticles.Articles
+    , viewArticlePreview : Article -> H.Html msg
+    }
+    -> List (H.Html msg)
+viewArticles { remoteDataArticles, viewArticlePreview } =
+    case remoteDataArticles of
+        RemoteData.Loading ->
+            []
+
+        RemoteData.Success { articles } ->
+            List.map viewArticlePreview articles
+
+        RemoteData.Failure _ ->
+            [ H.text "Unable to load articles." ]
 
 
 viewRow : List (H.Html msg) -> H.Html msg
