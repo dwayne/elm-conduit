@@ -23,6 +23,7 @@ import View.ProfileHeader as ProfileHeader
 type alias Model =
     { remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
+    , isDisabled : Bool
     }
 
 
@@ -39,6 +40,7 @@ init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, maybeToken, username, showFavourites, onChange } =
     ( { remoteDataProfile = RemoteData.Loading
       , showFavourites = showFavourites
+      , isDisabled = False
       }
     , GetProfile.getProfile
         apiUrl
@@ -96,7 +98,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataProfile, showFavourites } =
+view { zone, viewer, onChange } { remoteDataProfile, showFavourites, isDisabled } =
     let
         viewHelper =
             case viewer of
@@ -105,6 +107,7 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites } =
                         { zone = zone
                         , remoteDataProfile = remoteDataProfile
                         , showFavourites = showFavourites
+                        , isDisabled = isDisabled
                         }
 
                 Viewer.User user ->
@@ -113,6 +116,7 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites } =
                         , user = user
                         , remoteDataProfile = remoteDataProfile
                         , showFavourites = showFavourites
+                        , isDisabled = isDisabled
                         }
     in
     H.map onChange viewHelper
@@ -122,9 +126,10 @@ viewAsGuest :
     { zone : Time.Zone
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
+    , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsGuest { zone, remoteDataProfile, showFavourites } =
+viewAsGuest { zone, remoteDataProfile, showFavourites, isDisabled } =
     H.div []
         [ Navigation.view { role = Navigation.guest }
         , viewProfilePage
@@ -136,7 +141,7 @@ viewAsGuest { zone, remoteDataProfile, showFavourites } =
                 , viewRow
                     [ viewArticleTabs
                         { showFavourites = showFavourites
-                        , isDisabled = False
+                        , isDisabled = isDisabled
                         }
                     ]
                 ]
@@ -150,9 +155,10 @@ viewAsUser :
     , user : User
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
+    , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsUser { zone, user, remoteDataProfile, showFavourites } =
+viewAsUser { zone, user, remoteDataProfile, showFavourites, isDisabled } =
     H.div []
         [ Navigation.view
             { role =
@@ -176,7 +182,7 @@ viewAsUser { zone, user, remoteDataProfile, showFavourites } =
                                 --
                                 -- TODO: Implement follow/unfollow.
                                 --
-                                , isDisabled = False
+                                , isDisabled = isDisabled
                                 , onFollow = NoOp
                                 , onUnfollow = NoOp
                                 }
@@ -184,7 +190,7 @@ viewAsUser { zone, user, remoteDataProfile, showFavourites } =
                 , viewRow
                     [ viewArticleTabs
                         { showFavourites = showFavourites
-                        , isDisabled = False
+                        , isDisabled = isDisabled
                         }
                     ]
                 ]
