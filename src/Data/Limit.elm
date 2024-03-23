@@ -1,8 +1,13 @@
-module Data.Limit exposing (Limit, ten, toInt)
+module Data.Limit exposing (Limit, five, ten, toInt)
 
 
 type Limit
     = Limit Int
+
+
+five : Limit
+five =
+    Limit 5
 
 
 ten : Limit

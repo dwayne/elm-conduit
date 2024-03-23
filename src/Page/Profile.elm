@@ -51,7 +51,7 @@ init { apiUrl, maybeToken, username, showFavourites, onChange } =
             PageNumber.one
 
         pager =
-            Pager.new
+            Pager.five
     in
     ( { remoteDataProfile = RemoteData.Loading
       , showFavourites = showFavourites

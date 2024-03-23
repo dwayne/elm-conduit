@@ -63,7 +63,7 @@ feedInit : Feed
 feedInit =
     { remoteDataArticles = RemoteData.Loading
     , currentPageNumber = PageNumber.one
-    , pager = Pager.new
+    , pager = Pager.ten
     }
 
 

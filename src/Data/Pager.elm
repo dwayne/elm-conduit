@@ -1,7 +1,8 @@
 module Data.Pager exposing
     ( Page
     , Pager
-    , new
+    , five
+    , ten
     , setTotalPages
     , toPage
     , toTotalPages
@@ -20,10 +21,20 @@ type Pager
         }
 
 
-new : Pager
-new =
+five : Pager
+five =
+    fromLimit Limit.five
+
+
+ten : Pager
+ten =
+    fromLimit Limit.ten
+
+
+fromLimit : Limit -> Pager
+fromLimit limit =
     Pager
-        { limit = Limit.ten
+        { limit = limit
         , maybeTotalPages = Nothing
         }
 
