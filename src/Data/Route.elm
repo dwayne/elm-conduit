@@ -50,7 +50,7 @@ routeParser =
 
 slugParser : UP.Parser (Slug -> a) a
 slugParser =
-    UP.custom "SLUG" Slug.fromString
+    UP.custom "SLUG" (Url.percentDecode >> Maybe.andThen Slug.fromString)
 
 
 usernameParser : UP.Parser (Username -> a) a
