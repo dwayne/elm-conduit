@@ -30,13 +30,15 @@ type alias Profile =
     { username : Username
     , imageUrl : Url
     , bio : String
+    , isFollowing : Bool
     }
 
 
 decoder : JD.Decoder Profile
 decoder =
     JD.field "profile" <|
-        JD.map3 Profile
+        JD.map4 Profile
             (JD.field "username" Username.decoder)
             (JD.field "image" JD.url)
             (JD.field "bio" JD.nullableString)
+            (JD.field "following" JD.bool)
