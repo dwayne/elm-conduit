@@ -67,16 +67,13 @@ init { apiUrl, maybeToken, username, showFavourites, onChange } =
             , username = username
             , onResponse = GotGetProfileResponse
             }
-      , GetArticles.getArticles
-            apiUrl
-            { request =
-                if showFavourites then
-                    GetArticles.byFavourites maybeToken username
-
-                else
-                    GetArticles.byAuthor maybeToken username
-            , page = Pager.toPage currentPageNumber pager
-            , onResponse = GotGetArticlesResponse
+      , getArticles
+            { apiUrl = apiUrl
+            , maybeToken = maybeToken
+            , username = username
+            , showFavourites = showFavourites
+            , currentPageNumber = currentPageNumber
+            , pager = pager
             }
       ]
         |> Cmd.batch
@@ -130,6 +127,32 @@ update _ msg model =
                 |> Result.withDefault model
             , Cmd.none
             )
+
+
+-- HTTP
+
+
+getArticles :
+    { apiUrl : Url
+    , maybeToken : Maybe Token
+    , username : Username
+    , showFavourites : Bool
+    , currentPageNumber : PageNumber
+    , pager : Pager
+    }
+    -> Cmd Msg
+getArticles { apiUrl, maybeToken, username, showFavourites, currentPageNumber, pager } =
+    GetArticles.getArticles
+        apiUrl
+        { request =
+            if showFavourites then
+                GetArticles.byFavourites maybeToken username
+
+            else
+                GetArticles.byAuthor maybeToken username
+        , page = Pager.toPage currentPageNumber pager
+        , onResponse = GotGetArticlesResponse
+        }
 
 
 
