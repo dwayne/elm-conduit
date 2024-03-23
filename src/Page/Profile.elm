@@ -165,6 +165,9 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataA
                         , user = user
                         , remoteDataProfile = remoteDataProfile
                         , showFavourites = showFavourites
+                        , remoteDataArticles = remoteDataArticles
+                        , currentPageNumber = currentPageNumber
+                        , pager = pager
                         , isDisabled = isDisabled
                         }
     in
@@ -197,22 +200,11 @@ viewAsGuest { zone, remoteDataProfile, showFavourites, remoteDataArticles, curre
                         }
                     ]
                         ++ viewArticles
-                            { remoteDataArticles = remoteDataArticles
+                            { zone = zone
+                            , remoteDataArticles = remoteDataArticles
                             , currentPageNumber = currentPageNumber
                             , pager = pager
-                            , viewArticlePreview =
-                                \{ slug, title, description, tags, createdAt, author } ->
-                                    ArticlePreview.view
-                                        { role = ArticlePreview.Guest
-                                        , username = author.username
-                                        , imageUrl = author.imageUrl
-                                        , zone = zone
-                                        , createdAt = createdAt
-                                        , slug = slug
-                                        , title = title
-                                        , description = description
-                                        , tags = tags
-                                        }
+                            , toRole = always ArticlePreview.Guest
                             }
                 ]
             )
@@ -225,10 +217,13 @@ viewAsUser :
     , user : User
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
+    , remoteDataArticles : RemoteData () (List Article)
+    , currentPageNumber : PageNumber
+    , pager : Pager
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsUser { zone, user, remoteDataProfile, showFavourites, isDisabled } =
+viewAsUser { zone, user, remoteDataProfile, showFavourites, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     H.div []
         [ Navigation.view
             { role =
@@ -257,12 +252,30 @@ viewAsUser { zone, user, remoteDataProfile, showFavourites, isDisabled } =
                                 , onUnfollow = NoOp
                                 }
                     }
-                , viewRow
+                , viewRow <|
                     [ viewArticleTabs
                         { showFavourites = showFavourites
                         , isDisabled = isDisabled
                         }
                     ]
+                        ++ viewArticles
+                            { zone = zone
+                            , remoteDataArticles = remoteDataArticles
+                            , currentPageNumber = currentPageNumber
+                            , pager = pager
+                            , toRole =
+                                \{ isFavourite, totalFavourites } ->
+                                    ArticlePreview.User
+                                        { isLoading = isDisabled
+                                        , totalFavourites = totalFavourites
+                                        , isFavourite = isFavourite
+
+                                        --
+                                        -- TODO: Implement onToggleFavourite.
+                                        --
+                                        , onToggleFavourite = always NoOp
+                                        }
+                            }
                 ]
             )
             remoteDataProfile
@@ -320,23 +333,39 @@ viewArticleTabs { showFavourites, isDisabled } =
 
 
 viewArticles :
-    { remoteDataArticles : RemoteData () (List Article)
+    { zone : Time.Zone
+    , remoteDataArticles : RemoteData () (List Article)
     , currentPageNumber : PageNumber
     , pager : Pager
-    , viewArticlePreview : Article -> H.Html Msg
+    , toRole : Article -> ArticlePreview.Role Msg
     }
     -> List (H.Html Msg)
-viewArticles { remoteDataArticles, currentPageNumber, pager, viewArticlePreview } =
+viewArticles { zone, remoteDataArticles, currentPageNumber, pager, toRole } =
     case remoteDataArticles of
         RemoteData.Loading ->
             []
 
         RemoteData.Success articles ->
             List.concat
-                [ List.map viewArticlePreview articles
+                [ List.map
+                    (\({ slug, title, description, tags, createdAt, author } as article) ->
+                        ArticlePreview.view
+                            { role = toRole article
+                            , username = author.username
+                            , imageUrl = author.imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , slug = slug
+                            , title = title
+                            , description = description
+                            , tags = tags
+                            }
+                    )
+                    articles
                 , [ Pagination.view
                         { totalPages = Pager.toTotalPages pager
                         , currentPageNumber = currentPageNumber
+
                         --
                         -- TODO: Implement onChangePageNumber.
                         --
