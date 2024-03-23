@@ -11,6 +11,7 @@ import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Time
 import Url exposing (Url)
+import View.ArticleTabs as ArticleTabs
 import View.Navigation as Navigation
 import View.ProfileHeader as ProfileHeader
 
@@ -95,47 +96,52 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataProfile } =
-    case viewer of
-        Viewer.Guest ->
-            viewAsGuest
-                { zone = zone
-                , remoteDataProfile = remoteDataProfile
-                }
+view { zone, viewer, onChange } { remoteDataProfile, showFavourites } =
+    let
+        viewHelper =
+            case viewer of
+                Viewer.Guest ->
+                    viewAsGuest
+                        { zone = zone
+                        , remoteDataProfile = remoteDataProfile
+                        , showFavourites = showFavourites
+                        }
 
-        Viewer.User user ->
-            viewAsUser
-                { zone = zone
-                , user = user
-                , remoteDataProfile = remoteDataProfile
-                }
-                |> H.map onChange
+                Viewer.User user ->
+                    viewAsUser
+                        { zone = zone
+                        , user = user
+                        , remoteDataProfile = remoteDataProfile
+                        , showFavourites = showFavourites
+                        }
+    in
+    H.map onChange viewHelper
 
 
 viewAsGuest :
     { zone : Time.Zone
     , remoteDataProfile : RemoteData () GetProfile.Profile
+    , showFavourites : Bool
     }
-    -> H.Html msg
-viewAsGuest { zone, remoteDataProfile } =
+    -> H.Html Msg
+viewAsGuest { zone, remoteDataProfile, showFavourites } =
     H.div []
         [ Navigation.view { role = Navigation.guest }
-        , H.div [ HA.class "profile-page" ] <|
-            case remoteDataProfile of
-                RemoteData.Loading ->
-                    []
-
-                RemoteData.Success profile ->
-                    [ ProfileHeader.view
-                        { username = profile.username
-                        , imageUrl = profile.imageUrl
-                        , bio = profile.bio
-                        , role = ProfileHeader.Guest
+        , viewProfilePage
+            (\profile ->
+                [ viewProfileHeader
+                    { profile = profile
+                    , role = ProfileHeader.Guest
+                    }
+                , viewRow
+                    [ viewArticleTabs
+                        { showFavourites = showFavourites
+                        , isDisabled = False
                         }
                     ]
-
-                RemoteData.Failure _ ->
-                    [ H.text "Unable to load the user's profile." ]
+                ]
+            )
+            remoteDataProfile
         ]
 
 
@@ -143,9 +149,10 @@ viewAsUser :
     { zone : Time.Zone
     , user : User
     , remoteDataProfile : RemoteData () GetProfile.Profile
+    , showFavourites : Bool
     }
     -> H.Html Msg
-viewAsUser { zone, user, remoteDataProfile } =
+viewAsUser { zone, user, remoteDataProfile, showFavourites } =
     H.div []
         [ Navigation.view
             { role =
@@ -154,34 +161,96 @@ viewAsUser { zone, user, remoteDataProfile } =
                     , imageUrl = user.imageUrl
                     }
             }
-        , H.div [ HA.class "profile-page" ] <|
-            case remoteDataProfile of
-                RemoteData.Loading ->
-                    []
+        , viewProfilePage
+            (\profile ->
+                [ viewProfileHeader
+                    { profile = profile
+                    , role =
+                        if user.username == profile.username then
+                            ProfileHeader.Owner
 
-                RemoteData.Success profile ->
-                    [ ProfileHeader.view
-                        { username = profile.username
-                        , imageUrl = profile.imageUrl
-                        , bio = profile.bio
-                        , role =
-                            if profile.username == user.username then
-                                ProfileHeader.Owner
+                        else
+                            ProfileHeader.User
+                                { isFollowing = profile.isFollowing
 
-                            else
-                                ProfileHeader.User
-                                    { isFollowing = profile.isFollowing
-
-                                    --
-                                    -- TODO: Implement follow/unfollow.
-                                    --
-                                    , isDisabled = False
-                                    , onFollow = NoOp
-                                    , onUnfollow = NoOp
-                                    }
+                                --
+                                -- TODO: Implement follow/unfollow.
+                                --
+                                , isDisabled = False
+                                , onFollow = NoOp
+                                , onUnfollow = NoOp
+                                }
+                    }
+                , viewRow
+                    [ viewArticleTabs
+                        { showFavourites = showFavourites
+                        , isDisabled = False
                         }
                     ]
+                ]
+            )
+            remoteDataProfile
+        ]
 
-                RemoteData.Failure _ ->
-                    [ H.text "Unable to load the user's profile." ]
+
+viewProfilePage : (GetProfile.Profile -> List (H.Html msg)) -> RemoteData () GetProfile.Profile -> H.Html msg
+viewProfilePage toHtml remoteDataProfile =
+    H.div [ HA.class "profile-page" ] <|
+        case remoteDataProfile of
+            RemoteData.Loading ->
+                []
+
+            RemoteData.Success profile ->
+                toHtml profile
+
+            RemoteData.Failure _ ->
+                [ H.text "Unable to load the user's profile." ]
+
+
+viewProfileHeader :
+    { profile : GetProfile.Profile
+    , role : ProfileHeader.Role msg
+    }
+    -> H.Html msg
+viewProfileHeader { profile, role } =
+    ProfileHeader.view
+        { username = profile.username
+        , imageUrl = profile.imageUrl
+        , bio = profile.bio
+        , role = role
+        }
+
+
+viewArticleTabs :
+    { showFavourites : Bool
+    , isDisabled : Bool
+    }
+    -> H.Html Msg
+viewArticleTabs { showFavourites, isDisabled } =
+    ArticleTabs.view
+        { activeTab =
+            if showFavourites then
+                ArticleTabs.Favourites
+
+            else
+                ArticleTabs.Personal
+
+        --
+        -- TODO: Implement onSwitch.
+        --
+        , isDisabled = isDisabled
+        , onSwitch = always NoOp
+        }
+
+
+viewRow : List (H.Html msg) -> H.Html msg
+viewRow rows =
+    H.div
+        [ HA.class "container" ]
+        [ H.div
+            [ HA.class "row" ]
+            [ H.div
+                [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
+                rows
+            ]
         ]
