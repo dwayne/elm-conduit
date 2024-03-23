@@ -2,8 +2,8 @@ module Data.Pager exposing
     ( Page
     , Pager
     , five
-    , ten
     , setTotalPages
+    , ten
     , toPage
     , toTotalPages
     )

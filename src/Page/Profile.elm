@@ -18,6 +18,7 @@ import Url exposing (Url)
 import View.ArticlePreview as ArticlePreview
 import View.ArticleTabs as ArticleTabs
 import View.Navigation as Navigation
+import View.Pagination as Pagination
 import View.ProfileHeader as ProfileHeader
 
 
@@ -28,7 +29,7 @@ import View.ProfileHeader as ProfileHeader
 type alias Model =
     { remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
-    , remoteDataArticles : RemoteData () GetArticles.Articles
+    , remoteDataArticles : RemoteData () (List Article)
     , currentPageNumber : PageNumber
     , pager : Pager
     , isDisabled : Bool
@@ -120,8 +121,11 @@ update _ msg model =
         GotGetArticlesResponse result ->
             ( result
                 |> Result.map
-                    (\articles ->
-                        { model | remoteDataArticles = RemoteData.Success articles }
+                    (\{ articles, totalArticles } ->
+                        { model
+                            | remoteDataArticles = RemoteData.Success articles
+                            , pager = Pager.setTotalPages totalArticles model.pager
+                        }
                     )
                 |> Result.withDefault model
             , Cmd.none
@@ -140,7 +144,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataArticles, isDisabled } =
+view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     let
         viewHelper =
             case viewer of
@@ -150,6 +154,8 @@ view { zone, viewer, onChange } { remoteDataProfile, showFavourites, remoteDataA
                         , remoteDataProfile = remoteDataProfile
                         , showFavourites = showFavourites
                         , remoteDataArticles = remoteDataArticles
+                        , currentPageNumber = currentPageNumber
+                        , pager = pager
                         , isDisabled = isDisabled
                         }
 
@@ -169,11 +175,13 @@ viewAsGuest :
     { zone : Time.Zone
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , showFavourites : Bool
-    , remoteDataArticles : RemoteData () GetArticles.Articles
+    , remoteDataArticles : RemoteData () (List Article)
+    , currentPageNumber : PageNumber
+    , pager : Pager
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsGuest { zone, remoteDataProfile, showFavourites, remoteDataArticles, isDisabled } =
+viewAsGuest { zone, remoteDataProfile, showFavourites, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     H.div []
         [ Navigation.view { role = Navigation.guest }
         , viewProfilePage
@@ -190,6 +198,8 @@ viewAsGuest { zone, remoteDataProfile, showFavourites, remoteDataArticles, isDis
                     ]
                         ++ viewArticles
                             { remoteDataArticles = remoteDataArticles
+                            , currentPageNumber = currentPageNumber
+                            , pager = pager
                             , viewArticlePreview =
                                 \{ slug, title, description, tags, createdAt, author } ->
                                     ArticlePreview.view
@@ -310,17 +320,30 @@ viewArticleTabs { showFavourites, isDisabled } =
 
 
 viewArticles :
-    { remoteDataArticles : RemoteData () GetArticles.Articles
-    , viewArticlePreview : Article -> H.Html msg
+    { remoteDataArticles : RemoteData () (List Article)
+    , currentPageNumber : PageNumber
+    , pager : Pager
+    , viewArticlePreview : Article -> H.Html Msg
     }
-    -> List (H.Html msg)
-viewArticles { remoteDataArticles, viewArticlePreview } =
+    -> List (H.Html Msg)
+viewArticles { remoteDataArticles, currentPageNumber, pager, viewArticlePreview } =
     case remoteDataArticles of
         RemoteData.Loading ->
             []
 
-        RemoteData.Success { articles } ->
-            List.map viewArticlePreview articles
+        RemoteData.Success articles ->
+            List.concat
+                [ List.map viewArticlePreview articles
+                , [ Pagination.view
+                        { totalPages = Pager.toTotalPages pager
+                        , currentPageNumber = currentPageNumber
+                        --
+                        -- TODO: Implement onChangePageNumber.
+                        --
+                        , onChangePageNumber = always NoOp
+                        }
+                  ]
+                ]
 
         RemoteData.Failure _ ->
             [ H.text "Unable to load articles." ]
