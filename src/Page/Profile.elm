@@ -3,10 +3,12 @@ module Page.Profile exposing (InitOptions, Model, Msg, UpdateOptions, ViewOption
 import Api
 import Api.GetArticles as GetArticles
 import Api.GetProfile as GetProfile
+import Api.ToggleFavourite as ToggleFavourite
 import Api.ToggleFollow as ToggleFollow
 import Data.Article as Article exposing (Article)
 import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
+import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Username exposing (Username)
@@ -32,6 +34,7 @@ type alias Model =
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , activeTab : ArticleTabs.Tab
     , remoteDataArticles : RemoteData () (List Article)
+    , togglingFavourite : Maybe Slug
     , currentPageNumber : PageNumber
     , pager : Pager
     , isDisabled : Bool
@@ -67,6 +70,7 @@ init { apiUrl, maybeToken, username, showFavourites, onChange } =
       , remoteDataProfile = RemoteData.Loading
       , activeTab = activeTab
       , remoteDataArticles = RemoteData.Loading
+      , togglingFavourite = Nothing
       , currentPageNumber = currentPageNumber
       , pager = pager
       , isDisabled = False
@@ -102,6 +106,8 @@ type Msg
     | GotToggleFollowResponse (Result (Api.Error ()) Bool)
     | GotGetArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
     | SwitchedArticleTabs ArticleTabs.Tab
+    | ToggledFavourite Token Slug Bool
+    | GotToggleFavouriteResponse (Result (Api.Error ()) ToggleFavourite.TotalFavourites)
     | ChangedPageNumber PageNumber
 
 
@@ -190,6 +196,34 @@ update options msg model =
                 |> Cmd.map options.onChange
             )
 
+        ToggledFavourite token slug isFavourite ->
+            ( { model | togglingFavourite = Just slug }
+            , ToggleFavourite.toggleFavourite
+                options.apiUrl
+                { token = token
+                , slug = slug
+                , isFavourite = isFavourite
+                , onResponse = GotToggleFavouriteResponse
+                }
+                |> Cmd.map options.onChange
+            )
+
+        GotToggleFavouriteResponse result ->
+            let
+                newModel =
+                    { model | togglingFavourite = Nothing }
+            in
+            case result of
+                Ok totalFavourites ->
+                    ( { newModel | remoteDataArticles = updateFavourite totalFavourites model.remoteDataArticles }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( newModel
+                    , Cmd.none
+                    )
+
         ChangedPageNumber pageNumber ->
             ( { model
                 | remoteDataArticles = RemoteData.Loading
@@ -205,6 +239,20 @@ update options msg model =
                 }
                 |> Cmd.map options.onChange
             )
+
+
+updateFavourite : ToggleFavourite.TotalFavourites -> RemoteData () (List Article) -> RemoteData () (List Article)
+updateFavourite { slug, isFavourite, totalFavourites } =
+    RemoteData.map
+        (List.map
+            (\article ->
+                if article.slug == slug then
+                    { article | isFavourite = isFavourite, totalFavourites = totalFavourites }
+
+                else
+                    article
+            )
+        )
 
 
 
@@ -247,7 +295,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
     let
         viewHelper =
             case viewer of
@@ -270,6 +318,7 @@ view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remote
                         , remoteDataProfile = remoteDataProfile
                         , activeTab = activeTab
                         , remoteDataArticles = remoteDataArticles
+                        , togglingFavourite = togglingFavourite
                         , currentPageNumber = currentPageNumber
                         , pager = pager
                         , isDisabled = isDisabled
@@ -324,12 +373,13 @@ viewAsUser :
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , activeTab : ArticleTabs.Tab
     , remoteDataArticles : RemoteData () (List Article)
+    , togglingFavourite : Maybe Slug
     , currentPageNumber : PageNumber
     , pager : Pager
     , isDisabled : Bool
     }
     -> H.Html Msg
-viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
     H.div []
         [ Navigation.view
             { role =
@@ -376,16 +426,12 @@ viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDa
                             , currentPageNumber = currentPageNumber
                             , pager = pager
                             , toRole =
-                                \{ isFavourite, totalFavourites } ->
+                                \{ slug, isFavourite, totalFavourites } ->
                                     ArticlePreview.User
-                                        { isLoading = isDisabled
+                                        { isLoading = togglingFavourite == Just slug
                                         , totalFavourites = totalFavourites
                                         , isFavourite = isFavourite
-
-                                        --
-                                        -- TODO: Implement onToggleFavourite.
-                                        --
-                                        , onToggleFavourite = always NoOp
+                                        , onToggleFavourite = ToggledFavourite user.token slug
                                         }
                             }
                 ]
