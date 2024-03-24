@@ -3,6 +3,7 @@ module Page.Profile exposing (InitOptions, Model, Msg, UpdateOptions, ViewOption
 import Api
 import Api.GetArticles as GetArticles
 import Api.GetProfile as GetProfile
+import Api.ToggleFollow as ToggleFollow
 import Data.Article as Article exposing (Article)
 import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
@@ -97,6 +98,8 @@ init { apiUrl, maybeToken, username, showFavourites, onChange } =
 type Msg
     = NoOp
     | GotGetProfileResponse (Result (Api.Error ()) GetProfile.Profile)
+    | ToggledFollow Token Username Bool
+    | GotToggleFollowResponse (Result (Api.Error ()) Bool)
     | GotGetArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
     | SwitchedArticleTabs ArticleTabs.Tab
     | ChangedPageNumber PageNumber
@@ -124,6 +127,37 @@ update options msg model =
                         { model | remoteDataProfile = RemoteData.Success profile }
                     )
                 |> Result.withDefault { model | remoteDataProfile = RemoteData.Failure () }
+            , Cmd.none
+            )
+
+        ToggledFollow token username isFollowing ->
+            ( { model | isDisabled = True }
+            , ToggleFollow.toggleFollow
+                options.apiUrl
+                { token = token
+                , username = username
+                , isFollowing = isFollowing
+                , onResponse = GotToggleFollowResponse
+                }
+                |> Cmd.map options.onChange
+            )
+
+        GotToggleFollowResponse result ->
+            let
+                newModel =
+                    { model | isDisabled = False }
+            in
+            ( result
+                |> Result.map
+                    (\isFollowing ->
+                        { newModel
+                            | remoteDataProfile =
+                                RemoteData.map
+                                    (\profile -> { profile | isFollowing = isFollowing })
+                                    newModel.remoteDataProfile
+                        }
+                    )
+                |> Result.withDefault newModel
             , Cmd.none
             )
 
@@ -318,15 +352,15 @@ viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDa
                             ProfileHeader.Owner
 
                         else
+                            let
+                                toToggledFollowMsg =
+                                    ToggledFollow user.token profile.username
+                            in
                             ProfileHeader.User
                                 { isFollowing = profile.isFollowing
-
-                                --
-                                -- TODO: Implement follow/unfollow.
-                                --
                                 , isDisabled = isDisabled
-                                , onFollow = NoOp
-                                , onUnfollow = NoOp
+                                , onFollow = toToggledFollowMsg True
+                                , onUnfollow = toToggledFollowMsg False
                                 }
                     }
                 , viewRow <|
