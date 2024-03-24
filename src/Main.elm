@@ -71,6 +71,7 @@ type alias SuccessModel =
     { apiUrl : Url
     , url : Url
     , key : BN.Key
+    , reloadPage : Bool
     , zone : Time.Zone
     , viewer : Viewer
     , page : Page
@@ -182,6 +183,7 @@ initSuccess { apiUrl, url, key, maybeZone, viewer } =
         { apiUrl = apiUrl
         , url = url
         , key = key
+        , reloadPage = True
         , zone = zone
         , viewer = viewer
         , page = page
@@ -343,6 +345,7 @@ type Msg
     | PublishedArticle Article
     | UsedArticleCache
     | DeletedArticle
+    | ChangedRoute Route
     | ChangedPage PageMsg
 
 
@@ -396,6 +399,9 @@ update msg model =
 
         DeletedArticle ->
             handleDeletedArticle model
+
+        ChangedRoute route ->
+            changeRoute route model
 
         ChangedPage pageMsg ->
             updatePage pageMsg model
@@ -451,13 +457,19 @@ changeUrl : Url -> Model -> ( Model, Cmd Msg )
 changeUrl url =
     withSuccessModel
         (\subModel ->
-            let
-                ( page, cmd ) =
-                    getPageFromUrl subModel.apiUrl subModel.viewer subModel.maybeArticle url
-            in
-            ( { subModel | url = url, page = page }
-            , cmd
-            )
+            if subModel.reloadPage then
+                let
+                    ( page, cmd ) =
+                        getPageFromUrl subModel.apiUrl subModel.viewer subModel.maybeArticle url
+                in
+                ( { subModel | url = url, page = page }
+                , cmd
+                )
+
+            else
+                ( { subModel | url = url, reloadPage = True }
+                , Cmd.none
+                )
         )
 
 
@@ -535,6 +547,16 @@ handleDeletedArticle =
         (\subModel ->
             ( subModel
             , Route.redirectToHome subModel.key
+            )
+        )
+
+
+changeRoute : Route -> Model -> ( Model, Cmd Msg )
+changeRoute route =
+    withSuccessModel
+        (\subModel ->
+            ( { subModel | reloadPage = False }
+            , Route.pushUrl subModel.key route
             )
         )
 
@@ -718,6 +740,7 @@ updateProfilePage pageMsg subModel =
                     ProfilePage.update
                         { apiUrl = subModel.apiUrl
                         , viewer = subModel.viewer
+                        , onChangeRoute = ChangedRoute
                         , onChange = ChangedPage << ChangedProfilePage
                         }
                         pageMsg

@@ -1,6 +1,7 @@
 module Data.Route exposing
     ( Route(..)
     , fromUrl
+    , pushUrl
     , redirectToArticle
     , redirectToHome
     , toString
@@ -71,6 +72,11 @@ redirectToArticle key =
 replaceUrl : BN.Key -> Route -> Cmd msg
 replaceUrl key =
     toString >> BN.replaceUrl key
+
+
+pushUrl : BN.Key -> Route -> Cmd msg
+pushUrl key =
+    toString >> BN.pushUrl key
 
 
 toString : Route -> String

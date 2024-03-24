@@ -8,6 +8,7 @@ import Api.ToggleFollow as ToggleFollow
 import Data.Article as Article exposing (Article)
 import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
+import Data.Route as Route exposing (Route)
 import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
@@ -16,6 +17,7 @@ import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
+import Lib.Task as Task
 import Time
 import Url exposing (Url)
 import View.ArticlePreview as ArticlePreview
@@ -100,8 +102,7 @@ init { apiUrl, maybeToken, username, showFavourites, onChange } =
 
 
 type Msg
-    = NoOp
-    | GotGetProfileResponse (Result (Api.Error ()) GetProfile.Profile)
+    = GotGetProfileResponse (Result (Api.Error ()) GetProfile.Profile)
     | ToggledFollow Token Username Bool
     | GotToggleFollowResponse (Result (Api.Error ()) Bool)
     | GotGetArticlesResponse (Result (Api.Error ()) GetArticles.Articles)
@@ -114,6 +115,7 @@ type Msg
 type alias UpdateOptions msg =
     { apiUrl : Url
     , viewer : Viewer
+    , onChangeRoute : Route -> msg
     , onChange : Msg -> msg
     }
 
@@ -121,11 +123,6 @@ type alias UpdateOptions msg =
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
-        NoOp ->
-            ( model
-            , Cmd.none
-            )
-
         GotGetProfileResponse result ->
             ( result
                 |> Result.map
@@ -185,15 +182,27 @@ update options msg model =
                 | activeTab = tab
                 , remoteDataArticles = RemoteData.Loading
               }
-            , getArticles
-                { apiUrl = options.apiUrl
-                , maybeToken = Viewer.toToken options.viewer
-                , username = model.username
-                , activeTab = tab
-                , currentPageNumber = PageNumber.one
-                , pager = model.pager
-                }
-                |> Cmd.map options.onChange
+            , Cmd.batch
+                [ let
+                    route =
+                        case tab of
+                            ArticleTabs.Personal ->
+                                Route.Profile model.username
+
+                            ArticleTabs.Favourites ->
+                                Route.Favourites model.username
+                  in
+                  Task.dispatch <| options.onChangeRoute route
+                , getArticles
+                    { apiUrl = options.apiUrl
+                    , maybeToken = Viewer.toToken options.viewer
+                    , username = model.username
+                    , activeTab = tab
+                    , currentPageNumber = PageNumber.one
+                    , pager = model.pager
+                    }
+                    |> Cmd.map options.onChange
+                ]
             )
 
         ToggledFavourite token slug isFavourite ->
