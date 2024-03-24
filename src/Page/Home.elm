@@ -394,7 +394,7 @@ view { zone, viewer, onChange } model =
                     ( False
                     , case ( model.activeTab, articles ) of
                         ( FeedTabs.Personal, [] ) ->
-                            [ ArticlePreview.viewMessage "You need to follow some users to populate this feed." ]
+                            [ ArticlePreview.viewMessage "Follow some users to populate this feed." ]
 
                         _ ->
                             List.map (viewArticlePreview viewer zone model.togglingFavourite) articles

@@ -271,6 +271,7 @@ viewAsGuest { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPag
                         }
                         :: viewArticles
                             { zone = zone
+                            , activeTab = activeTab
                             , remoteDataArticles = remoteDataArticles
                             , currentPageNumber = currentPageNumber
                             , pager = pager
@@ -336,6 +337,7 @@ viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDa
                         }
                         :: viewArticles
                             { zone = zone
+                            , activeTab = activeTab
                             , remoteDataArticles = remoteDataArticles
                             , currentPageNumber = currentPageNumber
                             , pager = pager
@@ -388,41 +390,51 @@ viewProfileHeader { profile, role } =
 
 viewArticles :
     { zone : Time.Zone
+    , activeTab : ArticleTabs.Tab
     , remoteDataArticles : RemoteData () (List Article)
     , currentPageNumber : PageNumber
     , pager : Pager
     , toRole : Article -> ArticlePreview.Role Msg
     }
     -> List (H.Html Msg)
-viewArticles { zone, remoteDataArticles, currentPageNumber, pager, toRole } =
+viewArticles { zone, activeTab, remoteDataArticles, currentPageNumber, pager, toRole } =
     case remoteDataArticles of
         RemoteData.Loading ->
             [ ArticlePreview.viewMessage "Loading articles..." ]
 
         RemoteData.Success articles ->
-            List.concat
-                [ List.map
-                    (\({ slug, title, description, tags, createdAt, author } as article) ->
-                        ArticlePreview.view
-                            { role = toRole article
-                            , username = author.username
-                            , imageUrl = author.imageUrl
-                            , zone = zone
-                            , createdAt = createdAt
-                            , slug = slug
-                            , title = title
-                            , description = description
-                            , tags = tags
+            if List.isEmpty articles then
+                case activeTab of
+                    ArticleTabs.Personal ->
+                        [ ArticlePreview.viewMessage "Write some articles to populate this tab." ]
+
+                    ArticleTabs.Favourites ->
+                        [ ArticlePreview.viewMessage "Favourite some articles to populate this tab." ]
+
+            else
+                List.concat
+                    [ List.map
+                        (\({ slug, title, description, tags, createdAt, author } as article) ->
+                            ArticlePreview.view
+                                { role = toRole article
+                                , username = author.username
+                                , imageUrl = author.imageUrl
+                                , zone = zone
+                                , createdAt = createdAt
+                                , slug = slug
+                                , title = title
+                                , description = description
+                                , tags = tags
+                                }
+                        )
+                        articles
+                    , [ Pagination.view
+                            { totalPages = Pager.toTotalPages pager
+                            , currentPageNumber = currentPageNumber
+                            , onChangePageNumber = ChangedPageNumber
                             }
-                    )
-                    articles
-                , [ Pagination.view
-                        { totalPages = Pager.toTotalPages pager
-                        , currentPageNumber = currentPageNumber
-                        , onChangePageNumber = ChangedPageNumber
-                        }
-                  ]
-                ]
+                      ]
+                    ]
 
         RemoteData.Failure _ ->
             [ ArticlePreview.viewMessage "Unable to load articles." ]
