@@ -57,6 +57,10 @@
             tokenStorage.setToken(message.value);
             break;
 
+          case "logError":
+            console.error(message.value);
+            break;
+
           default:
             console.error("Received an unexpected message", message);
         }

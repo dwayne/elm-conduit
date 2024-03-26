@@ -71,10 +71,10 @@ type alias SuccessModel =
     { apiUrl : Url
     , url : Url
     , key : BN.Key
-    , reloadPage : Bool
     , zone : Time.Zone
     , viewer : Viewer
     , page : Page
+    , reloadPage : Bool
     , maybeArticle : Maybe Article
     }
 
@@ -125,7 +125,13 @@ init flags url key =
                         , maybeZone = Nothing
                         , viewer = Viewer.Guest
                         }
-                        |> Debug.log (JD.errorToString error)
+                        |> Tuple.mapSecond
+                            (\cmd ->
+                                Cmd.batch
+                                    [ Port.Action.logError ("Bad token: " ++ JD.errorToString error)
+                                    , cmd
+                                    ]
+                            )
 
         Err error ->
             ( Failure (BadConfig error)
@@ -183,10 +189,10 @@ initSuccess { apiUrl, url, key, maybeZone, viewer } =
         { apiUrl = apiUrl
         , url = url
         , key = key
-        , reloadPage = True
         , zone = zone
         , viewer = viewer
         , page = page
+        , reloadPage = True
         , maybeArticle = Nothing
         }
     , Cmd.batch
@@ -215,15 +221,12 @@ getPageFromRoute : Url -> Viewer -> Maybe Article -> Route -> ( Page, Cmd Msg )
 getPageFromRoute apiUrl viewer maybeArticle route =
     case route of
         Route.Home ->
-            let
-                ( model, cmd ) =
-                    HomePage.init
-                        { apiUrl = apiUrl
-                        , viewer = viewer
-                        , onChange = ChangedPage << ChangedHomePage
-                        }
-            in
-            ( Home model, cmd )
+            HomePage.init
+                { apiUrl = apiUrl
+                , viewer = viewer
+                , onChange = ChangedPage << ChangedHomePage
+                }
+                |> Tuple.mapFirst Home
 
         Route.Login ->
             ( Login LoginPage.init, Cmd.none )
@@ -250,7 +253,7 @@ getPageFromRoute apiUrl viewer maybeArticle route =
             getEditorPage apiUrl viewer Nothing
 
         Route.EditArticle slug ->
-            getEditorPage apiUrl viewer <| Just slug
+            getEditorPage apiUrl viewer (Just slug)
 
         Route.Article slug ->
             let
@@ -269,21 +272,21 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                             ( Either.Left slug
                             , Cmd.none
                             )
-
-                ( model, initCmd ) =
-                    ArticlePage.init
-                        { apiUrl = apiUrl
-                        , viewer = viewer
-                        , eitherSlugOrArticle = eitherSlugOrArticle
-                        , onChange = ChangedPage << ChangedArticlePage
-                        }
             in
-            ( Article model
-            , Cmd.batch
-                [ usedCmd
-                , initCmd
-                ]
-            )
+            ArticlePage.init
+                { apiUrl = apiUrl
+                , viewer = viewer
+                , eitherSlugOrArticle = eitherSlugOrArticle
+                , onChange = ChangedPage << ChangedArticlePage
+                }
+                |> Tuple.mapBoth
+                    Article
+                    (\initCmd ->
+                        Cmd.batch
+                            [ usedCmd
+                            , initCmd
+                            ]
+                    )
 
         Route.Profile username ->
             getProfilePage apiUrl viewer username False
@@ -295,38 +298,28 @@ getPageFromRoute apiUrl viewer maybeArticle route =
 getEditorPage : Url -> Viewer -> Maybe Slug -> ( Page, Cmd Msg )
 getEditorPage apiUrl viewer maybeSlug =
     withAuthForPage
-        (\user ->
-            let
-                ( model, cmd ) =
-                    EditorPage.init
-                        { apiUrl = apiUrl
-                        , token = user.token
-                        , maybeSlug = maybeSlug
-                        , onChange = ChangedPage << ChangedEditorPage
-                        }
-            in
-            ( Editor model
-            , cmd
-            )
+        (\{ token } ->
+            EditorPage.init
+                { apiUrl = apiUrl
+                , token = token
+                , maybeSlug = maybeSlug
+                , onChange = ChangedPage << ChangedEditorPage
+                }
+                |> Tuple.mapFirst Editor
         )
         viewer
 
 
 getProfilePage : Url -> Viewer -> Username -> Bool -> ( Page, Cmd Msg )
 getProfilePage apiUrl viewer username showFavourites =
-    let
-        ( model, cmd ) =
-            ProfilePage.init
-                { apiUrl = apiUrl
-                , maybeToken = Viewer.toToken viewer
-                , username = username
-                , showFavourites = showFavourites
-                , onChange = ChangedPage << ChangedProfilePage
-                }
-    in
-    ( Profile model
-    , cmd
-    )
+    ProfilePage.init
+        { apiUrl = apiUrl
+        , maybeToken = Viewer.toToken viewer
+        , username = username
+        , showFavourites = showFavourites
+        , onChange = ChangedPage << ChangedProfilePage
+        }
+        |> Tuple.mapFirst Profile
 
 
 
@@ -334,10 +327,10 @@ getProfilePage apiUrl viewer username showFavourites =
 
 
 type Msg
-    = GotUserResponse (Result (Api.Error ()) User)
-    | ClickedLink B.UrlRequest
+    = ClickedLink B.UrlRequest
     | ChangedUrl Url
     | GotZone Time.Zone
+    | GotUserResponse (Result (Api.Error ()) User)
     | Registered User
     | LoggedIn User
     | LoggedOut
@@ -362,9 +355,6 @@ type PageMsg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotUserResponse result ->
-            handleUserResponse result model
-
         ClickedLink urlRequest ->
             case urlRequest of
                 B.Internal url ->
@@ -378,6 +368,9 @@ update msg model =
 
         GotZone zone ->
             setZone zone model
+
+        GotUserResponse result ->
+            handleUserResponse result model
 
         Registered user ->
             loginUser user model
@@ -405,35 +398,6 @@ update msg model =
 
         ChangedPage pageMsg ->
             updatePage pageMsg model
-
-
-handleUserResponse : Result (Api.Error ()) User -> Model -> ( Model, Cmd Msg )
-handleUserResponse result model =
-    withLoadingUserModel
-        { onLoadingUser =
-            \{ apiUrl, url, key, zone } ->
-                case result of
-                    Ok user ->
-                        initSuccess
-                            { apiUrl = apiUrl
-                            , url = url
-                            , key = key
-                            , maybeZone = Just zone
-                            , viewer = Viewer.User user
-                            }
-
-                    Err error ->
-                        initSuccess
-                            { apiUrl = apiUrl
-                            , url = url
-                            , key = key
-                            , maybeZone = Just zone
-                            , viewer = Viewer.Guest
-                            }
-                            |> Debug.log ("Unable to get the user: " ++ Debug.toString error)
-        , default = ( model, Cmd.none )
-        }
-        model
 
 
 pushUrl : Url -> Model -> ( Model, Cmd msg )
@@ -483,6 +447,38 @@ setZone zone model =
         model
     , Cmd.none
     )
+
+
+handleUserResponse : Result (Api.Error ()) User -> Model -> ( Model, Cmd Msg )
+handleUserResponse result =
+    withLoadingUserModel
+        (\{ apiUrl, url, key, zone } ->
+            case result of
+                Ok user ->
+                    initSuccess
+                        { apiUrl = apiUrl
+                        , url = url
+                        , key = key
+                        , maybeZone = Just zone
+                        , viewer = Viewer.User user
+                        }
+
+                Err error ->
+                    initSuccess
+                        { apiUrl = apiUrl
+                        , url = url
+                        , key = key
+                        , maybeZone = Just zone
+                        , viewer = Viewer.Guest
+                        }
+                        |> Tuple.mapSecond
+                            (\cmd ->
+                                Cmd.batch
+                                    [ Port.Action.logError ("Unable to get user: " ++ Api.errorToString error)
+                                    , cmd
+                                    ]
+                            )
+        )
 
 
 loginUser : User -> Model -> ( Model, Cmd Msg )
@@ -593,19 +589,17 @@ updateHomePage : HomePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
 updateHomePage pageMsg subModel =
     case subModel.page of
         Home pageModel ->
-            let
-                ( newPageModel, newPageCmd ) =
-                    HomePage.update
-                        { apiUrl = subModel.apiUrl
-                        , viewer = subModel.viewer
-                        , onChange = ChangedPage << ChangedHomePage
-                        }
-                        pageMsg
-                        pageModel
-            in
-            ( { subModel | page = Home newPageModel }
-            , newPageCmd
-            )
+            HomePage.update
+                { apiUrl = subModel.apiUrl
+                , viewer = subModel.viewer
+                , onChange = ChangedPage << ChangedHomePage
+                }
+                pageMsg
+                pageModel
+                |> Tuple.mapFirst
+                    (\newPageModel ->
+                        { subModel | page = Home newPageModel }
+                    )
 
         _ ->
             ( subModel, Cmd.none )
@@ -615,19 +609,17 @@ updateLoginPage : LoginPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
 updateLoginPage pageMsg subModel =
     case subModel.page of
         Login pageModel ->
-            let
-                ( newPageModel, newPageCmd ) =
-                    LoginPage.update
-                        { apiUrl = subModel.apiUrl
-                        , onLoggedIn = LoggedIn
-                        , onChange = ChangedPage << ChangedLoginPage
-                        }
-                        pageMsg
-                        pageModel
-            in
-            ( { subModel | page = Login newPageModel }
-            , newPageCmd
-            )
+            LoginPage.update
+                { apiUrl = subModel.apiUrl
+                , onLoggedIn = LoggedIn
+                , onChange = ChangedPage << ChangedLoginPage
+                }
+                pageMsg
+                pageModel
+                |> Tuple.mapFirst
+                    (\newPageModel ->
+                        { subModel | page = Login newPageModel }
+                    )
 
         _ ->
             ( subModel, Cmd.none )
@@ -637,19 +629,17 @@ updateRegisterPage : RegisterPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg
 updateRegisterPage pageMsg subModel =
     case subModel.page of
         Register pageModel ->
-            let
-                ( newPageModel, newPageCmd ) =
-                    RegisterPage.update
-                        { apiUrl = subModel.apiUrl
-                        , onRegistered = Registered
-                        , onChange = ChangedPage << ChangedRegisterPage
-                        }
-                        pageMsg
-                        pageModel
-            in
-            ( { subModel | page = Register newPageModel }
-            , newPageCmd
-            )
+            RegisterPage.update
+                { apiUrl = subModel.apiUrl
+                , onRegistered = Registered
+                , onChange = ChangedPage << ChangedRegisterPage
+                }
+                pageMsg
+                pageModel
+                |> Tuple.mapFirst
+                    (\newPageModel ->
+                        { subModel | page = Register newPageModel }
+                    )
 
         _ ->
             ( subModel, Cmd.none )
@@ -660,21 +650,19 @@ updateSettingsPage pageMsg subModel =
     case subModel.page of
         Settings pageModel ->
             withAuthForUpdate
-                (\user ->
-                    let
-                        ( newPageModel, newPageCmd ) =
-                            SettingsPage.update
-                                { apiUrl = subModel.apiUrl
-                                , token = user.token
-                                , onUpdatedUser = UpdatedUser
-                                , onChange = ChangedPage << ChangedSettingsPage
-                                }
-                                pageMsg
-                                pageModel
-                    in
-                    ( { subModel | page = Settings newPageModel }
-                    , newPageCmd
-                    )
+                (\{ token } ->
+                    SettingsPage.update
+                        { apiUrl = subModel.apiUrl
+                        , token = token
+                        , onUpdatedUser = UpdatedUser
+                        , onChange = ChangedPage << ChangedSettingsPage
+                        }
+                        pageMsg
+                        pageModel
+                        |> Tuple.mapFirst
+                            (\newPageModel ->
+                                { subModel | page = Settings newPageModel }
+                            )
                 )
                 subModel
 
@@ -687,21 +675,19 @@ updateEditorPage pageMsg subModel =
     case subModel.page of
         Editor pageModel ->
             withAuthForUpdate
-                (\user ->
-                    let
-                        ( newPageModel, newPageCmd ) =
-                            EditorPage.update
-                                { apiUrl = subModel.apiUrl
-                                , token = user.token
-                                , onPublish = PublishedArticle
-                                , onChange = ChangedPage << ChangedEditorPage
-                                }
-                                pageMsg
-                                pageModel
-                    in
-                    ( { subModel | page = Editor newPageModel }
-                    , newPageCmd
-                    )
+                (\{ token } ->
+                    EditorPage.update
+                        { apiUrl = subModel.apiUrl
+                        , token = token
+                        , onPublish = PublishedArticle
+                        , onChange = ChangedPage << ChangedEditorPage
+                        }
+                        pageMsg
+                        pageModel
+                        |> Tuple.mapFirst
+                            (\newPageModel ->
+                                { subModel | page = Editor newPageModel }
+                            )
                 )
                 subModel
 
@@ -713,19 +699,17 @@ updateArticlePage : ArticlePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
 updateArticlePage pageMsg subModel =
     case subModel.page of
         Article pageModel ->
-            let
-                ( newPageModel, newPageCmd ) =
-                    ArticlePage.update
-                        { apiUrl = subModel.apiUrl
-                        , onDeleteArticle = DeletedArticle
-                        , onChange = ChangedPage << ChangedArticlePage
-                        }
-                        pageMsg
-                        pageModel
-            in
-            ( { subModel | page = Article newPageModel }
-            , newPageCmd
-            )
+            ArticlePage.update
+                { apiUrl = subModel.apiUrl
+                , onDeleteArticle = DeletedArticle
+                , onChange = ChangedPage << ChangedArticlePage
+                }
+                pageMsg
+                pageModel
+                |> Tuple.mapFirst
+                    (\newPageModel ->
+                        { subModel | page = Article newPageModel }
+                    )
 
         _ ->
             ( subModel, Cmd.none )
@@ -735,20 +719,18 @@ updateProfilePage : ProfilePage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
 updateProfilePage pageMsg subModel =
     case subModel.page of
         Profile pageModel ->
-            let
-                ( newPageModel, newPageCmd ) =
-                    ProfilePage.update
-                        { apiUrl = subModel.apiUrl
-                        , viewer = subModel.viewer
-                        , onChangeRoute = ChangedRoute
-                        , onChange = ChangedPage << ChangedProfilePage
-                        }
-                        pageMsg
-                        pageModel
-            in
-            ( { subModel | page = Profile newPageModel }
-            , newPageCmd
-            )
+            ProfilePage.update
+                { apiUrl = subModel.apiUrl
+                , viewer = subModel.viewer
+                , onChangeRoute = ChangedRoute
+                , onChange = ChangedPage << ChangedProfilePage
+                }
+                pageMsg
+                pageModel
+                |> Tuple.mapFirst
+                    (\newPageModel ->
+                        { subModel | page = Profile newPageModel }
+                    )
 
         _ ->
             ( subModel, Cmd.none )
@@ -780,27 +762,27 @@ viewLoadingUserPage _ =
 viewSuccessPage : SuccessModel -> H.Html Msg
 viewSuccessPage { url, zone, viewer, page } =
     case page of
-        Home model ->
+        Home pageModel ->
             HomePage.view
                 { zone = zone
                 , viewer = viewer
                 , onChange = ChangedPage << ChangedHomePage
                 }
-                model
+                pageModel
 
-        Login model ->
+        Login pageModel ->
             LoginPage.view
                 { onChange = ChangedPage << ChangedLoginPage
                 }
-                model
+                pageModel
 
-        Register model ->
+        Register pageModel ->
             RegisterPage.view
                 { onChange = ChangedPage << ChangedRegisterPage
                 }
-                model
+                pageModel
 
-        Settings model ->
+        Settings pageModel ->
             withAuthForView
                 (\user ->
                     SettingsPage.view
@@ -808,36 +790,36 @@ viewSuccessPage { url, zone, viewer, page } =
                         , onLogout = LoggedOut
                         , onChange = ChangedPage << ChangedSettingsPage
                         }
-                        model
+                        pageModel
                 )
                 viewer
 
-        Editor model ->
+        Editor pageModel ->
             withAuthForView
                 (\user ->
                     EditorPage.view
                         { user = user
                         , onChange = ChangedPage << ChangedEditorPage
                         }
-                        model
+                        pageModel
                 )
                 viewer
 
-        Article model ->
+        Article pageModel ->
             ArticlePage.view
                 { zone = zone
                 , viewer = viewer
                 , onChange = ChangedPage << ChangedArticlePage
                 }
-                model
+                pageModel
 
-        Profile model ->
+        Profile pageModel ->
             ProfilePage.view
                 { zone = zone
                 , viewer = viewer
                 , onChange = ChangedPage << ChangedProfilePage
                 }
-                model
+                pageModel
 
         NotAuthorized ->
             H.text "You are not allowed to view this page."
@@ -860,6 +842,34 @@ viewFailurePage (BadConfig error) =
 -- HELPERS
 
 
+withLoadingUserModel : (LoadingUserModel -> ( Model, Cmd msg )) -> Model -> ( Model, Cmd msg )
+withLoadingUserModel onLoadingUser model =
+    let
+        default =
+            ( model, Cmd.none )
+    in
+    withModel
+        { onLoadingUser = onLoadingUser
+        , onSuccess = always default
+        , onFailure = always default
+        }
+        model
+
+
+withSuccessModel : (SuccessModel -> ( SuccessModel, Cmd msg )) -> Model -> ( Model, Cmd msg )
+withSuccessModel onSuccess model =
+    let
+        default =
+            ( model, Cmd.none )
+    in
+    withModel
+        { onLoadingUser = always default
+        , onSuccess = Tuple.mapFirst Success << onSuccess
+        , onFailure = always default
+        }
+        model
+
+
 withModel :
     { onLoadingUser : LoadingUserModel -> a
     , onSuccess : SuccessModel -> a
@@ -877,34 +887,6 @@ withModel { onLoadingUser, onSuccess, onFailure } model =
 
         Failure error ->
             onFailure error
-
-
-withLoadingUserModel :
-    { onLoadingUser : LoadingUserModel -> a
-    , default : a
-    }
-    -> Model
-    -> a
-withLoadingUserModel { onLoadingUser, default } =
-    withModel
-        { onLoadingUser = onLoadingUser
-        , onSuccess = always default
-        , onFailure = always default
-        }
-
-
-withSuccessModel : (SuccessModel -> ( SuccessModel, Cmd msg )) -> Model -> ( Model, Cmd msg )
-withSuccessModel onSuccess model =
-    let
-        default =
-            ( model, Cmd.none )
-    in
-    withModel
-        { onLoadingUser = always default
-        , onSuccess = Tuple.mapFirst Success << onSuccess
-        , onFailure = always default
-        }
-        model
 
 
 withAuthForPage : (User -> ( Page, Cmd Msg )) -> Viewer -> ( Page, Cmd Msg )

@@ -5,6 +5,7 @@ module Api exposing
     , buildUrl
     , delete
     , emptyErrorsDecoder
+    , errorToString
     , expectJson
     , formErrorsDecoder
     , get
@@ -173,6 +174,34 @@ type Error e
     | Unauthorized
     | NotFound
     | UserError e
+
+
+errorToString : Error () -> String
+errorToString error =
+    case error of
+        BadUrl url ->
+            "Bad URL: " ++ url
+
+        Timeout ->
+            "Timeout"
+
+        NetworkError ->
+            "Network error"
+
+        BadStatus statusCode ->
+            "Bad status: " ++ String.fromInt statusCode
+
+        BadBody statusCode decoderError ->
+            "Bad body: " ++ String.fromInt statusCode ++ ", " ++ decoderError
+
+        Unauthorized ->
+            "Unauthorized"
+
+        NotFound ->
+            "Not found"
+
+        UserError () ->
+            "Unexpected error"
 
 
 expectJson : (Result (Error e) a -> msg) -> Either a (JD.Decoder a) -> JD.Decoder e -> Http.Expect msg
