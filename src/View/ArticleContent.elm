@@ -16,12 +16,15 @@ type alias ViewOptions =
 view : ViewOptions -> H.Html msg
 view { description, body, tags } =
     H.div
-        [ HA.class "row article-content" ]
+        [ HA.class "row" ]
         [ H.div
             [ HA.class "col-md-12" ]
-            [ H.p [] [ H.text description ]
-            , viewMarkdown body
-            , viewTags tags
+            [ H.div
+                [ HA.class "article-content" ]
+                [ H.p [] [ H.text description ]
+                , viewMarkdown body
+                , viewTags tags
+                ]
             ]
         ]
 

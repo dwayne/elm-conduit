@@ -11,7 +11,7 @@ import Html.Attributes as HA
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
-import View.Footer as Footer
+import View.DefaultLayout as DefaultLayout
 import View.Login as Login
 import View.Navigation as Navigation
 
@@ -129,9 +129,9 @@ view { onChange } =
 
 viewHelper : Model -> H.Html Msg
 viewHelper { email, password, errorMessages, isDisabled } =
-    H.div []
-        [ Navigation.view { role = Navigation.login }
-        , H.div
+    DefaultLayout.view
+        { role = Navigation.login }
+        [ H.div
             [ HA.class "auth-page" ]
             [ H.div
                 [ HA.class "container page" ]
@@ -152,5 +152,4 @@ viewHelper { email, password, errorMessages, isDisabled } =
                     ]
                 ]
             ]
-        , Footer.view
         ]

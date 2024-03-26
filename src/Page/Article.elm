@@ -33,6 +33,7 @@ import View.ArticleMeta as ArticleMeta
 import View.Comment as Comment
 import View.CommentForm as CommentForm
 import View.Navigation as Navigation
+import View.DefaultLayout as DefaultLayout
 
 
 
@@ -343,9 +344,9 @@ viewAsGuest :
     }
     -> H.Html msg
 viewAsGuest { zone, remoteDataArticle } =
-    H.div []
-        [ Navigation.view { role = Navigation.guest }
-        , viewArticle
+    DefaultLayout.view
+        { role = Navigation.guest }
+        [ viewArticle
             (\article ->
                 [ ArticleHeader.view
                     { title = article.title
@@ -383,15 +384,14 @@ viewAsUser :
     }
     -> H.Html Msg
 viewAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
-    H.div []
-        [ Navigation.view
-            { role =
-                Navigation.user
-                    { username = user.username
-                    , imageUrl = user.imageUrl
-                    }
-            }
-        , viewArticle
+    DefaultLayout.view
+        { role =
+            Navigation.user
+                { username = user.username
+                , imageUrl = user.imageUrl
+                }
+        }
+        [ viewArticle
             (\article ->
                 let
                     articleMetaViewOptions =

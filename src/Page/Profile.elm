@@ -25,6 +25,7 @@ import View.ArticleTabs as ArticleTabs
 import View.Navigation as Navigation
 import View.Pagination as Pagination
 import View.ProfileHeader as ProfileHeader
+import View.DefaultLayout as DefaultLayout
 
 
 
@@ -347,9 +348,9 @@ viewAsGuest :
     }
     -> H.Html Msg
 viewAsGuest { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
-    H.div []
-        [ Navigation.view { role = Navigation.guest }
-        , viewProfilePage
+    DefaultLayout.view
+        { role = Navigation.guest }
+        [ viewProfilePage
             (\profile ->
                 [ viewProfileHeader
                     { profile = profile
@@ -389,20 +390,19 @@ viewAsUser :
     }
     -> H.Html Msg
 viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
-    H.div []
-        [ Navigation.view
-            { role =
-                { username = user.username
-                , imageUrl = user.imageUrl
-                }
-                    |> (if user.username == profileUsername then
-                            Navigation.profile
-
-                        else
-                            Navigation.user
-                       )
+    DefaultLayout.view
+        { role =
+            { username = user.username
+            , imageUrl = user.imageUrl
             }
-        , viewProfilePage
+                |> (if user.username == profileUsername then
+                        Navigation.profile
+
+                    else
+                        Navigation.user
+                   )
+        }
+        [ viewProfilePage
             (\profile ->
                 [ viewProfileHeader
                     { profile = profile
@@ -532,7 +532,7 @@ viewArticles { zone, activeTab, remoteDataArticles, currentPageNumber, pager, to
 viewRow : List (H.Html msg) -> H.Html msg
 viewRow rows =
     H.div
-        [ HA.class "container" ]
+        [ HA.class "container page" ]
         [ H.div
             [ HA.class "row" ]
             [ H.div

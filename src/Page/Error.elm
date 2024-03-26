@@ -13,7 +13,16 @@ type alias ViewOptions =
 view : ViewOptions -> H.Html msg
 view { title, message } =
     H.div
-        [ HA.class "container page" ]
-        [ H.h1 [] [ H.text title ]
-        , H.p [] [ H.text message ]
+        [ HA.class "error-page" ]
+        [ H.div
+            [ HA.class "container page" ]
+            [ H.div
+                [ HA.class "row" ]
+                [ H.div
+                    [ HA.class "col-xs-12" ]
+                    [ H.h1 [] [ H.text title ]
+                    , H.p [] [ H.text message ]
+                    ]
+                ]
+            ]
         ]

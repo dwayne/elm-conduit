@@ -14,7 +14,7 @@ import Lib.String as String
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
-import View.Footer as Footer
+import View.DefaultLayout as DefaultLayout
 import View.Navigation as Navigation
 import View.Settings as Settings
 
@@ -177,15 +177,14 @@ type alias ViewOptions msg =
 
 view : ViewOptions msg -> Model -> H.Html msg
 view { user, onLogout, onChange } { imageUrl, username, bio, email, password, errorMessages, isDisabled } =
-    H.div []
-        [ Navigation.view
-            { role =
-                Navigation.settings
-                    { username = user.username
-                    , imageUrl = user.imageUrl
-                    }
-            }
-        , H.div
+    DefaultLayout.view
+        { role =
+            Navigation.settings
+                { username = user.username
+                , imageUrl = user.imageUrl
+                }
+        }
+        [ H.div
             [ HA.class "settings-page" ]
             [ H.div
                 [ HA.class "container page" ]
@@ -213,5 +212,4 @@ view { user, onLogout, onChange } { imageUrl, username, bio, email, password, er
                     ]
                 ]
             ]
-        , Footer.view
         ]

@@ -23,7 +23,7 @@ import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
 import View.Editor as Editor
-import View.Footer as Footer
+import View.DefaultLayout as DefaultLayout
 import View.Navigation as Navigation
 
 
@@ -255,23 +255,22 @@ view { user, onChange } =
 
 viewHelper : User -> Model -> H.Html Msg
 viewHelper user { action, title, description, body, tag, tags, errorMessages, isDisabled } =
-    let
-        userDetails =
-            { username = user.username
-            , imageUrl = user.imageUrl
-            }
-    in
-    H.div []
-        [ Navigation.view
-            { role =
-                case action of
-                    Create ->
-                        Navigation.newArticle userDetails
+    DefaultLayout.view
+        { role =
+            let
+                userDetails =
+                    { username = user.username
+                    , imageUrl = user.imageUrl
+                    }
+            in
+            case action of
+                Create ->
+                    Navigation.newArticle userDetails
 
-                    Edit _ ->
-                        Navigation.user userDetails
-            }
-        , H.div
+                Edit _ ->
+                    Navigation.user userDetails
+        }
+        [ H.div
             [ HA.class "editor-page" ]
             [ H.div
                 [ HA.class "container page" ]
@@ -306,7 +305,6 @@ viewHelper user { action, title, description, body, tag, tags, errorMessages, is
                     ]
                 ]
             ]
-        , Footer.view
         ]
 
 

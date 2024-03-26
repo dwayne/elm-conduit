@@ -24,11 +24,12 @@ import Time
 import Url exposing (Url)
 import View.ArticlePreview as ArticlePreview
 import View.FeedTabs as FeedTabs
-import View.Footer as Footer
+import View.DefaultLayout as DefaultLayout
 import View.HomeHeader as HomeHeader
 import View.Navigation as Navigation
 import View.Pagination as Pagination
 import View.Sidebar as Sidebar
+import View.DefaultLayout as DefaultLayout
 
 
 
@@ -428,9 +429,9 @@ view { zone, viewer, onChange } model =
                 RemoteData.Failure _ ->
                     Sidebar.Error "Unable to load tags."
     in
-    H.div []
-        [ Navigation.view { role = role }
-        , H.div
+    DefaultLayout.view
+        { role = role }
+        [ H.div
             [ HA.class "home-page" ]
             [ HomeHeader.view
             , viewColumns
@@ -441,7 +442,6 @@ view { zone, viewer, onChange } model =
                 [ Sidebar.view sidebarViewOptions
                 ]
             ]
-        , Footer.view
         ]
         |> H.map onChange
 
