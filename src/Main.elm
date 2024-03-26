@@ -18,8 +18,11 @@ import Lib.Either as Either
 import Lib.Task as Task
 import Page.Article as ArticlePage
 import Page.Editor as EditorPage
+import Page.Error as ErrorPage
 import Page.Home as HomePage
 import Page.Login as LoginPage
+import Page.NotAuthorized as NotAuthorizedPage
+import Page.NotFound as NotFoundPage
 import Page.Profile as ProfilePage
 import Page.Register as RegisterPage
 import Page.Settings as SettingsPage
@@ -92,7 +95,7 @@ type Page
 
 
 type Error
-    = BadConfig JD.Error
+    = BadConfig
 
 
 init : Flags -> Url -> BN.Key -> ( Model, Cmd Msg )
@@ -134,8 +137,8 @@ init flags url key =
                             )
 
         Err error ->
-            ( Failure (BadConfig error)
-            , Cmd.none
+            ( Failure BadConfig
+            , Port.Action.logError ("Configuration error: " ++ JD.errorToString error)
             )
 
 
@@ -822,20 +825,18 @@ viewSuccessPage { url, zone, viewer, page } =
                 pageModel
 
         NotAuthorized ->
-            H.text "You are not allowed to view this page."
+            NotAuthorizedPage.view
 
         NotFound ->
-            H.text "The page you are looking for does not exist."
+            NotFoundPage.view viewer
 
 
 viewFailurePage : Error -> H.Html msg
-viewFailurePage (BadConfig error) =
-    H.div
-        []
-        [ H.h1 [] [ H.text "Configuration Error" ]
-        , H.p [] [ H.text "An unexpected configuration error occurred." ]
-        , H.p [] [ H.text <| JD.errorToString error ]
-        ]
+viewFailurePage BadConfig =
+    ErrorPage.view
+        { title = "Configuration Error"
+        , message = "Please check your configuration. You can view the logs to diagnose and fix the specific problem."
+        }
 
 
 
