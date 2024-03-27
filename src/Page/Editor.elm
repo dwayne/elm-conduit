@@ -22,8 +22,9 @@ import Lib.String as String
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
+import View.Column as Column
 import View.Editor as Editor
-import View.DefaultLayout as DefaultLayout
+import View.Layout as Layout
 import View.Navigation as Navigation
 
 
@@ -249,14 +250,10 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { user, onChange } =
-    viewHelper user >> H.map onChange
-
-
-viewHelper : User -> Model -> H.Html Msg
-viewHelper user { action, title, description, body, tag, tags, errorMessages, isDisabled } =
-    DefaultLayout.view
-        { role =
+view { user, onChange } { action, title, description, body, tag, tags, errorMessages, isDisabled } =
+    Layout.view
+        { name = "editor"
+        , role =
             let
                 userDetails =
                     { username = user.username
@@ -269,43 +266,37 @@ viewHelper user { action, title, description, body, tag, tags, errorMessages, is
 
                 Edit _ ->
                     Navigation.user userDetails
+        , maybeHeader = Nothing
         }
-        [ H.div
-            [ HA.class "editor-page" ]
-            [ H.div
-                [ HA.class "container page" ]
-                [ H.div
-                    [ HA.class "row" ]
-                    [ withAction
-                        { onLoading = H.text ""
-                        , onSuccess =
-                            \maybeSlug ->
-                                Editor.view
-                                    { classNames = "col-md-10 offset-md-1 col-xs-12"
-                                    , form =
-                                        { title = title
-                                        , description = description
-                                        , body = body
-                                        , tag = tag
-                                        , tags = tags
-                                        , isDisabled = isDisabled
-                                        , onInputTitle = ChangedTitle
-                                        , onInputDescription = ChangedDescription
-                                        , onInputBody = ChangedBody
-                                        , onInputTag = ChangedTag
-                                        , onEnterTag = EnteredTag
-                                        , onRemoveTag = RemovedTag
-                                        , onSubmit = SubmittedForm maybeSlug
-                                        }
-                                    , errorMessages = errorMessages
-                                    }
-                        , onFailure = H.text "Unable to load the article."
-                        }
-                        action
-                    ]
-                ]
-            ]
+        [ withAction
+            { onLoading = H.text "Loading..."
+            , onSuccess =
+                \maybeSlug ->
+                    Column.viewSingle Column.Medium
+                        [ Editor.view
+                            { form =
+                                { title = title
+                                , description = description
+                                , body = body
+                                , tag = tag
+                                , tags = tags
+                                , isDisabled = isDisabled
+                                , onInputTitle = ChangedTitle
+                                , onInputDescription = ChangedDescription
+                                , onInputBody = ChangedBody
+                                , onInputTag = ChangedTag
+                                , onEnterTag = EnteredTag
+                                , onRemoveTag = RemovedTag
+                                , onSubmit = SubmittedForm maybeSlug
+                                }
+                            , errorMessages = errorMessages
+                            }
+                        ]
+            , onFailure = H.text "Unable to load the article."
+            }
+            action
         ]
+        |> H.map onChange
 
 
 withAction :

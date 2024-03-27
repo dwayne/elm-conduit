@@ -23,13 +23,13 @@ import Lib.Task as Task
 import Time
 import Url exposing (Url)
 import View.ArticlePreview as ArticlePreview
+import View.Column as Column
 import View.FeedTabs as FeedTabs
-import View.DefaultLayout as DefaultLayout
 import View.HomeHeader as HomeHeader
+import View.Layout as Layout
 import View.Navigation as Navigation
 import View.Pagination as Pagination
 import View.Sidebar as Sidebar
-import View.DefaultLayout as DefaultLayout
 
 
 
@@ -358,21 +358,20 @@ view { zone, viewer, onChange } model =
         feed =
             model.feed
 
-        { role, hasPersonal } =
+        ( role, hasPersonal ) =
             case viewer of
                 Viewer.Guest ->
-                    { role = Navigation.guestHome
-                    , hasPersonal = False
-                    }
+                    ( Navigation.guestHome
+                    , False
+                    )
 
                 Viewer.User { username, imageUrl } ->
-                    { role =
-                        Navigation.userHome
-                            { username = username
-                            , imageUrl = imageUrl
-                            }
-                    , hasPersonal = True
-                    }
+                    ( Navigation.userHome
+                        { username = username
+                        , imageUrl = imageUrl
+                        }
+                    , True
+                    )
 
         viewFeedTabs =
             [ FeedTabs.view
@@ -403,7 +402,7 @@ view { zone, viewer, onChange } model =
 
                 RemoteData.Failure _ ->
                     ( False
-                    , [ ArticlePreview.viewMessage "Unable to load articles." ]
+                    , [ ArticlePreview.viewMessage "Unable to load the articles." ]
                     )
 
         viewPagination =
@@ -414,40 +413,44 @@ view { zone, viewer, onChange } model =
                 }
             ]
 
-        sidebarViewOptions =
-            case model.remoteDataTags of
-                RemoteData.Loading ->
-                    Sidebar.Loading
+        viewSidebar =
+            Sidebar.view <|
+                case model.remoteDataTags of
+                    RemoteData.Loading ->
+                        Sidebar.Loading
 
-                RemoteData.Success tags ->
-                    Sidebar.Tags
-                        { tags = tags
-                        , activeTag = FeedTabs.activeTag model.activeTab
-                        , onClick = ClickedTag
-                        }
+                    RemoteData.Success tags ->
+                        Sidebar.Tags
+                            { tags = tags
+                            , activeTag = FeedTabs.activeTag model.activeTab
+                            , onClick = ClickedTag
+                            }
 
-                RemoteData.Failure _ ->
-                    Sidebar.Error "Unable to load tags."
+                    RemoteData.Failure _ ->
+                        Sidebar.Error "Unable to load the tags."
     in
-    DefaultLayout.view
-        { role = role }
-        [ H.div
-            [ HA.class "home-page" ]
-            [ HomeHeader.view
-            , viewColumns
-                [ viewFeedTabs
-                , viewArticlePreviews
-                , viewPagination
+    Layout.view
+        { name = "home"
+        , role = role
+        , maybeHeader = Just HomeHeader.view
+        }
+        [ Column.viewDouble
+            { left =
+                List.concat
+                    [ viewFeedTabs
+                    , viewArticlePreviews
+                    , viewPagination
+                    ]
+            , right =
+                [ viewSidebar
                 ]
-                [ Sidebar.view sidebarViewOptions
-                ]
-            ]
+            }
         ]
         |> H.map onChange
 
 
 viewArticlePreview : Viewer -> Time.Zone -> Maybe Slug -> Article -> H.Html Msg
-viewArticlePreview viewer zone togglingFavourite { slug, title, description, body, tags, createdAt, isFavourite, totalFavourites, author } =
+viewArticlePreview viewer zone togglingFavourite article =
     ArticlePreview.view
         { role =
             case viewer of
@@ -456,33 +459,17 @@ viewArticlePreview viewer zone togglingFavourite { slug, title, description, bod
 
                 Viewer.User { token } ->
                     ArticlePreview.User
-                        { isLoading = togglingFavourite == Just slug
-                        , totalFavourites = totalFavourites
-                        , isFavourite = isFavourite
-                        , onToggleFavourite = ToggledFavourite token slug
+                        { isLoading = togglingFavourite == Just article.slug
+                        , totalFavourites = article.totalFavourites
+                        , isFavourite = article.isFavourite
+                        , onToggleFavourite = ToggledFavourite token article.slug
                         }
-        , username = author.username
-        , imageUrl = author.imageUrl
+        , username = article.author.username
+        , imageUrl = article.author.imageUrl
         , zone = zone
-        , createdAt = createdAt
-        , slug = slug
-        , title = title
-        , description = description
-        , tags = tags
+        , createdAt = article.createdAt
+        , slug = article.slug
+        , title = article.title
+        , description = article.description
+        , tags = article.tags
         }
-
-
-viewColumns : List (List (H.Html msg)) -> List (H.Html msg) -> H.Html msg
-viewColumns list col2 =
-    let
-        col1 =
-            List.concat list
-    in
-    H.div
-        [ HA.class "container page" ]
-        [ H.div
-            [ HA.class "row" ]
-            [ H.div [ HA.class "col-md-9" ] col1
-            , H.div [ HA.class "col-md-3" ] col2
-            ]
-        ]

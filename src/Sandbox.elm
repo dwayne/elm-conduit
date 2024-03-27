@@ -19,12 +19,14 @@ import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
 import View.ArticlePreview as ArticlePreview
 import View.ArticleTabs as ArticleTabs
+import View.Column as Column
 import View.Comment as Comment
 import View.CommentForm as CommentForm
 import View.Editor as Editor
 import View.FeedTabs as FeedTabs
 import View.Footer as Footer
 import View.HomeHeader as HomeHeader
+import View.Layout as Layout
 import View.Login as Login
 import View.Navigation as Navigation
 import View.Pagination as Pagination
@@ -343,225 +345,225 @@ viewNavigation =
 
 viewHomePage : HomePageModel -> H.Html Msg
 viewHomePage { maybeTag, activeTab, isFavourite, currentPageNumber } =
-    H.div
-        [ HA.class "home-page" ]
-        [ HomeHeader.view
-        , H.div
-            [ HA.class "container page" ]
-            [ H.div
-                [ HA.class "row" ]
-                [ H.div
-                    [ HA.class "col-md-9" ]
-                    [ FeedTabs.view
-                        { hasPersonal = True
-                        , maybeTag = maybeTag
-                        , activeTab = activeTab
-                        , isDisabled = False
-                        , onSwitch = SwitchedFeedTabs
-                        }
-                    , viewMaybe2
-                        (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
-                            ArticlePreview.view
-                                { role = ArticlePreview.Guest
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , slug = slug
-                                , title = title
-                                , description = description
-                                , tags = tags
-                                }
-                        )
-                        maybeEricSimons
-                        maybeScaleWebAppsArticle
-                    , viewMaybe2
-                        (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
-                            ArticlePreview.view
-                                { role =
-                                    ArticlePreview.User
-                                        { isLoading = False
-                                        , totalFavourites =
-                                            if isFavourite then
-                                                Total.fromInt 30
-
-                                            else
-                                                Total.fromInt 29
-                                        , isFavourite = isFavourite
-                                        , onToggleFavourite = ToggledFavourite
-                                        }
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , slug = slug
-                                , title = title
-                                , description = description
-                                , tags = tags
-                                }
-                        )
-                        maybeAlbertPai
-                        maybeNeverStopSingingSongArticle
-                    , Pagination.view
-                        { totalPages = Total.fromInt 5
-                        , currentPageNumber = currentPageNumber
-                        , onChangePageNumber = ChangedPageNumber
-                        }
-                    ]
-                , H.div
-                    [ HA.class "col-md-3" ]
-                    [ Sidebar.view Sidebar.Loading
-                    , H.hr [] []
-                    , Sidebar.view <|
-                        Sidebar.Tags
-                            { tags =
-                                tagsFromStrings
-                                    [ "programming"
-                                    , "javascript"
-                                    , "elm"
-                                    , "emberjs"
-                                    , "angularjs"
-                                    , "react"
-                                    , "node"
-                                    , "django"
-                                    , "rails"
-                                    , "clear"
-                                    ]
-                            , activeTag = maybeTag
-                            , onClick = ClickedTag
+    Layout.view
+        { name = "home"
+        , role = Navigation.guestHome
+        , maybeHeader = Just HomeHeader.view
+        }
+        [ Column.viewDouble
+            { left =
+                [ FeedTabs.view
+                    { hasPersonal = True
+                    , maybeTag = maybeTag
+                    , activeTab = activeTab
+                    , isDisabled = False
+                    , onSwitch = SwitchedFeedTabs
+                    }
+                , viewMaybe2
+                    (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
+                        ArticlePreview.view
+                            { role = ArticlePreview.Guest
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , slug = slug
+                            , title = title
+                            , description = description
+                            , tags = tags
                             }
-                    , H.hr [] []
-                    , Sidebar.view <|
-                        Sidebar.Error "Unable to load tags."
-                    ]
+                    )
+                    maybeEricSimons
+                    maybeScaleWebAppsArticle
+                , viewMaybe2
+                    (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
+                        ArticlePreview.view
+                            { role =
+                                ArticlePreview.User
+                                    { isLoading = False
+                                    , totalFavourites =
+                                        if isFavourite then
+                                            Total.fromInt 30
+
+                                        else
+                                            Total.fromInt 29
+                                    , isFavourite = isFavourite
+                                    , onToggleFavourite = ToggledFavourite
+                                    }
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , slug = slug
+                            , title = title
+                            , description = description
+                            , tags = tags
+                            }
+                    )
+                    maybeAlbertPai
+                    maybeNeverStopSingingSongArticle
+                , Pagination.view
+                    { totalPages = Total.fromInt 5
+                    , currentPageNumber = currentPageNumber
+                    , onChangePageNumber = ChangedPageNumber
+                    }
                 ]
-            ]
+            , right =
+                [ Sidebar.view Sidebar.Loading
+                , H.hr [] []
+                , Sidebar.view <|
+                    Sidebar.Tags
+                        { tags =
+                            tagsFromStrings
+                                [ "programming"
+                                , "javascript"
+                                , "elm"
+                                , "emberjs"
+                                , "angularjs"
+                                , "react"
+                                , "node"
+                                , "django"
+                                , "rails"
+                                , "clear"
+                                ]
+                        , activeTag = maybeTag
+                        , onClick = ClickedTag
+                        }
+                , H.hr [] []
+                , Sidebar.view <|
+                    Sidebar.Error "Unable to load tags."
+                ]
+            }
         ]
 
 
 viewLoginPage : H.Html Msg
 viewLoginPage =
-    H.div
-        [ HA.class "auth-page" ]
-        [ H.div
-            [ HA.class "container page" ]
-            [ H.div
-                [ HA.class "row" ]
-                [ Login.view
-                    { classNames = "col-md-6 offset-md-3 col-xs-12"
-                    , form =
-                        { email = ""
-                        , password = ""
-                        , isDisabled = False
-                        , onInputEmail = always NoOp
-                        , onInputPassword = always NoOp
-                        , onSubmit = NoOp
-                        }
-                    , errorMessages =
-                        [ "email can't be blank"
-                        ]
+    Layout.view
+        { name = "auth"
+        , role = Navigation.login
+        , maybeHeader = Nothing
+        }
+        [ Column.viewSingle Column.ExtraSmall
+            [ Login.view
+                { form =
+                    { email = ""
+                    , password = ""
+                    , isDisabled = False
+                    , onInputEmail = always NoOp
+                    , onInputPassword = always NoOp
+                    , onSubmit = NoOp
                     }
-                ]
+                , errorMessages =
+                    [ "email can't be blank"
+                    ]
+                }
             ]
         ]
 
 
 viewRegisterPage : H.Html Msg
 viewRegisterPage =
-    H.div
-        [ HA.class "auth-page" ]
-        [ H.div
-            [ HA.class "container page" ]
-            [ H.div
-                [ HA.class "row" ]
-                [ Register.view
-                    { classNames = "col-md-6 offset-md-3 col-xs-12"
-                    , form =
-                        { username = ""
-                        , email = ""
-                        , password = ""
-                        , isDisabled = False
-                        , onInputUsername = always NoOp
-                        , onInputEmail = always NoOp
-                        , onInputPassword = always NoOp
-                        , onSubmit = NoOp
-                        }
-                    , errorMessages =
-                        [ "username has already been taken"
-                        , "email has already been taken"
-                        ]
+    Layout.view
+        { name = "auth"
+        , role = Navigation.register
+        , maybeHeader = Nothing
+        }
+        [ Column.viewSingle Column.ExtraSmall
+            [ Register.view
+                { form =
+                    { username = ""
+                    , email = ""
+                    , password = ""
+                    , isDisabled = False
+                    , onInputUsername = always NoOp
+                    , onInputEmail = always NoOp
+                    , onInputPassword = always NoOp
+                    , onSubmit = NoOp
                     }
-                ]
+                , errorMessages =
+                    [ "username has already been taken"
+                    , "email has already been taken"
+                    ]
+                }
             ]
         ]
 
 
 viewSettingsPage : H.Html Msg
 viewSettingsPage =
-    H.div
-        [ HA.class "settings-page" ]
-        [ H.div
-            [ HA.class "container page" ]
-            [ H.div
-                [ HA.class "row" ]
-                [ viewMaybe
-                    (\{ username, imageUrl } ->
-                        Settings.view
-                            { classNames = "col-md-6 offset-md-3 col-xs-12"
-                            , form =
-                                { imageUrl = Url.toString imageUrl
-                                , username = Username.toString username
-                                , bio = ""
-                                , email = "eric.simons@realworld.com"
-                                , password = ""
-                                , isDisabled = False
-                                , onInputImageUrl = always NoOp
-                                , onInputUsername = always NoOp
-                                , onInputBio = always NoOp
-                                , onInputEmail = always NoOp
-                                , onInputPassword = always NoOp
-                                , onSubmit = NoOp
-                                }
-                            , errorMessages = []
-                            , onLogout = NoOp
+    viewMaybe
+        (\{ username, imageUrl } ->
+            Layout.view
+                { name = "settings"
+                , role =
+                    Navigation.settings
+                        { username = username
+                        , imageUrl = imageUrl
+                        }
+                , maybeHeader = Nothing
+                }
+                [ Column.viewSingle Column.ExtraSmall
+                    [ Settings.view
+                        { form =
+                            { imageUrl = Url.toString imageUrl
+                            , username = Username.toString username
+                            , bio = ""
+                            , email = "eric.simons@realworld.com"
+                            , password = ""
+                            , isDisabled = False
+                            , onInputImageUrl = always NoOp
+                            , onInputUsername = always NoOp
+                            , onInputBio = always NoOp
+                            , onInputEmail = always NoOp
+                            , onInputPassword = always NoOp
+                            , onSubmit = NoOp
                             }
-                    )
-                    maybeEricSimons
+                        , errorMessages = []
+                        , onLogout = NoOp
+                        }
+                    ]
                 ]
-            ]
-        ]
+        )
+        maybeEricSimons
 
 
 viewEditorPage : EditorPageModel -> H.Html Msg
 viewEditorPage { tag, tags } =
-    H.div
-        [ HA.class "editor-page" ]
-        [ H.div
-            [ HA.class "container page" ]
-            [ H.div
-                [ HA.class "row" ]
-                [ Editor.view
-                    { classNames = "col-md-10 offset-md-1 col-xs-12"
-                    , form =
-                        { title = ""
-                        , description = ""
-                        , body = ""
-                        , tag = tag
-                        , tags = tags
-                        , isDisabled = False
-                        , onInputTitle = always NoOp
-                        , onInputDescription = always NoOp
-                        , onInputBody = always NoOp
-                        , onInputTag = ChangedTag
-                        , onEnterTag = EnteredTag
-                        , onRemoveTag = RemovedTag
-                        , onSubmit = NoOp
+    viewMaybe
+        (\{ username, imageUrl } ->
+            Layout.view
+                { name = "editor"
+                , role =
+                    Navigation.newArticle
+                        { username = username
+                        , imageUrl = imageUrl
                         }
-                    , errorMessages = []
-                    }
+                , maybeHeader = Nothing
+                }
+                [ Column.viewSingle Column.Medium
+                    [ Editor.view
+                        { form =
+                            { title = ""
+                            , description = ""
+                            , body = ""
+                            , tag = tag
+                            , tags = tags
+                            , isDisabled = False
+                            , onInputTitle = always NoOp
+                            , onInputDescription = always NoOp
+                            , onInputBody = always NoOp
+                            , onInputTag = ChangedTag
+                            , onEnterTag = EnteredTag
+                            , onRemoveTag = RemovedTag
+                            , onSubmit = NoOp
+                            }
+                        , errorMessages = []
+                        }
+                    ]
                 ]
-            ]
-        ]
+        )
+        maybeEricSimons
 
 
 viewArticlePage : H.Html Msg
@@ -689,11 +691,13 @@ viewArticlePage =
             [ HA.class "container page" ]
             [ viewMaybe
                 (\{ description, body, tags } ->
-                    ArticleContent.view
-                        { description = description
-                        , body = body
-                        , tags = tags
-                        }
+                    Column.viewSingle Column.Large
+                        [ ArticleContent.view
+                            { description = description
+                            , body = body
+                            , tags = tags
+                            }
+                        ]
                 )
                 maybeScaleWebAppsArticle
             , H.hr [] []
@@ -722,99 +726,95 @@ viewArticlePage =
                     )
                     maybeArticleData
                 ]
-            , H.div
-                [ HA.class "row" ]
-                [ H.div
-                    [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
-                    [ viewMaybe
-                        (\{ imageUrl } ->
-                            CommentForm.view
-                                { htmlId = "comment-form-1"
-                                , comment = ""
-                                , imageUrl = imageUrl
-                                , isDisabled = False
-                                , onInputComment = always NoOp
-                                , onSubmit = NoOp
-                                }
-                        )
-                        maybeEricSimons
-                    , viewMaybe
-                        (\{ imageUrl } ->
-                            CommentForm.view
-                                { htmlId = "comment-form-2"
-                                , comment = "This is a new comment."
-                                , imageUrl = imageUrl
-                                , isDisabled = False
-                                , onInputComment = always NoOp
-                                , onSubmit = NoOp
-                                }
-                        )
-                        maybeEricSimons
-                    , viewMaybe3
-                        (\body { username, imageUrl } createdAt ->
-                            Comment.view
-                                { body = body
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , maybeDelete = Nothing
-                                }
-                        )
-                        (NonEmptyString.fromString "This is the fourth comment.")
-                        maybeSmileyCyrus
-                        (Timestamp.fromString "2023-12-17T19:31:59.987Z")
-                    , viewMaybe3
-                        (\body { username, imageUrl } createdAt ->
-                            Comment.view
-                                { body = body
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , maybeDelete = Nothing
-                                }
-                        )
-                        (NonEmptyString.fromString "This is the third comment.")
-                        maybeAlbertPai
-                        (Timestamp.fromString "2023-12-01T01:25:37.123Z")
-                    , viewMaybe3
-                        (\body { username, imageUrl } createdAt ->
-                            Comment.view
-                                { body = body
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , maybeDelete =
-                                    Just
-                                        { isDisabled = False
-                                        , onDelete = NoOp
-                                        }
-                                }
-                        )
-                        (NonEmptyString.fromString "This is the second comment.")
-                        maybeEricSimons
-                        (Timestamp.fromString "2023-11-05T08:40:12.451Z")
-                    , viewMaybe3
-                        (\body { username, imageUrl } createdAt ->
-                            Comment.view
-                                { body = body
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , maybeDelete =
-                                    Just
-                                        { isDisabled = True
-                                        , onDelete = NoOp
-                                        }
-                                }
-                        )
-                        (NonEmptyString.fromString "This is the first comment.")
-                        maybeEricSimons
-                        (Timestamp.fromString "2023-10-23T15:26:09.619Z")
-                    ]
+            , Column.viewSingle Column.Small
+                [ viewMaybe
+                    (\{ imageUrl } ->
+                        CommentForm.view
+                            { htmlId = "comment-form-1"
+                            , comment = ""
+                            , imageUrl = imageUrl
+                            , isDisabled = False
+                            , onInputComment = always NoOp
+                            , onSubmit = NoOp
+                            }
+                    )
+                    maybeEricSimons
+                , viewMaybe
+                    (\{ imageUrl } ->
+                        CommentForm.view
+                            { htmlId = "comment-form-2"
+                            , comment = "This is a new comment."
+                            , imageUrl = imageUrl
+                            , isDisabled = False
+                            , onInputComment = always NoOp
+                            , onSubmit = NoOp
+                            }
+                    )
+                    maybeEricSimons
+                , viewMaybe3
+                    (\body { username, imageUrl } createdAt ->
+                        Comment.view
+                            { body = body
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , maybeDelete = Nothing
+                            }
+                    )
+                    (NonEmptyString.fromString "This is the fourth comment.")
+                    maybeSmileyCyrus
+                    (Timestamp.fromString "2023-12-17T19:31:59.987Z")
+                , viewMaybe3
+                    (\body { username, imageUrl } createdAt ->
+                        Comment.view
+                            { body = body
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , maybeDelete = Nothing
+                            }
+                    )
+                    (NonEmptyString.fromString "This is the third comment.")
+                    maybeAlbertPai
+                    (Timestamp.fromString "2023-12-01T01:25:37.123Z")
+                , viewMaybe3
+                    (\body { username, imageUrl } createdAt ->
+                        Comment.view
+                            { body = body
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , maybeDelete =
+                                Just
+                                    { isDisabled = False
+                                    , onDelete = NoOp
+                                    }
+                            }
+                    )
+                    (NonEmptyString.fromString "This is the second comment.")
+                    maybeEricSimons
+                    (Timestamp.fromString "2023-11-05T08:40:12.451Z")
+                , viewMaybe3
+                    (\body { username, imageUrl } createdAt ->
+                        Comment.view
+                            { body = body
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , maybeDelete =
+                                Just
+                                    { isDisabled = True
+                                    , onDelete = NoOp
+                                    }
+                            }
+                    )
+                    (NonEmptyString.fromString "This is the first comment.")
+                    maybeEricSimons
+                    (Timestamp.fromString "2023-10-23T15:26:09.619Z")
                 ]
             ]
         ]
@@ -841,60 +841,56 @@ viewProfilePage { activeTab } =
         , H.hr [] []
         , viewProfileHeader ProfileHeader.Owner
         , H.div
-            [ HA.class "container" ]
-            [ H.div
-                [ HA.class "row" ]
-                [ H.div
-                    [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
-                    [ ArticleTabs.view
-                        { activeTab = activeTab
-                        , isDisabled = False
-                        , onSwitch = SwitchedArticleTabs
-                        }
-                    , viewMaybe2
-                        (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
-                            ArticlePreview.view
-                                { role = ArticlePreview.Guest
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , slug = slug
-                                , title = title
-                                , description = description
-                                , tags = tags
-                                }
-                        )
-                        maybeEricSimons
-                        maybeScaleWebAppsArticle
-                    , viewMaybe2
-                        (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
-                            ArticlePreview.view
-                                { role =
-                                    ArticlePreview.User
-                                        { isLoading = False
-                                        , totalFavourites = Total.fromInt 30
-                                        , isFavourite = True
-                                        , onToggleFavourite = always NoOp
-                                        }
-                                , username = username
-                                , imageUrl = imageUrl
-                                , zone = zone
-                                , createdAt = createdAt
-                                , slug = slug
-                                , title = title
-                                , description = description
-                                , tags = tags
-                                }
-                        )
-                        maybeAlbertPai
-                        maybeNeverStopSingingSongArticle
-                    , Pagination.view
-                        { totalPages = Total.fromInt 2
-                        , currentPageNumber = PageNumber.fromInt 1
-                        , onChangePageNumber = always NoOp
-                        }
-                    ]
+            [ HA.class "container page" ]
+            [ Column.viewSingle Column.Medium
+                [ ArticleTabs.view
+                    { activeTab = activeTab
+                    , isDisabled = False
+                    , onSwitch = SwitchedArticleTabs
+                    }
+                , viewMaybe2
+                    (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
+                        ArticlePreview.view
+                            { role = ArticlePreview.Guest
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , slug = slug
+                            , title = title
+                            , description = description
+                            , tags = tags
+                            }
+                    )
+                    maybeEricSimons
+                    maybeScaleWebAppsArticle
+                , viewMaybe2
+                    (\{ username, imageUrl } { slug, title, description, tags, createdAt } ->
+                        ArticlePreview.view
+                            { role =
+                                ArticlePreview.User
+                                    { isLoading = False
+                                    , totalFavourites = Total.fromInt 30
+                                    , isFavourite = True
+                                    , onToggleFavourite = always NoOp
+                                    }
+                            , username = username
+                            , imageUrl = imageUrl
+                            , zone = zone
+                            , createdAt = createdAt
+                            , slug = slug
+                            , title = title
+                            , description = description
+                            , tags = tags
+                            }
+                    )
+                    maybeAlbertPai
+                    maybeNeverStopSingingSongArticle
+                , Pagination.view
+                    { totalPages = Total.fromInt 2
+                    , currentPageNumber = PageNumber.fromInt 1
+                    , onChangePageNumber = always NoOp
+                    }
                 ]
             ]
         ]

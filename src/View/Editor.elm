@@ -7,16 +7,14 @@ import View.EditorForm as EditorForm
 
 
 type alias ViewOptions msg =
-    { classNames : String
-    , form : EditorForm.ViewOptions msg
+    { form : EditorForm.ViewOptions msg
     , errorMessages : List String
     }
 
 
 view : ViewOptions msg -> H.Html msg
-view { classNames, form, errorMessages } =
-    H.div
-        [ HA.class classNames ]
+view { form, errorMessages } =
+    H.div []
         [ AuthErrors.view errorMessages
         , EditorForm.view form
         ]

@@ -12,7 +12,8 @@ import Html.Attributes as HA
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
-import View.DefaultLayout as DefaultLayout
+import View.Column as Column
+import View.Layout as Layout
 import View.Navigation as Navigation
 import View.Register as Register
 
@@ -135,35 +136,26 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> Model -> H.Html msg
-view { onChange } =
-    viewHelper >> H.map onChange
-
-
-viewHelper : Model -> H.Html Msg
-viewHelper { username, email, password, errorMessages, isDisabled } =
-    DefaultLayout.view
-        { role = Navigation.register }
-        [ H.div
-            [ HA.class "auth-page" ]
-            [ H.div
-                [ HA.class "container page" ]
-                [ H.div
-                    [ HA.class "row" ]
-                    [ Register.view
-                        { classNames = "col-md-6 offset-md-3 col-xs-12"
-                        , form =
-                            { username = username
-                            , email = email
-                            , password = password
-                            , isDisabled = isDisabled
-                            , onInputUsername = ChangedUsername
-                            , onInputEmail = ChangedEmail
-                            , onInputPassword = ChangedPassword
-                            , onSubmit = SubmittedForm
-                            }
-                        , errorMessages = errorMessages
-                        }
-                    ]
-                ]
+view { onChange } { username, email, password, errorMessages, isDisabled } =
+    Layout.view
+        { name = "auth"
+        , role = Navigation.register
+        , maybeHeader = Nothing
+        }
+        [ Column.viewSingle Column.ExtraSmall
+            [ Register.view
+                { form =
+                    { username = username
+                    , email = email
+                    , password = password
+                    , isDisabled = isDisabled
+                    , onInputUsername = ChangedUsername
+                    , onInputEmail = ChangedEmail
+                    , onInputPassword = ChangedPassword
+                    , onSubmit = SubmittedForm
+                    }
+                , errorMessages = errorMessages
+                }
             ]
         ]
+        |> H.map onChange

@@ -22,10 +22,11 @@ import Time
 import Url exposing (Url)
 import View.ArticlePreview as ArticlePreview
 import View.ArticleTabs as ArticleTabs
+import View.Column as Column
+import View.Layout as Layout
 import View.Navigation as Navigation
 import View.Pagination as Pagination
 import View.ProfileHeader as ProfileHeader
-import View.DefaultLayout as DefaultLayout
 
 
 
@@ -307,10 +308,10 @@ type alias ViewOptions msg =
 view : ViewOptions msg -> Model -> H.Html msg
 view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
     let
-        viewHelper =
+        { role, maybeHeader, content } =
             case viewer of
                 Viewer.Guest ->
-                    viewAsGuest
+                    fromGuestToLayoutOptions
                         { zone = zone
                         , remoteDataProfile = remoteDataProfile
                         , activeTab = activeTab
@@ -321,7 +322,7 @@ view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remote
                         }
 
                 Viewer.User user ->
-                    viewAsUser
+                    fromUserToLayoutOptions
                         { zone = zone
                         , user = user
                         , profileUsername = username
@@ -334,10 +335,23 @@ view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remote
                         , isDisabled = isDisabled
                         }
     in
-    H.map onChange viewHelper
+    Layout.view
+        { name = "profile"
+        , role = role
+        , maybeHeader = maybeHeader
+        }
+        content
+        |> H.map onChange
 
 
-viewAsGuest :
+type alias LayoutOptions msg =
+    { role : Navigation.Role
+    , maybeHeader : Maybe (H.Html msg)
+    , content : List (H.Html msg)
+    }
+
+
+fromGuestToLayoutOptions :
     { zone : Time.Zone
     , remoteDataProfile : RemoteData () GetProfile.Profile
     , activeTab : ArticleTabs.Tab
@@ -346,37 +360,53 @@ viewAsGuest :
     , pager : Pager
     , isDisabled : Bool
     }
-    -> H.Html Msg
-viewAsGuest { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
-    DefaultLayout.view
-        { role = Navigation.guest }
-        [ viewProfilePage
-            (\profile ->
-                [ viewProfileHeader
-                    { profile = profile
-                    , role = ProfileHeader.Guest
+    -> LayoutOptions Msg
+fromGuestToLayoutOptions { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+    let
+        { maybeHeader, content } =
+            case remoteDataProfile of
+                RemoteData.Loading ->
+                    { maybeHeader = Nothing
+                    , content = []
                     }
-                , viewRow <|
-                    ArticleTabs.view
-                        { activeTab = activeTab
-                        , isDisabled = isDisabled
-                        , onSwitch = SwitchedArticleTabs
-                        }
-                        :: viewArticles
-                            { zone = zone
-                            , activeTab = activeTab
-                            , remoteDataArticles = remoteDataArticles
-                            , currentPageNumber = currentPageNumber
-                            , pager = pager
-                            , toRole = always ArticlePreview.Guest
-                            }
-                ]
-            )
-            remoteDataProfile
-        ]
+
+                RemoteData.Success profile ->
+                    { maybeHeader =
+                        Just <|
+                            viewProfileHeader
+                                { profile = profile
+                                , role = ProfileHeader.Guest
+                                }
+                    , content =
+                        [ Column.viewSingle Column.Medium <|
+                            ArticleTabs.view
+                                { activeTab = activeTab
+                                , isDisabled = isDisabled
+                                , onSwitch = SwitchedArticleTabs
+                                }
+                                :: viewArticles
+                                    { zone = zone
+                                    , activeTab = activeTab
+                                    , remoteDataArticles = remoteDataArticles
+                                    , currentPageNumber = currentPageNumber
+                                    , pager = pager
+                                    , toRole = always ArticlePreview.Guest
+                                    }
+                        ]
+                    }
+
+                RemoteData.Failure () ->
+                    { maybeHeader = Nothing
+                    , content = [ viewProfileFailure ]
+                    }
+    in
+    { role = Navigation.guest
+    , maybeHeader = maybeHeader
+    , content = content
+    }
 
 
-viewAsUser :
+fromUserToLayoutOptions :
     { zone : Time.Zone
     , user : User
     , profileUsername : Username
@@ -388,79 +418,82 @@ viewAsUser :
     , pager : Pager
     , isDisabled : Bool
     }
-    -> H.Html Msg
-viewAsUser { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
-    DefaultLayout.view
-        { role =
-            { username = user.username
-            , imageUrl = user.imageUrl
-            }
-                |> (if user.username == profileUsername then
-                        Navigation.profile
-
-                    else
-                        Navigation.user
-                   )
-        }
-        [ viewProfilePage
-            (\profile ->
-                [ viewProfileHeader
-                    { profile = profile
-                    , role =
-                        if user.username == profile.username then
-                            ProfileHeader.Owner
-
-                        else
-                            let
-                                toToggledFollowMsg =
-                                    ToggledFollow user.token profile.username
-                            in
-                            ProfileHeader.User
-                                { isFollowing = profile.isFollowing
-                                , isDisabled = isDisabled
-                                , onFollow = toToggledFollowMsg True
-                                , onUnfollow = toToggledFollowMsg False
-                                }
+    -> LayoutOptions Msg
+fromUserToLayoutOptions { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
+    let
+        { maybeHeader, content } =
+            case remoteDataProfile of
+                RemoteData.Loading ->
+                    { maybeHeader = Nothing
+                    , content = []
                     }
-                , viewRow <|
-                    ArticleTabs.view
-                        { activeTab = activeTab
-                        , isDisabled = isDisabled
-                        , onSwitch = SwitchedArticleTabs
-                        }
-                        :: viewArticles
-                            { zone = zone
-                            , activeTab = activeTab
-                            , remoteDataArticles = remoteDataArticles
-                            , currentPageNumber = currentPageNumber
-                            , pager = pager
-                            , toRole =
-                                \{ slug, isFavourite, totalFavourites } ->
-                                    ArticlePreview.User
-                                        { isLoading = togglingFavourite == Just slug
-                                        , totalFavourites = totalFavourites
-                                        , isFavourite = isFavourite
-                                        , onToggleFavourite = ToggledFavourite user.token slug
-                                        }
-                            }
-                ]
-            )
-            remoteDataProfile
-        ]
 
+                RemoteData.Success profile ->
+                    { maybeHeader =
+                        Just <|
+                            viewProfileHeader
+                                { profile = profile
+                                , role =
+                                    if user.username == profile.username then
+                                        ProfileHeader.Owner
 
-viewProfilePage : (GetProfile.Profile -> List (H.Html msg)) -> RemoteData () GetProfile.Profile -> H.Html msg
-viewProfilePage toHtml remoteDataProfile =
-    H.div [ HA.class "profile-page" ] <|
-        case remoteDataProfile of
-            RemoteData.Loading ->
-                []
+                                    else
+                                        let
+                                            toToggledFollowMsg =
+                                                ToggledFollow user.token profile.username
+                                        in
+                                        ProfileHeader.User
+                                            { isFollowing = profile.isFollowing
+                                            , isDisabled = isDisabled
+                                            , onFollow = toToggledFollowMsg True
+                                            , onUnfollow = toToggledFollowMsg False
+                                            }
+                                }
+                    , content =
+                        [ Column.viewSingle Column.Medium <|
+                            ArticleTabs.view
+                                { activeTab = activeTab
+                                , isDisabled = isDisabled
+                                , onSwitch = SwitchedArticleTabs
+                                }
+                                :: viewArticles
+                                    { zone = zone
+                                    , activeTab = activeTab
+                                    , remoteDataArticles = remoteDataArticles
+                                    , currentPageNumber = currentPageNumber
+                                    , pager = pager
+                                    , toRole =
+                                        \{ slug, isFavourite, totalFavourites } ->
+                                            ArticlePreview.User
+                                                { isLoading = togglingFavourite == Just slug
+                                                , totalFavourites = totalFavourites
+                                                , isFavourite = isFavourite
+                                                , onToggleFavourite = ToggledFavourite user.token slug
+                                                }
+                                    }
+                        ]
+                    }
 
-            RemoteData.Success profile ->
-                toHtml profile
+                RemoteData.Failure () ->
+                    { maybeHeader = Nothing
+                    , content = [ viewProfileFailure ]
+                    }
+    in
+    { role =
+        let
+            userDetails =
+                { username = user.username
+                , imageUrl = user.imageUrl
+                }
+        in
+        if user.username == profileUsername then
+            Navigation.profile userDetails
 
-            RemoteData.Failure _ ->
-                [ H.text "Unable to load the user's profile." ]
+        else
+            Navigation.user userDetails
+    , maybeHeader = maybeHeader
+    , content = content
+    }
 
 
 viewProfileHeader :
@@ -525,18 +558,10 @@ viewArticles { zone, activeTab, remoteDataArticles, currentPageNumber, pager, to
                       ]
                     ]
 
-        RemoteData.Failure _ ->
-            [ ArticlePreview.viewMessage "Unable to load articles." ]
+        RemoteData.Failure () ->
+            [ ArticlePreview.viewMessage "Unable to load the articles." ]
 
 
-viewRow : List (H.Html msg) -> H.Html msg
-viewRow rows =
-    H.div
-        [ HA.class "container page" ]
-        [ H.div
-            [ HA.class "row" ]
-            [ H.div
-                [ HA.class "col-xs-12 col-md-10 offset-md-1" ]
-                rows
-            ]
-        ]
+viewProfileFailure : H.Html msg
+viewProfileFailure =
+    H.p [] [ H.text "Unable to load the user's profile." ]

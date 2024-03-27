@@ -14,7 +14,8 @@ import Lib.String as String
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
-import View.DefaultLayout as DefaultLayout
+import View.Column as Column
+import View.Layout as Layout
 import View.Navigation as Navigation
 import View.Settings as Settings
 
@@ -177,39 +178,33 @@ type alias ViewOptions msg =
 
 view : ViewOptions msg -> Model -> H.Html msg
 view { user, onLogout, onChange } { imageUrl, username, bio, email, password, errorMessages, isDisabled } =
-    DefaultLayout.view
-        { role =
+    Layout.view
+        { name = "settings"
+        , role =
             Navigation.settings
                 { username = user.username
                 , imageUrl = user.imageUrl
                 }
+        , maybeHeader = Nothing
         }
-        [ H.div
-            [ HA.class "settings-page" ]
-            [ H.div
-                [ HA.class "container page" ]
-                [ H.div
-                    [ HA.class "row" ]
-                    [ Settings.view
-                        { classNames = "col-md-6 offset-md-3 col-xs-12"
-                        , form =
-                            { imageUrl = imageUrl
-                            , username = username
-                            , bio = bio
-                            , email = email
-                            , password = password
-                            , isDisabled = isDisabled
-                            , onInputImageUrl = onChange << ChangedImageUrl
-                            , onInputUsername = onChange << ChangedUsername
-                            , onInputBio = onChange << ChangedBio
-                            , onInputEmail = onChange << ChangedEmail
-                            , onInputPassword = onChange << ChangedPassword
-                            , onSubmit = onChange SubmittedForm
-                            }
-                        , errorMessages = errorMessages
-                        , onLogout = onLogout
-                        }
-                    ]
-                ]
+        [ Column.viewSingle Column.ExtraSmall
+            [ Settings.view
+                { form =
+                    { imageUrl = imageUrl
+                    , username = username
+                    , bio = bio
+                    , email = email
+                    , password = password
+                    , isDisabled = isDisabled
+                    , onInputImageUrl = onChange << ChangedImageUrl
+                    , onInputUsername = onChange << ChangedUsername
+                    , onInputBio = onChange << ChangedBio
+                    , onInputEmail = onChange << ChangedEmail
+                    , onInputPassword = onChange << ChangedPassword
+                    , onSubmit = onChange SubmittedForm
+                    }
+                , errorMessages = errorMessages
+                , onLogout = onLogout
+                }
             ]
         ]

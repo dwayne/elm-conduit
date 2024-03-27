@@ -30,10 +30,11 @@ import View.ArticleActionsForGuest as ArticleActionsForGuest
 import View.ArticleContent as ArticleContent
 import View.ArticleHeader as ArticleHeader
 import View.ArticleMeta as ArticleMeta
+import View.Column as Column
 import View.Comment as Comment
 import View.CommentForm as CommentForm
+import View.Layout as Layout
 import View.Navigation as Navigation
-import View.DefaultLayout as DefaultLayout
 
 
 
@@ -319,62 +320,93 @@ type alias ViewOptions msg =
 
 view : ViewOptions msg -> Model -> H.Html msg
 view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment, isDisabled } =
-    case viewer of
-        Viewer.Guest ->
-            viewAsGuest
-                { zone = zone
-                , remoteDataArticle = remoteDataArticle
-                }
+    let
+        { role, maybeHeader, content } =
+            case viewer of
+                Viewer.Guest ->
+                    fromGuestToLayoutOptions
+                        { zone = zone
+                        , remoteDataArticle = remoteDataArticle
+                        }
 
-        Viewer.User user ->
-            viewAsUser
-                { zone = zone
-                , user = user
-                , remoteDataArticle = remoteDataArticle
-                , remoteDataComments = remoteDataComments
-                , comment = comment
-                , isDisabled = isDisabled
-                }
-                |> H.map onChange
+                Viewer.User user ->
+                    fromUserToLayoutOptions
+                        { zone = zone
+                        , user = user
+                        , remoteDataArticle = remoteDataArticle
+                        , remoteDataComments = remoteDataComments
+                        , comment = comment
+                        , isDisabled = isDisabled
+                        }
+    in
+    Layout.view
+        { name = "article"
+        , role = role
+        , maybeHeader = maybeHeader
+        }
+        content
+        |> H.map onChange
 
 
-viewAsGuest :
+type alias LayoutOptions msg =
+    { role : Navigation.Role
+    , maybeHeader : Maybe (H.Html msg)
+    , content : List (H.Html msg)
+    }
+
+
+fromGuestToLayoutOptions :
     { zone : Time.Zone
     , remoteDataArticle : RemoteData () Article
     }
-    -> H.Html msg
-viewAsGuest { zone, remoteDataArticle } =
-    DefaultLayout.view
-        { role = Navigation.guest }
-        [ viewArticle
-            (\article ->
-                [ ArticleHeader.view
-                    { title = article.title
-                    , meta =
-                        { username = article.author.username
-                        , imageUrl = article.author.imageUrl
-                        , zone = zone
-                        , createdAt = article.createdAt
-                        , role = ArticleMeta.Guest
-                        }
+    -> LayoutOptions msg
+fromGuestToLayoutOptions { zone, remoteDataArticle } =
+    let
+        { maybeHeader, content } =
+            case remoteDataArticle of
+                RemoteData.Loading ->
+                    { maybeHeader = Nothing
+                    , content = []
                     }
-                , H.div
-                    [ HA.class "container page" ]
-                    [ ArticleContent.view
-                        { description = article.description
-                        , body = article.body
-                        , tags = article.tags
-                        }
-                    , H.hr [] []
-                    , ArticleActionsForGuest.view
-                    ]
-                ]
-            )
-            remoteDataArticle
-        ]
+
+                RemoteData.Success article ->
+                    { maybeHeader =
+                        Just <|
+                            ArticleHeader.view
+                                { title = article.title
+                                , meta =
+                                    { username = article.author.username
+                                    , imageUrl = article.author.imageUrl
+                                    , zone = zone
+                                    , createdAt = article.createdAt
+                                    , role = ArticleMeta.Guest
+                                    }
+                                }
+                    , content =
+                        [ Column.viewSingle Column.Large
+                            [ ArticleContent.view
+                                { description = article.description
+                                , body = article.body
+                                , tags = article.tags
+                                }
+                            , H.hr [] []
+                            , ArticleActionsForGuest.view
+                            ]
+                        ]
+                    }
+
+                RemoteData.Failure () ->
+                    { maybeHeader = Nothing
+                    , content = [ viewArticleFailure ]
+                    }
+    in
+    { role = Navigation.guest
+    , maybeHeader = maybeHeader
+    , content = content
+    }
 
 
-viewAsUser :
+fromUserToLayoutOptions :
     { zone : Time.Zone
     , user : User
     , remoteDataArticle : RemoteData () Article
@@ -382,71 +414,71 @@ viewAsUser :
     , comment : String
     , isDisabled : Bool
     }
-    -> H.Html Msg
-viewAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
-    DefaultLayout.view
-        { role =
-            Navigation.user
-                { username = user.username
-                , imageUrl = user.imageUrl
-                }
-        }
-        [ viewArticle
-            (\article ->
-                let
-                    articleMetaViewOptions =
-                        { username = article.author.username
-                        , imageUrl = article.author.imageUrl
-                        , zone = zone
-                        , createdAt = article.createdAt
-                        , role =
-                            if user.username == article.author.username then
-                                ArticleMeta.Author
-                                    { isDisabled = isDisabled
-                                    , slug = article.slug
-                                    , onDelete = ClickedDeleteArticle user.token
-                                    }
-
-                            else
-                                ArticleMeta.User
-                                    { isDisabled = isDisabled
-                                    , isFollowing = article.author.isFollowing
-                                    , onFollow = toToggledFollowMsg True
-                                    , onUnfollow = toToggledFollowMsg False
-                                    , isFavourite = article.isFavourite
-                                    , totalFavourites = article.totalFavourites
-                                    , onFavourite = toToggledFavouriteMsg True
-                                    , onUnfavourite = toToggledFavouriteMsg False
-                                    }
-                        }
-
-                    toToggledFollowMsg =
-                        ToggledFollow user.token article.author.username
-
-                    toToggledFavouriteMsg =
-                        ToggledFavourite user.token article.slug
-                in
-                [ ArticleHeader.view
-                    { title = article.title
-                    , meta = articleMetaViewOptions
+    -> LayoutOptions Msg
+fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
+    let
+        { maybeHeader, content } =
+            case remoteDataArticle of
+                RemoteData.Loading ->
+                    { maybeHeader = Nothing
+                    , content = []
                     }
-                , H.div
-                    [ HA.class "container page" ]
-                    [ ArticleContent.view
-                        { description = article.description
-                        , body = article.body
-                        , tags = article.tags
-                        }
-                    , H.hr [] []
-                    , H.div
-                        [ HA.class "article-actions" ]
-                        [ ArticleMeta.view articleMetaViewOptions
-                        ]
-                    , H.div
-                        [ HA.class "row" ]
-                        [ H.div
-                            [ HA.class "col-xs-12 col-md-8 offset-md-2" ]
-                            ([ CommentForm.view
+
+                RemoteData.Success article ->
+                    let
+                        articleMetaViewOptions =
+                            { username = article.author.username
+                            , imageUrl = article.author.imageUrl
+                            , zone = zone
+                            , createdAt = article.createdAt
+                            , role =
+                                if user.username == article.author.username then
+                                    ArticleMeta.Author
+                                        { isDisabled = isDisabled
+                                        , slug = article.slug
+                                        , onDelete = ClickedDeleteArticle user.token
+                                        }
+
+                                else
+                                    ArticleMeta.User
+                                        { isDisabled = isDisabled
+                                        , isFollowing = article.author.isFollowing
+                                        , onFollow = toToggledFollowMsg True
+                                        , onUnfollow = toToggledFollowMsg False
+                                        , isFavourite = article.isFavourite
+                                        , totalFavourites = article.totalFavourites
+                                        , onFavourite = toToggledFavouriteMsg True
+                                        , onUnfavourite = toToggledFavouriteMsg False
+                                        }
+                            }
+
+                        toToggledFollowMsg =
+                            ToggledFollow user.token article.author.username
+
+                        toToggledFavouriteMsg =
+                            ToggledFavourite user.token article.slug
+                    in
+                    { maybeHeader =
+                        Just <|
+                            ArticleHeader.view
+                                { title = article.title
+                                , meta = articleMetaViewOptions
+                                }
+                    , content =
+                        [ Column.viewSingle Column.Large
+                            [ ArticleContent.view
+                                { description = article.description
+                                , body = article.body
+                                , tags = article.tags
+                                }
+                            ]
+                        , H.hr [] []
+                        , H.div
+                            [ HA.class "article-actions" ]
+                            [ ArticleMeta.view articleMetaViewOptions
+                            ]
+                        , Column.viewSingle Column.Small <|
+                            CommentForm.view
                                 { htmlId = commentFormId
                                 , comment = comment
                                 , imageUrl = user.imageUrl
@@ -454,8 +486,7 @@ viewAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, isDisab
                                 , onInputComment = ChangedComment
                                 , onSubmit = SubmittedComment user.token article.slug
                                 }
-                             ]
-                                ++ viewComments
+                                :: viewComments
                                     (List.map
                                         (viewComment
                                             { zone = zone
@@ -468,30 +499,29 @@ viewAsUser { zone, user, remoteDataArticle, remoteDataComments, comment, isDisab
                                         << Comments.toList
                                     )
                                     remoteDataComments
-                            )
                         ]
-                    ]
-                ]
-            )
-            remoteDataArticle
+                    }
+
+                RemoteData.Failure () ->
+                    { maybeHeader = Nothing
+                    , content = [ viewArticleFailure ]
+                    }
+    in
+    { role =
+        Navigation.user
+            { username = user.username
+            , imageUrl = user.imageUrl
+            }
+    , maybeHeader = maybeHeader
+    , content = content
+    }
+
+
+viewArticleFailure : H.Html msg
+viewArticleFailure =
+    Column.viewSingle Column.Large
+        [ H.p [] [ H.text "Unable to load the article." ]
         ]
-
-
-viewArticle : (Article -> List (H.Html msg)) -> RemoteData () Article -> H.Html msg
-viewArticle toHtml remoteDataArticle =
-    H.div [ HA.class "article-page" ] <|
-        case remoteDataArticle of
-            RemoteData.Loading ->
-                []
-
-            RemoteData.Success article ->
-                toHtml article
-
-            RemoteData.Failure () ->
-                [ H.div
-                    [ HA.class "container page" ]
-                    [ H.text "Unable to load the article." ]
-                ]
 
 
 viewComments : (Comments -> List (H.Html msg)) -> RemoteData () Comments -> List (H.Html msg)
@@ -504,7 +534,7 @@ viewComments toHtml remoteDataComments =
             toHtml comments
 
         RemoteData.Failure () ->
-            [ H.text "Unable to load comments." ]
+            [ H.p [] [ H.text "Unable to load the comments." ] ]
 
 
 viewComment :

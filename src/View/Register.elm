@@ -8,16 +8,14 @@ import View.RegisterForm as RegisterForm
 
 
 type alias ViewOptions msg =
-    { classNames : String
-    , form : RegisterForm.ViewOptions msg
+    { form : RegisterForm.ViewOptions msg
     , errorMessages : List String
     }
 
 
 view : ViewOptions msg -> H.Html msg
-view { classNames, form, errorMessages } =
-    H.div
-        [ HA.class classNames ]
+view { form, errorMessages } =
+    H.div []
         [ H.h1
             [ HA.class "text-xs-center" ]
             [ H.text "Sign up" ]

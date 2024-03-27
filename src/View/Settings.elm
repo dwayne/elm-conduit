@@ -8,17 +8,15 @@ import View.SettingsForm as SettingsForm
 
 
 type alias ViewOptions msg =
-    { classNames : String
-    , form : SettingsForm.ViewOptions msg
+    { form : SettingsForm.ViewOptions msg
     , errorMessages : List String
     , onLogout : msg
     }
 
 
 view : ViewOptions msg -> H.Html msg
-view { classNames, form, errorMessages, onLogout } =
-    H.div
-        [ HA.class classNames ]
+view { form, errorMessages, onLogout } =
+    H.div []
         [ H.h1
             [ HA.class "text-xs-center" ]
             [ H.text "Your Settings" ]

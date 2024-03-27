@@ -3,14 +3,16 @@ module Page.NotFound exposing (view)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Html.Attributes as HA
-import View.DefaultLayout as DefaultLayout
+import View.Column as Column
+import View.Layout as Layout
 import View.Navigation as Navigation
 
 
 view : Viewer -> H.Html msg
 view viewer =
-    DefaultLayout.view
-        { role =
+    Layout.view
+        { name = "not-found-page"
+        , role =
             case viewer of
                 Viewer.Guest ->
                     Navigation.guest
@@ -20,17 +22,9 @@ view viewer =
                         { username = username
                         , imageUrl = imageUrl
                         }
+        , maybeHeader = Nothing
         }
-        [ H.div
-            [ HA.class "not-found-page" ]
-            [ H.div
-                [ HA.class "container page" ]
-                [ H.div
-                    [ HA.class "row" ]
-                    [ H.div
-                        [ HA.class "col-xs-12" ]
-                        [ H.text "The page you are looking for does not exist." ]
-                    ]
-                ]
+        [ Column.viewSingle Column.Large
+            [ H.text "The page you are looking for does not exist."
             ]
         ]
