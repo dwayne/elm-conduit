@@ -745,24 +745,35 @@ updateProfilePage pageMsg subModel =
 
 view : Model -> B.Document Msg
 view model =
-    { title = "Conduit"
+    let
+        { title, body } =
+            withModel
+                { onLoadingUser = viewLoadingUserPage
+                , onSuccess = viewSuccessPage
+                , onFailure = viewFailurePage
+                }
+                model
+    in
+    { title =
+        if String.isEmpty title then
+            "Conduit"
+
+        else
+            title ++ " - Conduit"
+    , body = body
+    }
+
+
+viewLoadingUserPage : LoadingUserModel -> B.Document msg
+viewLoadingUserPage _ =
+    { title = ""
     , body =
-        [ withModel
-            { onLoadingUser = viewLoadingUserPage
-            , onSuccess = viewSuccessPage
-            , onFailure = viewFailurePage
-            }
-            model
+        [ H.text ""
         ]
     }
 
 
-viewLoadingUserPage : LoadingUserModel -> H.Html msg
-viewLoadingUserPage _ =
-    H.text ""
-
-
-viewSuccessPage : SuccessModel -> H.Html Msg
+viewSuccessPage : SuccessModel -> B.Document Msg
 viewSuccessPage { zone, viewer, page } =
     case page of
         Home pageModel ->
@@ -831,7 +842,7 @@ viewSuccessPage { zone, viewer, page } =
             NotFoundPage.view viewer
 
 
-viewFailurePage : Error -> H.Html msg
+viewFailurePage : Error -> B.Document msg
 viewFailurePage BadConfig =
     ErrorPage.view
         { title = "Configuration Error"
@@ -910,11 +921,11 @@ withAuthForUpdate toModel subModel =
             toModel user
 
 
-withAuthForView : (User -> H.Html msg) -> Viewer -> H.Html msg
+withAuthForView : (User -> B.Document msg) -> Viewer -> B.Document msg
 withAuthForView toView viewer =
     case viewer of
         Viewer.Guest ->
-            H.text "You are not allowed to view this page."
+            NotAuthorizedPage.view
 
         Viewer.User user ->
             toView user

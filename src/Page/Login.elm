@@ -2,6 +2,7 @@ module Page.Login exposing (Model, Msg, UpdateOptions, ViewOptions, init, update
 
 import Api
 import Api.Login as Login
+import Browser as B
 import Data.Email exposing (Email)
 import Data.Password exposing (Password)
 import Data.User exposing (User)
@@ -122,25 +123,29 @@ type alias ViewOptions msg =
     }
 
 
-view : ViewOptions msg -> Model -> H.Html msg
+view : ViewOptions msg -> Model -> B.Document msg
 view { onChange } { email, password, errorMessages, isDisabled } =
-    Layout.view
-        { name = "auth"
-        , role = Navigation.login
-        , maybeHeader = Nothing
-        }
-        [ Column.viewSingle Column.ExtraSmall
-            [ Login.view
-                { form =
-                    { email = email
-                    , password = password
-                    , isDisabled = isDisabled
-                    , onInputEmail = ChangedEmail
-                    , onInputPassword = ChangedPassword
-                    , onSubmit = SubmittedForm
+    { title = "Login"
+    , body =
+        [ Layout.view
+            { name = "auth"
+            , role = Navigation.login
+            , maybeHeader = Nothing
+            }
+            [ Column.viewSingle Column.ExtraSmall
+                [ Login.view
+                    { form =
+                        { email = email
+                        , password = password
+                        , isDisabled = isDisabled
+                        , onInputEmail = ChangedEmail
+                        , onInputPassword = ChangedPassword
+                        , onSubmit = SubmittedForm
+                        }
+                    , errorMessages = errorMessages
                     }
-                , errorMessages = errorMessages
-                }
+                ]
             ]
+            |> H.map onChange
         ]
-        |> H.map onChange
+    }

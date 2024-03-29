@@ -4,6 +4,7 @@ import Api
 import Api.CreateArticle as CreateArticle
 import Api.GetArticle as GetArticle
 import Api.UpdateArticle as UpdateArticle
+import Browser as B
 import Data.Article as Article exposing (Article)
 import Data.Slug exposing (Slug)
 import Data.Tag exposing (Tag)
@@ -28,6 +29,7 @@ import View.Navigation as Navigation
 
 type alias Model =
     { action : Action
+    , previousTitle : String
     , title : String
     , description : String
     , body : String
@@ -56,6 +58,7 @@ init { apiUrl, token, maybeSlug, onChange } =
     case maybeSlug of
         Nothing ->
             ( { action = Create
+              , previousTitle = ""
               , title = ""
               , description = ""
               , body = ""
@@ -69,6 +72,7 @@ init { apiUrl, token, maybeSlug, onChange } =
 
         Just slug ->
             ( { action = Edit RemoteData.Loading
+              , previousTitle = ""
               , title = ""
               , description = ""
               , body = ""
@@ -87,10 +91,11 @@ init { apiUrl, token, maybeSlug, onChange } =
             )
 
 
-resetModel : Model -> Model
-resetModel model =
+resetModel : String -> Model -> Model
+resetModel previousTitle model =
     { model
-        | title = ""
+        | previousTitle = previousTitle
+        , title = ""
         , description = ""
         , body = ""
         , tag = ""
@@ -134,6 +139,7 @@ update options msg model =
                         Ok article ->
                             { model
                                 | action = Edit <| RemoteData.Success article.slug
+                                , previousTitle = article.title
                                 , title = article.title
                                 , description = article.description
                                 , body = article.body
@@ -216,7 +222,7 @@ update options msg model =
         GotPublishArticleResponse result ->
             Api.handleFormResponse
                 (\article ->
-                    ( resetModel model
+                    ( resetModel article.title model
                     , Task.dispatch (options.onPublish article)
                     )
                 )
@@ -243,54 +249,68 @@ type alias ViewOptions msg =
     }
 
 
-view : ViewOptions msg -> Model -> H.Html msg
-view { user, onChange } { action, title, description, body, tag, tags, errorMessages, isDisabled } =
-    Layout.view
-        { name = "editor"
-        , role =
-            let
-                userDetails =
-                    { username = user.username
-                    , imageUrl = user.imageUrl
-                    }
-            in
+view : ViewOptions msg -> Model -> B.Document msg
+view { user, onChange } { action, previousTitle, title, description, body, tag, tags, errorMessages, isDisabled } =
+    let
+        userDetails =
+            { username = user.username
+            , imageUrl = user.imageUrl
+            }
+
+        ( pageTitle, role ) =
             case action of
                 Create ->
-                    Navigation.newArticle userDetails
+                    ( "New Article"
+                    , Navigation.newArticle userDetails
+                    )
 
                 Edit _ ->
-                    Navigation.user userDetails
-        , maybeHeader = Nothing
-        }
-        [ withAction
-            { onLoading = H.text "Loading..."
-            , onSuccess =
-                \maybeSlug ->
-                    Column.viewSingle Column.Medium
-                        [ Editor.view
-                            { form =
-                                { title = title
-                                , description = description
-                                , body = body
-                                , tag = tag
-                                , tags = tags
-                                , isDisabled = isDisabled
-                                , onInputTitle = ChangedTitle
-                                , onInputDescription = ChangedDescription
-                                , onInputBody = ChangedBody
-                                , onInputTag = ChangedTag
-                                , onEnterTag = EnteredTag
-                                , onRemoveTag = RemovedTag
-                                , onSubmit = SubmittedForm maybeSlug
-                                }
-                            , errorMessages = errorMessages
-                            }
-                        ]
-            , onFailure = H.text "Unable to load the article."
+                    ( if String.isEmpty previousTitle then
+                        "Edit Article"
+
+                      else
+                        "Edit \"" ++ previousTitle ++ "\""
+                    , Navigation.user userDetails
+                    )
+    in
+    { title = pageTitle
+    , body =
+        [ Layout.view
+            { name = "editor"
+            , role = role
+            , maybeHeader = Nothing
             }
-            action
+            [ withAction
+                { onLoading = H.text "Loading..."
+                , onSuccess =
+                    \maybeSlug ->
+                        Column.viewSingle Column.Medium
+                            [ Editor.view
+                                { form =
+                                    { title = title
+                                    , description = description
+                                    , body = body
+                                    , tag = tag
+                                    , tags = tags
+                                    , isDisabled = isDisabled
+                                    , onInputTitle = ChangedTitle
+                                    , onInputDescription = ChangedDescription
+                                    , onInputBody = ChangedBody
+                                    , onInputTag = ChangedTag
+                                    , onEnterTag = EnteredTag
+                                    , onRemoveTag = RemovedTag
+                                    , onSubmit = SubmittedForm maybeSlug
+                                    }
+                                , errorMessages = errorMessages
+                                }
+                            ]
+                , onFailure = H.text "Unable to load the article."
+                }
+                action
+            ]
+            |> H.map onChange
         ]
-        |> H.map onChange
+    }
 
 
 withAction :

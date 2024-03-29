@@ -2,6 +2,7 @@ module Page.Register exposing (Model, Msg, UpdateOptions, ViewOptions, init, upd
 
 import Api
 import Api.Register as Register
+import Browser as B
 import Data.Email exposing (Email)
 import Data.Password exposing (Password)
 import Data.User exposing (User)
@@ -134,27 +135,31 @@ type alias ViewOptions msg =
     }
 
 
-view : ViewOptions msg -> Model -> H.Html msg
+view : ViewOptions msg -> Model -> B.Document msg
 view { onChange } { username, email, password, errorMessages, isDisabled } =
-    Layout.view
-        { name = "auth"
-        , role = Navigation.register
-        , maybeHeader = Nothing
-        }
-        [ Column.viewSingle Column.ExtraSmall
-            [ Register.view
-                { form =
-                    { username = username
-                    , email = email
-                    , password = password
-                    , isDisabled = isDisabled
-                    , onInputUsername = ChangedUsername
-                    , onInputEmail = ChangedEmail
-                    , onInputPassword = ChangedPassword
-                    , onSubmit = SubmittedForm
+    { title = "Register"
+    , body =
+        [ Layout.view
+            { name = "auth"
+            , role = Navigation.register
+            , maybeHeader = Nothing
+            }
+            [ Column.viewSingle Column.ExtraSmall
+                [ Register.view
+                    { form =
+                        { username = username
+                        , email = email
+                        , password = password
+                        , isDisabled = isDisabled
+                        , onInputUsername = ChangedUsername
+                        , onInputEmail = ChangedEmail
+                        , onInputPassword = ChangedPassword
+                        , onSubmit = SubmittedForm
+                        }
+                    , errorMessages = errorMessages
                     }
-                , errorMessages = errorMessages
-                }
+                ]
             ]
+            |> H.map onChange
         ]
-        |> H.map onChange
+    }

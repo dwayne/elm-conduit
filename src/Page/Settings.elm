@@ -2,13 +2,13 @@ module Page.Settings exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptio
 
 import Api
 import Api.UpdateUser as UpdateUser
+import Browser as B
 import Data.Email as Email exposing (Email)
 import Data.Password exposing (Password)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Username as Username exposing (Username)
 import Data.Validation as V
-import Html as H
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
@@ -174,35 +174,39 @@ type alias ViewOptions msg =
     }
 
 
-view : ViewOptions msg -> Model -> H.Html msg
+view : ViewOptions msg -> Model -> B.Document msg
 view { user, onLogout, onChange } { imageUrl, username, bio, email, password, errorMessages, isDisabled } =
-    Layout.view
-        { name = "settings"
-        , role =
-            Navigation.settings
-                { username = user.username
-                , imageUrl = user.imageUrl
-                }
-        , maybeHeader = Nothing
-        }
-        [ Column.viewSingle Column.ExtraSmall
-            [ Settings.view
-                { form =
-                    { imageUrl = imageUrl
-                    , username = username
-                    , bio = bio
-                    , email = email
-                    , password = password
-                    , isDisabled = isDisabled
-                    , onInputImageUrl = onChange << ChangedImageUrl
-                    , onInputUsername = onChange << ChangedUsername
-                    , onInputBio = onChange << ChangedBio
-                    , onInputEmail = onChange << ChangedEmail
-                    , onInputPassword = onChange << ChangedPassword
-                    , onSubmit = onChange SubmittedForm
+    { title = "Settings"
+    , body =
+        [ Layout.view
+            { name = "settings"
+            , role =
+                Navigation.settings
+                    { username = user.username
+                    , imageUrl = user.imageUrl
                     }
-                , errorMessages = errorMessages
-                , onLogout = onLogout
-                }
+            , maybeHeader = Nothing
+            }
+            [ Column.viewSingle Column.ExtraSmall
+                [ Settings.view
+                    { form =
+                        { imageUrl = imageUrl
+                        , username = username
+                        , bio = bio
+                        , email = email
+                        , password = password
+                        , isDisabled = isDisabled
+                        , onInputImageUrl = onChange << ChangedImageUrl
+                        , onInputUsername = onChange << ChangedUsername
+                        , onInputBio = onChange << ChangedBio
+                        , onInputEmail = onChange << ChangedEmail
+                        , onInputPassword = onChange << ChangedPassword
+                        , onSubmit = onChange SubmittedForm
+                        }
+                    , errorMessages = errorMessages
+                    , onLogout = onLogout
+                    }
+                ]
             ]
         ]
+    }

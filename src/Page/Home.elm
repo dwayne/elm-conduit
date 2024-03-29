@@ -4,6 +4,7 @@ import Api
 import Api.GetArticles as GetArticles
 import Api.GetTags as GetTags
 import Api.ToggleFavourite as ToggleFavourite
+import Browser as B
 import Data.Article exposing (Article)
 import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
@@ -347,7 +348,7 @@ type alias ViewOptions msg =
     }
 
 
-view : ViewOptions msg -> Model -> H.Html msg
+view : ViewOptions msg -> Model -> B.Document msg
 view { zone, viewer, onChange } model =
     let
         feed =
@@ -424,24 +425,28 @@ view { zone, viewer, onChange } model =
                     RemoteData.Failure _ ->
                         Sidebar.Error "Unable to load the tags."
     in
-    Layout.view
-        { name = "home"
-        , role = role
-        , maybeHeader = Just HomeHeader.view
-        }
-        [ Column.viewDouble
-            { left =
-                List.concat
-                    [ viewFeedTabs
-                    , viewArticlePreviews
-                    , viewPagination
-                    ]
-            , right =
-                [ viewSidebar
-                ]
+    { title = "Home"
+    , body =
+        [ Layout.view
+            { name = "home"
+            , role = role
+            , maybeHeader = Just HomeHeader.view
             }
+            [ Column.viewDouble
+                { left =
+                    List.concat
+                        [ viewFeedTabs
+                        , viewArticlePreviews
+                        , viewPagination
+                        ]
+                , right =
+                    [ viewSidebar
+                    ]
+                }
+            ]
+            |> H.map onChange
         ]
-        |> H.map onChange
+    }
 
 
 viewArticlePreview : Viewer -> Time.Zone -> Maybe Slug -> Article -> H.Html Msg

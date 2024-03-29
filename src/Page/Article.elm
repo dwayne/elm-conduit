@@ -8,6 +8,7 @@ import Api.GetArticle as GetArticle
 import Api.GetComments as GetComments
 import Api.ToggleFavourite as ToggleFavourite
 import Api.ToggleFollow as ToggleFollow
+import Browser as B
 import Data.Article exposing (Article)
 import Data.Comment exposing (Comment)
 import Data.Comments as Comments exposing (Comments)
@@ -317,10 +318,10 @@ type alias ViewOptions msg =
     }
 
 
-view : ViewOptions msg -> Model -> H.Html msg
+view : ViewOptions msg -> Model -> B.Document msg
 view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment, isDisabled } =
     let
-        { role, maybeHeader, content } =
+        { maybeTitle, role, maybeHeader, content } =
             case viewer of
                 Viewer.Guest ->
                     fromGuestToLayoutOptions
@@ -338,17 +339,24 @@ view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment
                         , isDisabled = isDisabled
                         }
     in
-    Layout.view
-        { name = "article"
-        , role = role
-        , maybeHeader = maybeHeader
-        }
-        content
-        |> H.map onChange
+    { title =
+        maybeTitle
+            |> Maybe.withDefault "Article"
+    , body =
+        [ Layout.view
+            { name = "article"
+            , role = role
+            , maybeHeader = maybeHeader
+            }
+            content
+            |> H.map onChange
+        ]
+    }
 
 
 type alias LayoutOptions msg =
-    { role : Navigation.Role
+    { maybeTitle : Maybe String
+    , role : Navigation.Role
     , maybeHeader : Maybe (H.Html msg)
     , content : List (H.Html msg)
     }
@@ -361,15 +369,17 @@ fromGuestToLayoutOptions :
     -> LayoutOptions msg
 fromGuestToLayoutOptions { zone, remoteDataArticle } =
     let
-        { maybeHeader, content } =
+        { maybeTitle, maybeHeader, content } =
             case remoteDataArticle of
                 RemoteData.Loading ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = []
                     }
 
                 RemoteData.Success article ->
-                    { maybeHeader =
+                    { maybeTitle = makeMaybeTitle article.title
+                    , maybeHeader =
                         Just <|
                             ArticleHeader.view
                                 { title = article.title
@@ -395,11 +405,13 @@ fromGuestToLayoutOptions { zone, remoteDataArticle } =
                     }
 
                 RemoteData.Failure () ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = [ viewArticleFailure ]
                     }
     in
-    { role = Navigation.guest
+    { maybeTitle = maybeTitle
+    , role = Navigation.guest
     , maybeHeader = maybeHeader
     , content = content
     }
@@ -416,10 +428,11 @@ fromUserToLayoutOptions :
     -> LayoutOptions Msg
 fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
     let
-        { maybeHeader, content } =
+        { maybeTitle, maybeHeader, content } =
             case remoteDataArticle of
                 RemoteData.Loading ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = []
                     }
 
@@ -458,7 +471,8 @@ fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, com
                                         }
                             }
                     in
-                    { maybeHeader =
+                    { maybeTitle = makeMaybeTitle article.title
+                    , maybeHeader =
                         Just <|
                             ArticleHeader.view
                                 { title = article.title
@@ -503,11 +517,13 @@ fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, com
                     }
 
                 RemoteData.Failure () ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = [ viewArticleFailure ]
                     }
     in
-    { role =
+    { maybeTitle = maybeTitle
+    , role =
         Navigation.user
             { username = user.username
             , imageUrl = user.imageUrl
@@ -576,6 +592,15 @@ commentFormId =
 
 
 -- HELPERS
+
+
+makeMaybeTitle : String -> Maybe String
+makeMaybeTitle articleTitle =
+    if String.isEmpty articleTitle then
+        Nothing
+
+    else
+        Just <| "Article \"" ++ articleTitle ++ "\""
 
 
 toggleFollowAuthor : Bool -> Article -> Article

@@ -5,6 +5,7 @@ import Api.GetArticles as GetArticles
 import Api.GetProfile as GetProfile
 import Api.ToggleFavourite as ToggleFavourite
 import Api.ToggleFollow as ToggleFollow
+import Browser as B
 import Data.Article exposing (Article)
 import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
@@ -12,7 +13,7 @@ import Data.Route as Route exposing (Route)
 import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
-import Data.Username exposing (Username)
+import Data.Username as Username exposing (Username)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
 import Lib.RemoteData as RemoteData exposing (RemoteData)
@@ -304,10 +305,10 @@ type alias ViewOptions msg =
     }
 
 
-view : ViewOptions msg -> Model -> H.Html msg
+view : ViewOptions msg -> Model -> B.Document msg
 view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
     let
-        { role, maybeHeader, content } =
+        { maybeTitle, role, maybeHeader, content } =
             case viewer of
                 Viewer.Guest ->
                     fromGuestToLayoutOptions
@@ -334,17 +335,24 @@ view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remote
                         , isDisabled = isDisabled
                         }
     in
-    Layout.view
-        { name = "profile"
-        , role = role
-        , maybeHeader = maybeHeader
-        }
-        content
-        |> H.map onChange
+    { title =
+        maybeTitle
+            |> Maybe.withDefault "Profile"
+    , body =
+        [ Layout.view
+            { name = "profile"
+            , role = role
+            , maybeHeader = maybeHeader
+            }
+            content
+            |> H.map onChange
+        ]
+    }
 
 
 type alias LayoutOptions msg =
-    { role : Navigation.Role
+    { maybeTitle : Maybe String
+    , role : Navigation.Role
     , maybeHeader : Maybe (H.Html msg)
     , content : List (H.Html msg)
     }
@@ -362,15 +370,17 @@ fromGuestToLayoutOptions :
     -> LayoutOptions Msg
 fromGuestToLayoutOptions { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
     let
-        { maybeHeader, content } =
+        { maybeTitle, maybeHeader, content } =
             case remoteDataProfile of
                 RemoteData.Loading ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = []
                     }
 
                 RemoteData.Success profile ->
-                    { maybeHeader =
+                    { maybeTitle = Just <| makeTitle activeTab profile.username
+                    , maybeHeader =
                         Just <|
                             viewProfileHeader
                                 { profile = profile
@@ -395,11 +405,13 @@ fromGuestToLayoutOptions { zone, remoteDataProfile, activeTab, remoteDataArticle
                     }
 
                 RemoteData.Failure () ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = [ viewProfileFailure ]
                     }
     in
-    { role = Navigation.guest
+    { maybeTitle = maybeTitle
+    , role = Navigation.guest
     , maybeHeader = maybeHeader
     , content = content
     }
@@ -420,15 +432,17 @@ fromUserToLayoutOptions :
     -> LayoutOptions Msg
 fromUserToLayoutOptions { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
     let
-        { maybeHeader, content } =
+        { maybeTitle, maybeHeader, content } =
             case remoteDataProfile of
                 RemoteData.Loading ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = []
                     }
 
                 RemoteData.Success profile ->
-                    { maybeHeader =
+                    { maybeTitle = Just <| makeTitle activeTab profile.username
+                    , maybeHeader =
                         Just <|
                             viewProfileHeader
                                 { profile = profile
@@ -474,11 +488,13 @@ fromUserToLayoutOptions { zone, user, profileUsername, remoteDataProfile, active
                     }
 
                 RemoteData.Failure () ->
-                    { maybeHeader = Nothing
+                    { maybeTitle = Nothing
+                    , maybeHeader = Nothing
                     , content = [ viewProfileFailure ]
                     }
     in
-    { role =
+    { maybeTitle = maybeTitle
+    , role =
         let
             userDetails =
                 { username = user.username
@@ -564,3 +580,21 @@ viewArticles { zone, activeTab, remoteDataArticles, currentPageNumber, pager, to
 viewProfileFailure : H.Html msg
 viewProfileFailure =
     H.p [] [ H.text "Unable to load the user's profile." ]
+
+
+
+-- HELPERS
+
+
+makeTitle : ArticleTabs.Tab -> Username -> String
+makeTitle activeTab username =
+    let
+        usernameString =
+            Username.toString username
+    in
+    case activeTab of
+        ArticleTabs.Personal ->
+            usernameString
+
+        ArticleTabs.Favourites ->
+            "Favourite Articles for " ++ usernameString
