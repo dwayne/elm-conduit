@@ -597,4 +597,4 @@ makeTitle activeTab username =
             usernameString
 
         ArticleTabs.Favourites ->
-            "Favourite Articles for " ++ usernameString
+            "Favourited Articles for " ++ usernameString
