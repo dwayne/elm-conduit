@@ -1,5 +1,6 @@
 {
   "packages": {
+    "brotli": "latest",
     "caddy": {
       "version": "latest",
       "disable_plugin": true
@@ -7,9 +8,14 @@
     "dart-sass": "latest",
     "elmPackages.elm": "latest",
     "elmPackages.elm-format": "latest",
+    "elmPackages.elm-optimize-level-2": "latest",
     "elmPackages.elm-review": "latest",
+    "html-minifier": "latest",
+    "optipng": "latest",
     "shellcheck": "latest",
-    "xdg-utils": "latest"
+    "terser": "latest",
+    "xdg-utils": "latest",
+    "zopfli": "latest"
   },
   "env": {
     "project": "$PWD",
