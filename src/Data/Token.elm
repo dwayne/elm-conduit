@@ -1,7 +1,6 @@
 module Data.Token exposing
     ( Token
     , decoder
-    , fromString
     , toAuthorizationHeader
     , toString
     )
@@ -9,16 +8,10 @@ module Data.Token exposing
 import Http
 import Json.Decode as JD
 import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
-import Port
 
 
 type Token
     = Token NonEmptyString
-
-
-fromString : String -> Maybe Token
-fromString =
-    Maybe.map Token << NonEmptyString.fromString
 
 
 decoder : JD.Decoder Token

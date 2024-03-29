@@ -1,6 +1,7 @@
 module View.ArticleMeta exposing
     ( AuthorOptions
     , Role(..)
+    , UserOptions
     , ViewOptions
     , view
     )
@@ -8,7 +9,7 @@ module View.ArticleMeta exposing
 import Data.Route as Route
 import Data.Slug exposing (Slug)
 import Data.Timestamp as Timestamp exposing (Timestamp)
-import Data.Total as Total exposing (Total)
+import Data.Total exposing (Total)
 import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA

@@ -12,18 +12,14 @@ module Api.GetArticles exposing
 
 import Api
 import Data.Article as Article exposing (Article)
-import Data.Limit as Limit exposing (Limit)
-import Data.Offset as Offset exposing (Offset)
+import Data.Limit as Limit
+import Data.Offset as Offset
 import Data.Pager exposing (Page)
-import Data.Slug as Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
-import Data.Timestamp as Timestamp exposing (Timestamp)
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Data.Total as Total exposing (Total)
 import Data.Username as Username exposing (Username)
 import Json.Decode as JD
-import Json.Decode.Pipeline as JD
-import Lib.Json.Decode as JD
 import Url exposing (Url)
 import Url.Builder as UB
 

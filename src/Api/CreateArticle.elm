@@ -2,12 +2,10 @@ module Api.CreateArticle exposing (Options, createArticle)
 
 import Api
 import Data.Article as Article exposing (Article)
-import Data.Tag as Tag exposing (Tag)
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Http
 import Json.Decode as JD
 import Json.Encode as JE
-import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 import Url exposing (Url)
 
 

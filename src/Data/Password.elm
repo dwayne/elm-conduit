@@ -3,7 +3,6 @@ module Data.Password exposing
     , Password
     , encode
     , fromString
-    , toString
     )
 
 import Json.Encode as JE
@@ -23,9 +22,6 @@ fromString s =
     let
         t =
             String.trim s
-
-        len =
-            String.length t
     in
     if String.isEmpty t then
         Err Blank
@@ -40,8 +36,3 @@ fromString s =
 encode : Password -> JE.Value
 encode (Password password) =
     JE.string password
-
-
-toString : Password -> String
-toString (Password password) =
-    password

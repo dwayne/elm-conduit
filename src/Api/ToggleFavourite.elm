@@ -1,11 +1,8 @@
-module Api.ToggleFavourite exposing
-    ( TotalFavourites
-    , toggleFavourite
-    )
+module Api.ToggleFavourite exposing (Options, TotalFavourites, toggleFavourite)
 
 import Api
 import Data.Slug as Slug exposing (Slug)
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Data.Total as Total exposing (Total)
 import Http
 import Json.Decode as JD

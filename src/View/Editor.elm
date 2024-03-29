@@ -1,7 +1,6 @@
 module View.Editor exposing (ViewOptions, view)
 
 import Html as H
-import Html.Attributes as HA
 import View.AuthErrors as AuthErrors
 import View.EditorForm as EditorForm
 

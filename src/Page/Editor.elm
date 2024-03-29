@@ -5,20 +5,14 @@ import Api.CreateArticle as CreateArticle
 import Api.GetArticle as GetArticle
 import Api.UpdateArticle as UpdateArticle
 import Data.Article as Article exposing (Article)
-import Data.Email as Email exposing (Email)
-import Data.Password as Password exposing (Password)
 import Data.Slug exposing (Slug)
-import Data.Tag as Tag exposing (Tag)
+import Data.Tag exposing (Tag)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
-import Data.Username as Username exposing (Username)
 import Data.Validation as V
 import Html as H
-import Html.Attributes as HA
-import Lib.NonEmptyString exposing (NonEmptyString)
 import Lib.OrderedSet as OrderedSet exposing (OrderedSet)
 import Lib.RemoteData as RemoteData exposing (RemoteData)
-import Lib.String as String
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)

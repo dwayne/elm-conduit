@@ -3,12 +3,10 @@ module Api.UpdateArticle exposing (Options, updateArticle)
 import Api
 import Data.Article as Article exposing (Article)
 import Data.Slug as Slug exposing (Slug)
-import Data.Tag as Tag exposing (Tag)
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Http
 import Json.Decode as JD
 import Json.Encode as JE
-import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 import Url exposing (Url)
 
 

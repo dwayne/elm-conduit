@@ -3,14 +3,12 @@ module Page.Settings exposing (InitOptions, Model, Msg, UpdateOptions, ViewOptio
 import Api
 import Api.UpdateUser as UpdateUser
 import Data.Email as Email exposing (Email)
-import Data.Password as Password exposing (Password)
+import Data.Password exposing (Password)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Username as Username exposing (Username)
 import Data.Validation as V
 import Html as H
-import Html.Attributes as HA
-import Lib.String as String
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)

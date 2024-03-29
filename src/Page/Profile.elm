@@ -5,7 +5,7 @@ import Api.GetArticles as GetArticles
 import Api.GetProfile as GetProfile
 import Api.ToggleFavourite as ToggleFavourite
 import Api.ToggleFollow as ToggleFollow
-import Data.Article as Article exposing (Article)
+import Data.Article exposing (Article)
 import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
 import Data.Route as Route exposing (Route)
@@ -15,7 +15,6 @@ import Data.User exposing (User)
 import Data.Username exposing (Username)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
-import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Lib.Task as Task
 import Time

@@ -1,9 +1,8 @@
-module Api.GetProfile exposing (Profile, getProfile)
+module Api.GetProfile exposing (Options, Profile, getProfile)
 
 import Api
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Data.Username as Username exposing (Username)
-import Http
 import Json.Decode as JD
 import Lib.Json.Decode as JD
 import Url exposing (Url)

@@ -4,7 +4,6 @@ import Data.Route as Route
 import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
-import Html.Events as HE
 import Url exposing (Url)
 import View.FollowButton as FollowButton
 

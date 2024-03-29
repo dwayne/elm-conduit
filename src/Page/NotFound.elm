@@ -2,7 +2,6 @@ module Page.NotFound exposing (view)
 
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
-import Html.Attributes as HA
 import View.Column as Column
 import View.Layout as Layout
 import View.Navigation as Navigation

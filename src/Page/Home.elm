@@ -5,19 +5,14 @@ import Api.GetArticles as GetArticles
 import Api.GetTags as GetTags
 import Api.ToggleFavourite as ToggleFavourite
 import Data.Article exposing (Article)
-import Data.Limit as Limit
-import Data.Offset as Offset
 import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Pager as Pager exposing (Pager)
-import Data.Slug as Slug exposing (Slug)
-import Data.Tag as Tag exposing (Tag)
-import Data.Timestamp as Timestamp
+import Data.Slug exposing (Slug)
+import Data.Tag exposing (Tag)
 import Data.Token exposing (Token)
-import Data.Total as Total exposing (Total)
-import Data.Username as Username
+import Data.Total exposing (Total)
 import Data.Viewer as Viewer exposing (Viewer)
 import Html as H
-import Html.Attributes as HA
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Lib.Task as Task
 import Time

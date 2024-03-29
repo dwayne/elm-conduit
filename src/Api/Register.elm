@@ -3,13 +3,11 @@ module Api.Register exposing (Options, register)
 import Api
 import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
-import Data.Token as Token exposing (Token)
 import Data.User as User exposing (User)
 import Data.Username as Username exposing (Username)
 import Http
 import Json.Decode as JD
 import Json.Encode as JE
-import Lib.Json.Decode as JD
 import Url exposing (Url)
 
 

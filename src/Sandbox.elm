@@ -5,7 +5,7 @@ import Data.PageNumber as PageNumber exposing (PageNumber)
 import Data.Slug as Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
 import Data.Timestamp as Timestamp exposing (Timestamp)
-import Data.Total as Total exposing (Total)
+import Data.Total as Total
 import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
@@ -991,5 +991,5 @@ zip alist blist =
         ( a :: restAList, b :: restBList ) ->
             ( a, b ) :: zip restAList restBList
 
-        ( _, _ ) ->
+        _ ->
             []

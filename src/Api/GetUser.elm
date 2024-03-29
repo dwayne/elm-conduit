@@ -1,7 +1,7 @@
 module Api.GetUser exposing (Options, getUser)
 
 import Api
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Data.User as User exposing (User)
 import Json.Decode as JD
 import Url exposing (Url)

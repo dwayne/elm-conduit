@@ -763,7 +763,7 @@ viewLoadingUserPage _ =
 
 
 viewSuccessPage : SuccessModel -> H.Html Msg
-viewSuccessPage { url, zone, viewer, page } =
+viewSuccessPage { zone, viewer, page } =
     case page of
         Home pageModel ->
             HomePage.view

@@ -11,7 +11,6 @@ import Api.ToggleFollow as ToggleFollow
 import Data.Article exposing (Article)
 import Data.Comment exposing (Comment)
 import Data.Comments as Comments exposing (Comments)
-import Data.Route as Route
 import Data.Slug exposing (Slug)
 import Data.Token exposing (Token)
 import Data.User exposing (User)
@@ -440,6 +439,13 @@ fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, com
                                         }
 
                                 else
+                                    let
+                                        toToggledFollowMsg =
+                                            ToggledFollow user.token article.author.username
+
+                                        toToggledFavouriteMsg =
+                                            ToggledFavourite user.token article.slug
+                                    in
                                     ArticleMeta.User
                                         { isDisabled = isDisabled
                                         , isFollowing = article.author.isFollowing
@@ -451,12 +457,6 @@ fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, com
                                         , onUnfavourite = toToggledFavouriteMsg False
                                         }
                             }
-
-                        toToggledFollowMsg =
-                            ToggledFollow user.token article.author.username
-
-                        toToggledFavouriteMsg =
-                            ToggledFavourite user.token article.slug
                     in
                     { maybeHeader =
                         Just <|

@@ -11,7 +11,7 @@ module Data.Validation exposing
 
 import Data.Email as Email exposing (Email)
 import Data.Password as Password exposing (Password)
-import Data.Tag as Tag exposing (Tag)
+import Data.Tag exposing (Tag)
 import Data.Username as Username exposing (Username)
 import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
 import Lib.OrderedSet as OrderedSet exposing (OrderedSet)

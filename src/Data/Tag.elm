@@ -8,7 +8,7 @@ module Data.Tag exposing
 
 import Json.Decode as JD
 import Json.Encode as JE
-import Lib.NonEmptyString as NonEmptyString exposing (NonEmptyString)
+import Lib.NonEmptyString as NonEmptyString
 
 
 type Tag

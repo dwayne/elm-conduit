@@ -3,7 +3,7 @@ module Api.GetArticle exposing (Options, getArticle)
 import Api
 import Data.Article as Article exposing (Article)
 import Data.Slug as Slug exposing (Slug)
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Json.Decode as JD
 import Url exposing (Url)
 

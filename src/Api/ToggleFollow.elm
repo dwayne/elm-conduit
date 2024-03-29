@@ -1,7 +1,7 @@
-module Api.ToggleFollow exposing (toggleFollow)
+module Api.ToggleFollow exposing (Options, toggleFollow)
 
 import Api
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Data.Username as Username exposing (Username)
 import Http
 import Json.Decode as JD

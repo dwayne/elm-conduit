@@ -6,7 +6,6 @@ module Api exposing
     , delete
     , emptyErrorsDecoder
     , errorToString
-    , expectJson
     , formErrorsDecoder
     , get
     , handleFormResponse

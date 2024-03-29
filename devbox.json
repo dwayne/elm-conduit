@@ -7,6 +7,7 @@
     "dart-sass": "latest",
     "elmPackages.elm": "latest",
     "elmPackages.elm-format": "latest",
+    "elmPackages.elm-review": "latest",
     "shellcheck": "latest",
     "xdg-utils": "latest"
   },

@@ -1,4 +1,4 @@
-module Data.Comment exposing (Comment, compare, decoder)
+module Data.Comment exposing (Comment, Commenter, compare, decoder)
 
 import Data.Timestamp as Timestamp exposing (Timestamp)
 import Data.Username as Username exposing (Username)

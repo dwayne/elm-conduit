@@ -34,3 +34,9 @@ fi
 if ! build &>/dev/null; then
   build
 fi
+
+# Review
+
+if ! review &>/dev/null; then
+  review
+fi

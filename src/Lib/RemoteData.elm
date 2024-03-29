@@ -1,4 +1,4 @@
-module Lib.RemoteData exposing (RemoteData(..), isLoading, map)
+module Lib.RemoteData exposing (RemoteData(..), map)
 
 
 type RemoteData e a
@@ -18,13 +18,3 @@ map f remoteData =
 
         Failure e ->
             Failure e
-
-
-isLoading : RemoteData e a -> Bool
-isLoading remoteData =
-    case remoteData of
-        Loading ->
-            True
-
-        _ ->
-            False

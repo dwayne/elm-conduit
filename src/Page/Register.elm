@@ -2,13 +2,12 @@ module Page.Register exposing (Model, Msg, UpdateOptions, ViewOptions, init, upd
 
 import Api
 import Api.Register as Register
-import Data.Email as Email exposing (Email)
-import Data.Password as Password exposing (Password)
+import Data.Email exposing (Email)
+import Data.Password exposing (Password)
 import Data.User exposing (User)
-import Data.Username as Username exposing (Username)
+import Data.Username exposing (Username)
 import Data.Validation as V
 import Html as H
-import Html.Attributes as HA
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)

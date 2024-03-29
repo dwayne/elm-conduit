@@ -1,7 +1,7 @@
 module View.ArticlePreview exposing (Role(..), ViewOptions, view, viewMessage)
 
 import Data.Route as Route
-import Data.Slug as Slug exposing (Slug)
+import Data.Slug exposing (Slug)
 import Data.Tag as Tag exposing (Tag)
 import Data.Timestamp as Timestamp exposing (Timestamp)
 import Data.Total as Total exposing (Total)

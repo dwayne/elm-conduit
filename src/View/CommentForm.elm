@@ -17,7 +17,7 @@ type alias ViewOptions msg =
 
 
 view : ViewOptions msg -> H.Html msg
-view ({ htmlId, comment, imageUrl, isDisabled, onInputComment, onSubmit } as options) =
+view { htmlId, comment, imageUrl, isDisabled, onInputComment, onSubmit } =
     let
         isButtonDisabled =
             isEmptyComment || isDisabled

@@ -2,7 +2,7 @@ module Api.DeleteComment exposing (Options, deleteComment)
 
 import Api
 import Data.Slug as Slug exposing (Slug)
-import Data.Token as Token exposing (Token)
+import Data.Token exposing (Token)
 import Url exposing (Url)
 
 

@@ -1,6 +1,6 @@
 module View.EditorForm exposing (ViewOptions, view)
 
-import Data.Tag as Tag exposing (Tag)
+import Data.Tag exposing (Tag)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE

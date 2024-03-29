@@ -10,8 +10,6 @@ module Data.Route exposing
 import Browser.Navigation as BN
 import Data.Slug as Slug exposing (Slug)
 import Data.Username as Username exposing (Username)
-import Html as H
-import Html.Attributes as HA
 import Url exposing (Url)
 import Url.Builder as UB
 import Url.Parser as UP exposing ((</>))
