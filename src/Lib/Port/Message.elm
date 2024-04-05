@@ -5,30 +5,30 @@ import Json.Encode as JE
 
 type Message
     = Message
-        { namespace : String
+        { tag : String
         , value : JE.Value
         }
 
 
 empty : String -> Message
-empty namespace =
+empty tag =
     Message
-        { namespace = namespace
+        { tag = tag
         , value = JE.null
         }
 
 
 string : String -> String -> Message
-string namespace s =
+string tag s =
     Message
-        { namespace = namespace
+        { tag = tag
         , value = JE.string s
         }
 
 
 encode : Message -> JE.Value
-encode (Message { namespace, value }) =
+encode (Message { tag, value }) =
     JE.object
-        [ ( "namespace", JE.string namespace )
+        [ ( "tag", JE.string tag )
         , ( "value", value )
         ]

@@ -26,7 +26,7 @@ import Page.NotFound as NotFoundPage
 import Page.Profile as ProfilePage
 import Page.Register as RegisterPage
 import Page.Settings as SettingsPage
-import Port.Action
+import Port.Outgoing
 import Task
 import Time
 import Url exposing (Url)
@@ -131,14 +131,14 @@ init flags url key =
                         |> Tuple.mapSecond
                             (\cmd ->
                                 Cmd.batch
-                                    [ Port.Action.logError ("Bad token: " ++ JD.errorToString error)
+                                    [ Port.Outgoing.logError ("Bad token: " ++ JD.errorToString error)
                                     , cmd
                                     ]
                             )
 
         Err error ->
             ( Failure BadConfig
-            , Port.Action.logError ("Configuration error: " ++ JD.errorToString error)
+            , Port.Outgoing.logError ("Configuration error: " ++ JD.errorToString error)
             )
 
 
@@ -477,7 +477,7 @@ handleUserResponse result =
                         |> Tuple.mapSecond
                             (\cmd ->
                                 Cmd.batch
-                                    [ Port.Action.logError ("Unable to get user: " ++ Api.errorToString error)
+                                    [ Port.Outgoing.logError ("Unable to get user: " ++ Api.errorToString error)
                                     , cmd
                                     ]
                             )
@@ -490,7 +490,7 @@ loginUser user =
         (\subModel ->
             ( { subModel | viewer = Viewer.User user }
             , Cmd.batch
-                [ Port.Action.saveToken user.token
+                [ Port.Outgoing.saveToken user.token
                 , Route.redirectToHome subModel.key
                 ]
             )
@@ -503,7 +503,7 @@ logout =
         (\subModel ->
             ( { subModel | viewer = Viewer.Guest }
             , Cmd.batch
-                [ Port.Action.deleteToken
+                [ Port.Outgoing.deleteToken
                 , Route.redirectToHome subModel.key
                 ]
             )
@@ -515,7 +515,7 @@ updateUser user =
     withSuccessModel
         (\subModel ->
             ( { subModel | viewer = Viewer.User user }
-            , Port.Action.saveToken user.token
+            , Port.Outgoing.saveToken user.token
             )
         )
 

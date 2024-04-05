@@ -46,9 +46,9 @@
       });
 
       app.ports.send.subscribe(message => {
-        console.info("sendValue", message);
+        console.info("send", message);
 
-        switch (message?.namespace) {
+        switch (message?.tag) {
           case "deleteToken":
             tokenStorage.deleteToken();
             break;
@@ -63,6 +63,12 @@
 
           default:
             console.error("Received an unexpected message", message);
+        }
+      });
+
+      window.addEventListener("storage", event => {
+        if (event.storageArea === localStorage && event.key === tokenStorage.key && event.oldValue !== event.newValue) {
+          window.location.reload();
         }
       });
     </script>
