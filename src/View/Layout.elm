@@ -8,7 +8,7 @@ import View.Navigation as Navigation
 
 type alias ViewOptions msg =
     { name : String
-    , role : Navigation.Role
+    , role : Navigation.Role msg
     , maybeHeader : Maybe (H.Html msg)
     }
 

@@ -1,6 +1,7 @@
 module Data.Route exposing
     ( Route(..)
     , fromUrl
+    , logoutPath
     , pushUrl
     , redirectToArticle
     , redirectToHome
@@ -106,3 +107,8 @@ toString route =
 
         Favourites username ->
             UB.absolute [ "profile", Username.toString username, "favourites" ] []
+
+
+logoutPath : String
+logoutPath =
+    UB.absolute [ "logout" ] []

@@ -324,10 +324,17 @@ view { homePageModel, editorPageModel, profilePageModel } =
         ]
 
 
-viewNavigation : H.Html msg
+viewNavigation : H.Html Msg
 viewNavigation =
     viewMaybe
-        (\userDetails ->
+        (\{ username, imageUrl } ->
+            let
+                userDetails =
+                    { username = username
+                    , imageUrl = imageUrl
+                    , onLogout = NoOp
+                    }
+            in
             H.div []
                 [ Navigation.view { role = Navigation.guest }
                 , Navigation.view { role = Navigation.guestHome }
@@ -500,6 +507,7 @@ viewSettingsPage =
                     Navigation.settings
                         { username = username
                         , imageUrl = imageUrl
+                        , onLogout = NoOp
                         }
                 , maybeHeader = Nothing
                 }
@@ -538,6 +546,7 @@ viewEditorPage { tag, tags } =
                     Navigation.newArticle
                         { username = username
                         , imageUrl = imageUrl
+                        , onLogout = NoOp
                         }
                 , maybeHeader = Nothing
                 }

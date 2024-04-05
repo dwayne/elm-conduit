@@ -344,12 +344,13 @@ getArticlesByTag maybeToken tag apiUrl feed =
 type alias ViewOptions msg =
     { zone : Time.Zone
     , viewer : Viewer
+    , onLogout : msg
     , onChange : Msg -> msg
     }
 
 
 view : ViewOptions msg -> Model -> B.Document msg
-view { zone, viewer, onChange } model =
+view { zone, viewer, onLogout, onChange } model =
     let
         feed =
             model.feed
@@ -365,6 +366,7 @@ view { zone, viewer, onChange } model =
                     ( Navigation.userHome
                         { username = username
                         , imageUrl = imageUrl
+                        , onLogout = onLogout
                         }
                     , True
                     )
@@ -443,8 +445,8 @@ view { zone, viewer, onChange } model =
                     [ viewSidebar
                     ]
                 }
+                |> H.map onChange
             ]
-            |> H.map onChange
         ]
     }
 

@@ -245,16 +245,18 @@ validate { title, description, body, tags } =
 
 type alias ViewOptions msg =
     { user : User
+    , onLogout : msg
     , onChange : Msg -> msg
     }
 
 
 view : ViewOptions msg -> Model -> B.Document msg
-view { user, onChange } { action, previousTitle, title, description, body, tag, tags, errorMessages, isDisabled } =
+view { user, onLogout, onChange } { action, previousTitle, title, description, body, tag, tags, errorMessages, isDisabled } =
     let
         userDetails =
             { username = user.username
             , imageUrl = user.imageUrl
+            , onLogout = onLogout
             }
 
         ( pageTitle, role ) =
@@ -304,11 +306,11 @@ view { user, onChange } { action, previousTitle, title, description, body, tag, 
                                 , errorMessages = errorMessages
                                 }
                             ]
+                            |> H.map onChange
                 , onFailure = H.text "Unable to load the article."
                 }
                 action
             ]
-            |> H.map onChange
         ]
     }
 

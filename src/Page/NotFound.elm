@@ -1,4 +1,4 @@
-module Page.NotFound exposing (view)
+module Page.NotFound exposing (ViewOptions, view)
 
 import Browser as B
 import Data.Viewer as Viewer exposing (Viewer)
@@ -8,8 +8,14 @@ import View.Layout as Layout
 import View.Navigation as Navigation
 
 
-view : Viewer -> B.Document msg
-view viewer =
+type alias ViewOptions msg =
+    { viewer : Viewer
+    , onLogout : msg
+    }
+
+
+view : ViewOptions msg -> B.Document msg
+view { viewer, onLogout } =
     { title = "Not Found"
     , body =
         [ Layout.view
@@ -23,6 +29,7 @@ view viewer =
                         Navigation.user
                             { username = username
                             , imageUrl = imageUrl
+                            , onLogout = onLogout
                             }
             , maybeHeader = Nothing
             }

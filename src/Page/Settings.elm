@@ -184,6 +184,7 @@ view { user, onLogout, onChange } { imageUrl, username, bio, email, password, er
                 Navigation.settings
                     { username = user.username
                     , imageUrl = user.imageUrl
+                    , onLogout = onLogout
                     }
             , maybeHeader = Nothing
             }

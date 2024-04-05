@@ -780,6 +780,7 @@ viewSuccessPage { zone, viewer, page } =
             HomePage.view
                 { zone = zone
                 , viewer = viewer
+                , onLogout = LoggedOut
                 , onChange = ChangedPage << ChangedHomePage
                 }
                 pageModel
@@ -813,6 +814,7 @@ viewSuccessPage { zone, viewer, page } =
                 (\user ->
                     EditorPage.view
                         { user = user
+                        , onLogout = LoggedOut
                         , onChange = ChangedPage << ChangedEditorPage
                         }
                         pageModel
@@ -823,6 +825,7 @@ viewSuccessPage { zone, viewer, page } =
             ArticlePage.view
                 { zone = zone
                 , viewer = viewer
+                , onLogout = LoggedOut
                 , onChange = ChangedPage << ChangedArticlePage
                 }
                 pageModel
@@ -831,6 +834,7 @@ viewSuccessPage { zone, viewer, page } =
             ProfilePage.view
                 { zone = zone
                 , viewer = viewer
+                , onLogout = LoggedOut
                 , onChange = ChangedPage << ChangedProfilePage
                 }
                 pageModel
@@ -839,7 +843,10 @@ viewSuccessPage { zone, viewer, page } =
             NotAuthorizedPage.view
 
         NotFound ->
-            NotFoundPage.view viewer
+            NotFoundPage.view
+                { viewer = viewer
+                , onLogout = LoggedOut
+                }
 
 
 viewFailurePage : Error -> B.Document msg

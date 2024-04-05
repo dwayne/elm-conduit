@@ -301,12 +301,13 @@ getArticles { apiUrl, maybeToken, username, activeTab, currentPageNumber, pager 
 type alias ViewOptions msg =
     { zone : Time.Zone
     , viewer : Viewer
+    , onLogout : msg
     , onChange : Msg -> msg
     }
 
 
 view : ViewOptions msg -> Model -> B.Document msg
-view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
+view { zone, viewer, onLogout, onChange } { username, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
     let
         { maybeTitle, role, maybeHeader, content } =
             case viewer of
@@ -319,6 +320,7 @@ view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remote
                         , currentPageNumber = currentPageNumber
                         , pager = pager
                         , isDisabled = isDisabled
+                        , onChange = onChange
                         }
 
                 Viewer.User user ->
@@ -333,6 +335,8 @@ view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remote
                         , currentPageNumber = currentPageNumber
                         , pager = pager
                         , isDisabled = isDisabled
+                        , onLogout = onLogout
+                        , onChange = onChange
                         }
     in
     { title =
@@ -345,14 +349,13 @@ view { zone, viewer, onChange } { username, remoteDataProfile, activeTab, remote
             , maybeHeader = maybeHeader
             }
             content
-            |> H.map onChange
         ]
     }
 
 
 type alias LayoutOptions msg =
     { maybeTitle : Maybe String
-    , role : Navigation.Role
+    , role : Navigation.Role msg
     , maybeHeader : Maybe (H.Html msg)
     , content : List (H.Html msg)
     }
@@ -366,9 +369,10 @@ fromGuestToLayoutOptions :
     , currentPageNumber : PageNumber
     , pager : Pager
     , isDisabled : Bool
+    , onChange : Msg -> msg
     }
-    -> LayoutOptions Msg
-fromGuestToLayoutOptions { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled } =
+    -> LayoutOptions msg
+fromGuestToLayoutOptions { zone, remoteDataProfile, activeTab, remoteDataArticles, currentPageNumber, pager, isDisabled, onChange } =
     let
         { maybeTitle, maybeHeader, content } =
             case remoteDataProfile of
@@ -413,7 +417,7 @@ fromGuestToLayoutOptions { zone, remoteDataProfile, activeTab, remoteDataArticle
     { maybeTitle = maybeTitle
     , role = Navigation.guest
     , maybeHeader = maybeHeader
-    , content = content
+    , content = List.map (H.map onChange) content
     }
 
 
@@ -428,9 +432,11 @@ fromUserToLayoutOptions :
     , currentPageNumber : PageNumber
     , pager : Pager
     , isDisabled : Bool
+    , onLogout : msg
+    , onChange : Msg -> msg
     }
-    -> LayoutOptions Msg
-fromUserToLayoutOptions { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled } =
+    -> LayoutOptions msg
+fromUserToLayoutOptions { zone, user, profileUsername, remoteDataProfile, activeTab, remoteDataArticles, togglingFavourite, currentPageNumber, pager, isDisabled, onLogout, onChange } =
     let
         { maybeTitle, maybeHeader, content } =
             case remoteDataProfile of
@@ -499,6 +505,7 @@ fromUserToLayoutOptions { zone, user, profileUsername, remoteDataProfile, active
             userDetails =
                 { username = user.username
                 , imageUrl = user.imageUrl
+                , onLogout = onLogout
                 }
         in
         if user.username == profileUsername then
@@ -506,8 +513,8 @@ fromUserToLayoutOptions { zone, user, profileUsername, remoteDataProfile, active
 
         else
             Navigation.user userDetails
-    , maybeHeader = maybeHeader
-    , content = content
+    , maybeHeader = Maybe.map (H.map onChange) maybeHeader
+    , content = List.map (H.map onChange) content
     }
 
 

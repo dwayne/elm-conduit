@@ -18,22 +18,25 @@ import Data.Route as Route exposing (Route)
 import Data.Username as Username exposing (Username)
 import Html as H
 import Html.Attributes as HA
+import Html.Events as HE
+import Json.Decode as JD
 import Url exposing (Url)
 
 
-type alias ViewOptions =
-    { role : Role
+type alias ViewOptions msg =
+    { role : Role msg
     }
 
 
-type Role
+type Role msg
     = Guest (Maybe GuestItem)
-    | User (Maybe UserItem) UserDetails
+    | User (Maybe UserItem) (UserDetails msg)
 
 
-type alias UserDetails =
+type alias UserDetails msg =
     { username : Username
     , imageUrl : Url
+    , onLogout : msg
     }
 
 
@@ -50,52 +53,52 @@ type UserItem
     | Profile
 
 
-guest : Role
+guest : Role msg
 guest =
     Guest Nothing
 
 
-guestHome : Role
+guestHome : Role msg
 guestHome =
     Guest <| Just GuestHome
 
 
-login : Role
+login : Role msg
 login =
     Guest <| Just Login
 
 
-register : Role
+register : Role msg
 register =
     Guest <| Just Register
 
 
-user : UserDetails -> Role
+user : UserDetails msg -> Role msg
 user =
     User Nothing
 
 
-userHome : UserDetails -> Role
+userHome : UserDetails msg -> Role msg
 userHome =
     User (Just UserHome)
 
 
-newArticle : UserDetails -> Role
+newArticle : UserDetails msg -> Role msg
 newArticle =
     User (Just NewArticle)
 
 
-settings : UserDetails -> Role
+settings : UserDetails msg -> Role msg
 settings =
     User (Just Settings)
 
 
-profile : UserDetails -> Role
+profile : UserDetails msg -> Role msg
 profile =
     User (Just Profile)
 
 
-view : ViewOptions -> H.Html msg
+view : ViewOptions msg -> H.Html msg
 view { role } =
     H.nav
         [ HA.class "navbar navbar-light" ]
@@ -111,7 +114,7 @@ view { role } =
         ]
 
 
-viewNavItems : Role -> H.Html msg
+viewNavItems : Role msg -> H.Html msg
 viewNavItems role =
     let
         navLinks =
@@ -133,7 +136,7 @@ viewNavItems role =
             navLinks
 
 
-type NavLink
+type NavLink msg
     = Text
         { route : Route
         , text : String
@@ -148,9 +151,13 @@ type NavLink
         , username : Username
         , imageUrl : Url
         }
+    | Action
+        { text : String
+        , onClick : msg
+        }
 
 
-guestNavLinks : Maybe GuestItem -> List ( Bool, NavLink )
+guestNavLinks : Maybe GuestItem -> List ( Bool, NavLink msg )
 guestNavLinks maybeItem =
     [ ( maybeItem == Just GuestHome
       , Text { route = Route.Home, text = "Home" }
@@ -164,8 +171,8 @@ guestNavLinks maybeItem =
     ]
 
 
-userNavLinks : Maybe UserItem -> UserDetails -> List ( Bool, NavLink )
-userNavLinks maybeItem { username, imageUrl } =
+userNavLinks : Maybe UserItem -> UserDetails msg -> List ( Bool, NavLink msg )
+userNavLinks maybeItem { username, imageUrl, onLogout } =
     [ ( maybeItem == Just UserHome
       , Text { route = Route.Home, text = "Home" }
       )
@@ -190,10 +197,13 @@ userNavLinks maybeItem { username, imageUrl } =
             , imageUrl = imageUrl
             }
       )
+    , ( False
+      , Action { text = "Sign out", onClick = onLogout }
+      )
     ]
 
 
-viewNavLink : Bool -> NavLink -> H.Html msg
+viewNavLink : Bool -> NavLink msg -> H.Html msg
 viewNavLink isActive navLink =
     let
         attrs route =
@@ -227,3 +237,11 @@ viewNavLink isActive navLink =
                     []
                 , H.text text
                 ]
+
+        Action { text, onClick } ->
+            H.a
+                [ HA.class "nav-link"
+                , HA.href Route.logoutPath
+                , HE.preventDefaultOn "click" (JD.succeed ( onClick, True ))
+                ]
+                [ H.text text ]

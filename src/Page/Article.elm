@@ -314,12 +314,13 @@ update options msg model =
 type alias ViewOptions msg =
     { zone : Time.Zone
     , viewer : Viewer
+    , onLogout : msg
     , onChange : Msg -> msg
     }
 
 
 view : ViewOptions msg -> Model -> B.Document msg
-view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment, isDisabled } =
+view { zone, viewer, onLogout, onChange } { remoteDataArticle, remoteDataComments, comment, isDisabled } =
     let
         { maybeTitle, role, maybeHeader, content } =
             case viewer of
@@ -337,6 +338,8 @@ view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment
                         , remoteDataComments = remoteDataComments
                         , comment = comment
                         , isDisabled = isDisabled
+                        , onLogout = onLogout
+                        , onChange = onChange
                         }
     in
     { title =
@@ -349,14 +352,13 @@ view { zone, viewer, onChange } { remoteDataArticle, remoteDataComments, comment
             , maybeHeader = maybeHeader
             }
             content
-            |> H.map onChange
         ]
     }
 
 
 type alias LayoutOptions msg =
     { maybeTitle : Maybe String
-    , role : Navigation.Role
+    , role : Navigation.Role msg
     , maybeHeader : Maybe (H.Html msg)
     , content : List (H.Html msg)
     }
@@ -424,9 +426,11 @@ fromUserToLayoutOptions :
     , remoteDataComments : RemoteData () Comments
     , comment : String
     , isDisabled : Bool
+    , onLogout : msg
+    , onChange : Msg -> msg
     }
-    -> LayoutOptions Msg
-fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled } =
+    -> LayoutOptions msg
+fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, comment, isDisabled, onLogout, onChange } =
     let
         { maybeTitle, maybeHeader, content } =
             case remoteDataArticle of
@@ -527,9 +531,10 @@ fromUserToLayoutOptions { zone, user, remoteDataArticle, remoteDataComments, com
         Navigation.user
             { username = user.username
             , imageUrl = user.imageUrl
+            , onLogout = onLogout
             }
-    , maybeHeader = maybeHeader
-    , content = content
+    , maybeHeader = Maybe.map (H.map onChange) maybeHeader
+    , content = List.map (H.map onChange) content
     }
 
 
