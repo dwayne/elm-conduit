@@ -186,7 +186,7 @@ initSuccess { apiUrl, url, key, maybeZone, viewer } =
                     ( givenZone, Cmd.none )
 
         ( page, pageCmd ) =
-            getPageFromUrl apiUrl viewer Nothing url
+            getPageFromUrl apiUrl key viewer Nothing url
     in
     ( Success
         { apiUrl = apiUrl
@@ -210,18 +210,18 @@ getZone =
     Task.perform GotZone Time.here
 
 
-getPageFromUrl : Url -> Viewer -> Maybe Article -> Url -> ( Page, Cmd Msg )
-getPageFromUrl apiUrl viewer maybeArticle url =
+getPageFromUrl : Url -> BN.Key -> Viewer -> Maybe Article -> Url -> ( Page, Cmd Msg )
+getPageFromUrl apiUrl key viewer maybeArticle url =
     case Route.fromUrl url of
         Just route ->
-            getPageFromRoute apiUrl viewer maybeArticle route
+            getPageFromRoute apiUrl key viewer maybeArticle route
 
         Nothing ->
             ( NotFound, Cmd.none )
 
 
-getPageFromRoute : Url -> Viewer -> Maybe Article -> Route -> ( Page, Cmd Msg )
-getPageFromRoute apiUrl viewer maybeArticle route =
+getPageFromRoute : Url -> BN.Key -> Viewer -> Maybe Article -> Route -> ( Page, Cmd Msg )
+getPageFromRoute apiUrl key viewer maybeArticle route =
     case route of
         Route.Home ->
             HomePage.init
@@ -232,13 +232,19 @@ getPageFromRoute apiUrl viewer maybeArticle route =
                 |> Tuple.mapFirst Home
 
         Route.Login ->
-            ( Login LoginPage.init, Cmd.none )
+            withGuestForPage
+                (always ( Login LoginPage.init, Cmd.none ))
+                key
+                viewer
 
         Route.Register ->
-            ( Register RegisterPage.init, Cmd.none )
+            withGuestForPage
+                (always ( Register RegisterPage.init, Cmd.none ))
+                key
+                viewer
 
         Route.Settings ->
-            withAuthForPage
+            withUserForPage
                 (\user ->
                     ( Settings <|
                         SettingsPage.init
@@ -300,7 +306,7 @@ getPageFromRoute apiUrl viewer maybeArticle route =
 
 getEditorPage : Url -> Viewer -> Maybe Slug -> ( Page, Cmd Msg )
 getEditorPage apiUrl viewer maybeSlug =
-    withAuthForPage
+    withUserForPage
         (\{ token } ->
             EditorPage.init
                 { apiUrl = apiUrl
@@ -427,7 +433,7 @@ changeUrl url =
             if subModel.reloadPage then
                 let
                     ( page, cmd ) =
-                        getPageFromUrl subModel.apiUrl subModel.viewer subModel.maybeArticle url
+                        getPageFromUrl subModel.apiUrl subModel.key subModel.viewer subModel.maybeArticle url
                 in
                 ( { subModel | url = url, page = page }
                 , cmd
@@ -652,7 +658,7 @@ updateSettingsPage : SettingsPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg
 updateSettingsPage pageMsg subModel =
     case subModel.page of
         Settings pageModel ->
-            withAuthForUpdate
+            withUserForUpdate
                 (\{ token } ->
                     SettingsPage.update
                         { apiUrl = subModel.apiUrl
@@ -677,7 +683,7 @@ updateEditorPage : EditorPage.Msg -> SuccessModel -> ( SuccessModel, Cmd Msg )
 updateEditorPage pageMsg subModel =
     case subModel.page of
         Editor pageModel ->
-            withAuthForUpdate
+            withUserForUpdate
                 (\{ token } ->
                     EditorPage.update
                         { apiUrl = subModel.apiUrl
@@ -798,7 +804,7 @@ viewSuccessPage { zone, viewer, page } =
                 pageModel
 
         Settings pageModel ->
-            withAuthForView
+            withUserForView
                 (\user ->
                     SettingsPage.view
                         { user = user
@@ -810,7 +816,7 @@ viewSuccessPage { zone, viewer, page } =
                 viewer
 
         Editor pageModel ->
-            withAuthForView
+            withUserForView
                 (\user ->
                     EditorPage.view
                         { user = user
@@ -908,8 +914,18 @@ withModel { onLoadingUser, onSuccess, onFailure } model =
             onFailure error
 
 
-withAuthForPage : (User -> ( Page, Cmd Msg )) -> Viewer -> ( Page, Cmd Msg )
-withAuthForPage toPage viewer =
+withGuestForPage : (() -> ( Page, Cmd Msg )) -> BN.Key -> Viewer -> ( Page, Cmd Msg )
+withGuestForPage toPage key viewer =
+    case viewer of
+        Viewer.Guest ->
+            toPage ()
+
+        Viewer.User _ ->
+            ( NotFound, Route.redirectToHome key )
+
+
+withUserForPage : (User -> ( Page, Cmd Msg )) -> Viewer -> ( Page, Cmd Msg )
+withUserForPage toPage viewer =
     case viewer of
         Viewer.Guest ->
             ( NotAuthorized, Cmd.none )
@@ -918,8 +934,8 @@ withAuthForPage toPage viewer =
             toPage user
 
 
-withAuthForUpdate : (User -> ( SuccessModel, Cmd Msg )) -> SuccessModel -> ( SuccessModel, Cmd Msg )
-withAuthForUpdate toModel subModel =
+withUserForUpdate : (User -> ( SuccessModel, Cmd Msg )) -> SuccessModel -> ( SuccessModel, Cmd Msg )
+withUserForUpdate toModel subModel =
     case subModel.viewer of
         Viewer.Guest ->
             ( subModel, Cmd.none )
@@ -928,8 +944,8 @@ withAuthForUpdate toModel subModel =
             toModel user
 
 
-withAuthForView : (User -> B.Document msg) -> Viewer -> B.Document msg
-withAuthForView toView viewer =
+withUserForView : (User -> B.Document msg) -> Viewer -> B.Document msg
+withUserForView toView viewer =
     case viewer of
         Viewer.Guest ->
             NotAuthorizedPage.view
