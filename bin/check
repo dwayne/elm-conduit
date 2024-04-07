@@ -29,6 +29,12 @@ if ! build-prototype &>/dev/null; then
   build-prototype
 fi
 
+# Build sandbox
+
+if ! build-sandbox &>/dev/null; then
+  build-sandbox
+fi
+
 # Build
 
 if ! build &>/dev/null; then
