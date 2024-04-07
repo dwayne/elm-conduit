@@ -10,6 +10,7 @@
     "elmPackages.elm-format": "latest",
     "elmPackages.elm-optimize-level-2": "latest",
     "elmPackages.elm-review": "latest",
+    "elmPackages.elm-test": "latest",
     "html-minifier": "latest",
     "optipng": "latest",
     "shellcheck": "latest",

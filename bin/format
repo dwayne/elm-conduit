@@ -6,4 +6,9 @@
 
 set -euo pipefail
 
-elm-format "${project:?}/src" "${@:---yes}"
+cd "${project:?}" && \
+  elm-format         \
+    review/src       \
+    src              \
+    tests            \
+    "${@:---yes}"
