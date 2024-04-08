@@ -43,10 +43,7 @@ setTotalPages : Total -> Pager -> Pager
 setTotalPages totalItems (Pager pager) =
     let
         totalPages =
-            Total.fromInt <|
-                total
-                    // limit
-                    + extra
+            Total.fromInt <| total // limit + extra
 
         total =
             Total.toInt totalItems
@@ -64,6 +61,11 @@ setTotalPages totalItems (Pager pager) =
     Pager { pager | maybeTotalPages = Just totalPages }
 
 
+toTotalPages : Pager -> Total
+toTotalPages (Pager { maybeTotalPages }) =
+    Maybe.withDefault Total.zero maybeTotalPages
+
+
 type alias Page =
     { offset : Offset
     , limit : Limit
@@ -79,14 +81,6 @@ toPage pageNumber (Pager { limit, maybeTotalPages }) =
             }
 
         Just _ ->
-            { offset =
-                Offset.fromInt <|
-                    (PageNumber.toInt pageNumber - 1)
-                        * Limit.toInt limit
+            { offset = Offset.fromInt <| (PageNumber.toInt pageNumber - 1) * Limit.toInt limit
             , limit = limit
             }
-
-
-toTotalPages : Pager -> Total
-toTotalPages (Pager { maybeTotalPages }) =
-    Maybe.withDefault Total.zero maybeTotalPages
