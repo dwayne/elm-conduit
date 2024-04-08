@@ -10,4 +10,5 @@ cd "${project:?}" && \
   elm-review         \
     review/src       \
     src              \
+    tests            \
     "$@"

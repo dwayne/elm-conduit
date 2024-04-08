@@ -1,7 +1,7 @@
 module Test.Data.Comments exposing (suite)
 
 import Data.Comment exposing (Comment)
-import Data.Comments as Comments exposing (Comments)
+import Data.Comments as Comments
 import Data.Timestamp as Timestamp
 import Expect
 import Fuzz exposing (Fuzzer)
