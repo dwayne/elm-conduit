@@ -5,6 +5,7 @@ module Data.Timestamp exposing
     , fromString
     , toDayAndTimeString
     , toDayString
+    , toTimeString
     )
 
 import Date
@@ -53,9 +54,6 @@ toDayString zone (Timestamp posix) =
 
 toTimeString : Time.Zone -> Timestamp -> String
 toTimeString zone (Timestamp posix) =
-    --
-    -- NOTE: This function is a good candidate for unit tests.
-    --
     let
         hour24 =
             Time.toHour zone posix
