@@ -2,7 +2,6 @@ module Test.Data.Password exposing (suite)
 
 import Data.Password as Password
 import Expect
-import Fuzz exposing (Fuzzer)
 import Test exposing (Test, describe, fuzz, test)
 import Test.Lib.Fuzz as Fuzz
 
