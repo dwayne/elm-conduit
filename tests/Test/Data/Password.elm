@@ -4,6 +4,7 @@ import Data.Password as Password
 import Expect
 import Fuzz exposing (Fuzzer)
 import Test exposing (Test, describe, fuzz, test)
+import Test.Lib.Fuzz as Fuzz
 
 
 suite : Test
@@ -16,7 +17,7 @@ suite =
 fromStringSuite : Test
 fromStringSuite =
     describe "fromString"
-        [ fuzz onlyAsciiWhitespace "Err Blank" <|
+        [ fuzz Fuzz.onlyAsciiWhitespace "Err Blank" <|
             \ws ->
                 Password.fromString ws
                     |> Expect.equal (Err Password.Blank)
@@ -56,25 +57,3 @@ fromStringSuite =
                 , "pa5$w0rD!"
                 ]
         ]
-
-
-
--- FUZZERS
-
-
-onlyAsciiWhitespace : Fuzzer String
-onlyAsciiWhitespace =
-    --
-    -- https://www.ascii-code.com/characters/white-space-characters
-    --
-    [ 9 -- Horizontal Tab
-    , 10 -- Line Feed
-    , 11 -- Vertical Tabulation
-    , 12 -- Form Feed
-    , 13 -- Carriage Return
-    , 32 -- Space
-    ]
-        |> List.map Char.fromCode
-        |> Fuzz.oneOfValues
-        |> Fuzz.list
-        |> Fuzz.map String.fromList
