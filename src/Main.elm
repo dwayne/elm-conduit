@@ -233,28 +233,37 @@ getPageFromRoute apiUrl key viewer maybeArticle route =
 
         Route.Login ->
             withGuestForPage
-                (always ( Login LoginPage.init, Cmd.none ))
+                (always
+                    (LoginPage.init
+                        { onChange = ChangedPage << ChangedLoginPage }
+                        |> Tuple.mapFirst Login
+                    )
+                )
                 key
                 viewer
 
         Route.Register ->
             withGuestForPage
-                (always ( Register RegisterPage.init, Cmd.none ))
+                (always
+                    (RegisterPage.init
+                        { onChange = ChangedPage << ChangedRegisterPage }
+                        |> Tuple.mapFirst Register
+                    )
+                )
                 key
                 viewer
 
         Route.Settings ->
             withUserForPage
                 (\user ->
-                    ( Settings <|
-                        SettingsPage.init
-                            { imageUrl = user.imageUrl
-                            , username = user.username
-                            , bio = user.bio
-                            , email = user.email
-                            }
-                    , Cmd.none
-                    )
+                    SettingsPage.init
+                        { imageUrl = user.imageUrl
+                        , username = user.username
+                        , bio = user.bio
+                        , email = user.email
+                        , onChange = ChangedPage << ChangedSettingsPage
+                        }
+                        |> Tuple.mapFirst Settings
                 )
                 viewer
 

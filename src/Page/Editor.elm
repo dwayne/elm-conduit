@@ -12,6 +12,7 @@ import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Validation as V
 import Html as H
+import Lib.Browser.Dom as BD
 import Lib.OrderedSet as OrderedSet exposing (OrderedSet)
 import Lib.RemoteData as RemoteData exposing (RemoteData)
 import Lib.Task as Task
@@ -55,6 +56,10 @@ type alias InitOptions msg =
 
 init : InitOptions msg -> ( Model, Cmd msg )
 init { apiUrl, token, maybeSlug, onChange } =
+    let
+        focusArticleTitle =
+            BD.focus "title" FocusedArticleTitle
+    in
     case maybeSlug of
         Nothing ->
             ( { action = Create
@@ -67,7 +72,8 @@ init { apiUrl, token, maybeSlug, onChange } =
               , errorMessages = []
               , isDisabled = False
               }
-            , Cmd.none
+            , focusArticleTitle
+                |> Cmd.map onChange
             )
 
         Just slug ->
@@ -81,12 +87,15 @@ init { apiUrl, token, maybeSlug, onChange } =
               , errorMessages = []
               , isDisabled = False
               }
-            , GetArticle.getArticle
-                apiUrl
-                { maybeToken = Just token
-                , slug = slug
-                , onResponse = GotGetArticleResponse
-                }
+            , [ focusArticleTitle
+              , GetArticle.getArticle
+                    apiUrl
+                    { maybeToken = Just token
+                    , slug = slug
+                    , onResponse = GotGetArticleResponse
+                    }
+              ]
+                |> Cmd.batch
                 |> Cmd.map onChange
             )
 
@@ -110,7 +119,8 @@ resetModel previousTitle model =
 
 
 type Msg
-    = GotGetArticleResponse (Result (Api.Error ()) Article)
+    = FocusedArticleTitle
+    | GotGetArticleResponse (Result (Api.Error ()) Article)
     | ChangedTitle String
     | ChangedDescription String
     | ChangedBody String
@@ -132,6 +142,9 @@ type alias UpdateOptions msg =
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
+        FocusedArticleTitle ->
+            ( model, Cmd.none )
+
         GotGetArticleResponse result ->
             ( case model.action of
                 Edit RemoteData.Loading ->

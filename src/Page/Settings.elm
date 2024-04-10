@@ -9,6 +9,7 @@ import Data.Token exposing (Token)
 import Data.User exposing (User)
 import Data.Username as Username exposing (Username)
 import Data.Validation as V
+import Lib.Browser.Dom as BD
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
@@ -33,16 +34,32 @@ type alias Model =
     }
 
 
-type alias InitOptions =
+type alias InitOptions msg =
     { imageUrl : Url
     , username : Username
     , bio : String
     , email : Email
+    , onChange : Msg -> msg
     }
 
 
-init : InitOptions -> Model
-init { imageUrl, username, bio, email } =
+init : InitOptions msg -> ( Model, Cmd msg )
+init options =
+    ( initModel options
+    , BD.focus "imageUrl" FocusedImageUrl
+        |> Cmd.map options.onChange
+    )
+
+
+initModel :
+    { a
+        | imageUrl : Url
+        , username : Username
+        , bio : String
+        , email : Email
+    }
+    -> Model
+initModel { imageUrl, username, bio, email } =
     { imageUrl = Url.toString imageUrl
     , username = Username.toString username
     , bio = bio
@@ -66,7 +83,8 @@ type alias UpdateOptions msg =
 
 
 type Msg
-    = ChangedImageUrl String
+    = FocusedImageUrl
+    | ChangedImageUrl String
     | ChangedUsername String
     | ChangedBio String
     | ChangedEmail String
@@ -78,6 +96,9 @@ type Msg
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
+        FocusedImageUrl ->
+            ( model, Cmd.none )
+
         ChangedImageUrl imageUrl ->
             ( { model | imageUrl = imageUrl }
             , Cmd.none
@@ -131,12 +152,7 @@ update options msg model =
         GotUpdateUserResponse result ->
             Api.handleFormResponse
                 (\user ->
-                    ( init
-                        { imageUrl = user.imageUrl
-                        , username = user.username
-                        , bio = user.bio
-                        , email = user.email
-                        }
+                    ( initModel user
                     , Task.dispatch (options.onUpdatedUser user)
                     )
                 )

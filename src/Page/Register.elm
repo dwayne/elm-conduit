@@ -9,6 +9,7 @@ import Data.User exposing (User)
 import Data.Username exposing (Username)
 import Data.Validation as V
 import Html as H
+import Lib.Browser.Dom as BD
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
@@ -31,8 +32,21 @@ type alias Model =
     }
 
 
-init : Model
-init =
+type alias InitOptions msg =
+    { onChange : Msg -> msg
+    }
+
+
+init : InitOptions msg -> ( Model, Cmd msg )
+init { onChange } =
+    ( initModel
+    , BD.focus "username" FocusedUsername
+        |> Cmd.map onChange
+    )
+
+
+initModel : Model
+initModel =
     { username = ""
     , email = ""
     , password = ""
@@ -53,7 +67,8 @@ type alias UpdateOptions msg =
 
 
 type Msg
-    = ChangedUsername String
+    = FocusedUsername
+    | ChangedUsername String
     | ChangedEmail String
     | ChangedPassword String
     | SubmittedForm
@@ -63,6 +78,9 @@ type Msg
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
+        FocusedUsername ->
+            ( model, Cmd.none )
+
         ChangedUsername username ->
             ( { model | username = username }
             , Cmd.none
@@ -103,7 +121,7 @@ update options msg model =
         GotRegisterResponse result ->
             Api.handleFormResponse
                 (\user ->
-                    ( init
+                    ( initModel
                     , Task.dispatch (options.onRegistered user)
                     )
                 )

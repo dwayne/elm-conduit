@@ -21,6 +21,7 @@ view { name, type_, placeholder, value, isDisabled, onInput } =
         [ HA.class "form-group" ]
         [ H.input
             [ HA.class "form-control form-control-lg"
+            , HA.id name
             , HA.name name
             , HA.type_ type_
             , HA.placeholder placeholder

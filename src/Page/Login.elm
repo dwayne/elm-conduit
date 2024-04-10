@@ -8,6 +8,7 @@ import Data.Password exposing (Password)
 import Data.User exposing (User)
 import Data.Validation as V
 import Html as H
+import Lib.Browser.Dom as BD
 import Lib.Task as Task
 import Lib.Validation as V
 import Url exposing (Url)
@@ -29,8 +30,21 @@ type alias Model =
     }
 
 
-init : Model
-init =
+type alias InitOptions msg =
+    { onChange : Msg -> msg
+    }
+
+
+init : InitOptions msg -> ( Model, Cmd msg )
+init { onChange } =
+    ( initModel
+    , BD.focus "email" FocusedEmail
+        |> Cmd.map onChange
+    )
+
+
+initModel : Model
+initModel =
     { email = ""
     , password = ""
     , errorMessages = []
@@ -50,7 +64,8 @@ type alias UpdateOptions msg =
 
 
 type Msg
-    = ChangedEmail String
+    = FocusedEmail
+    | ChangedEmail String
     | ChangedPassword String
     | SubmittedForm
     | GotLoginResponse (Result (Api.Error (List String)) User)
@@ -59,6 +74,9 @@ type Msg
 update : UpdateOptions msg -> Msg -> Model -> ( Model, Cmd msg )
 update options msg model =
     case msg of
+        FocusedEmail ->
+            ( model, Cmd.none )
+
         ChangedEmail email ->
             ( { model | email = email }
             , Cmd.none
@@ -93,7 +111,7 @@ update options msg model =
         GotLoginResponse result ->
             Api.handleFormResponse
                 (\user ->
-                    ( init
+                    ( initModel
                     , Task.dispatch (options.onLoggedIn user)
                     )
                 )
