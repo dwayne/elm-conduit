@@ -48,14 +48,6 @@ type alias Feed =
     }
 
 
-
---
--- TODO: Try implementing the below in terms of
---
--- updateFeed : (Feed -> Feed) -> Model -> Model
---
-
-
 feedInit : Feed
 feedInit =
     { remoteDataArticles = RemoteData.Loading
