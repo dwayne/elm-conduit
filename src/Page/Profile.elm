@@ -180,9 +180,14 @@ update options msg model =
             )
 
         SwitchedArticleTabs tab ->
+            let
+                currentPageNumber =
+                    PageNumber.one
+            in
             ( { model
                 | activeTab = tab
                 , remoteDataArticles = RemoteData.Loading
+                , currentPageNumber = currentPageNumber
               }
             , Cmd.batch
                 [ let
@@ -200,7 +205,7 @@ update options msg model =
                     , maybeToken = Viewer.toToken options.viewer
                     , username = model.username
                     , activeTab = tab
-                    , currentPageNumber = PageNumber.one
+                    , currentPageNumber = currentPageNumber
                     , pager = model.pager
                     }
                     |> Cmd.map options.onChange
