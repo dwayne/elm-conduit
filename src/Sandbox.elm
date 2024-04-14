@@ -318,7 +318,7 @@ view { homePageModel, editorPageModel, profilePageModel } =
                 |> H.div []
     in
     H.div []
-        [ H.h1 [] [ H.text "conduit Sandbox" ]
+        [ H.h1 [] [ H.text "Conduit Sandbox" ]
         , viewTableOfContents titlesAndIds
         , showcases
         ]
