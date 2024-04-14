@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# Usage: [simulate=0*|1] deploy
+# Usage: [simulate=0*|1] deploy-sandbox
 #
 
 set -euo pipefail
