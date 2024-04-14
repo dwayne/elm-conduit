@@ -72,6 +72,7 @@ hash="$(git log -n 1 --format='%h' "$current_branch")"
 message="Site updated to commit $hash from the $current_branch branch"
 
 cp -r "$src/"* "$out"
+cp -r "${project:?}/config/production/"* "$out"
 
 if [[ "$simulate" != 0 ]]; then
   echo "$message"
