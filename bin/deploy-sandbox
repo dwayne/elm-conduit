@@ -76,6 +76,8 @@ cp -r "$src/"* "$out"
 if [[ "$simulate" != 0 ]]; then
   echo "$message"
 else
+  git -C "$out" add -N .
+
   if git -C "$out" diff --quiet; then
     echo "No changes detected."
   else
