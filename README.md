@@ -1,6 +1,8 @@
 # ![Elm RealWorld Example App](/misc/elm-realworld-example-app.png)
 
 [![RealWorld Frontend](https://img.shields.io/badge/realworld-frontend-%23783578.svg)][RealWorld]
+[![Netlify Status](https://api.netlify.com/api/v1/badges/344f78b2-387c-4023-90ab-6cf07e8d8568/deploy-status)](https://app.netlify.com/sites/elm-conduit/deploys?branch=production)
+
 
 > [Elm](https://elm-lang.org) codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld][RealWorld] spec and API.
 
