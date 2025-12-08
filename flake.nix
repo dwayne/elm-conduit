@@ -1,7 +1,7 @@
 {
   inputs = {
     elm2nix = {
-      url = "git+ssh://git@github.com/dwayne/elm2nix?rev=3fa2c5bb6a1d01b6788369057a9edc46d3c78e72";
+      url = "github:dwayne/elm2nix";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -11,9 +11,9 @@
     flake-utils.lib.eachDefaultSystem(system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        mkElmDerivation = (elm2nix.lib.elm2nix pkgs).mkElmDerivation;
+        inherit (elm2nix.lib.elm2nix pkgs) buildElmApplication;
 
-        elmConduit = mkElmDerivation {
+        elmConduit = buildElmApplication {
           name = "elm-conduit";
           src = ./.;
           elmLock = ./elm.lock;
@@ -39,14 +39,17 @@
 
           default = elmConduit;
 
-          elmConduitDebug = elmConduit.override { enableDebugger = true; };
+          debugElmConduit = elmConduit.override { enableDebugger = true; };
 
-          elmConduitOptimized = elmConduit.override {
+          optimizedElmConduit = elmConduit.override {
             enableOptimizations = true;
-            enableMinification = true;
+            doMinification = true;
             useTerser = true;
-            enableCompression = true;
-            showStats = true;
+            #
+            # Uglify actually gave smaller file sizes
+            #
+            doCompression = true;
+            doReporting = true;
           };
         };
       }
