@@ -5,6 +5,20 @@
         pkgs = nixpkgs.legacyPackages.${system};
 
         workshop = pkgs.callPackage ./nix/workshop.nix {};
+
+        serve = pkgs.callPackage ./nix/serve.nix {};
+
+        serveWorkshop = serve {
+          name = "serve-elm-conduit-workshop";
+          root = workshop;
+          port = 9000;
+        };
+
+        mkApp = { drv, description }: {
+          type = "app";
+          program = "${drv}";
+          meta.description = description;
+        };
       in
       {
         devShells.default = pkgs.mkShell {
@@ -21,6 +35,13 @@
 
         packages = {
           inherit workshop;
+        };
+
+        apps = {
+          workshop = mkApp {
+            drv = serveWorkshop;
+            description = "Serve the Conduit workshop";
+          };
         };
       }
     );
