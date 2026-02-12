@@ -1,0 +1,104 @@
+[
+    {
+        "author": "NoRedInk",
+        "package": "elm-json-decode-pipeline",
+        "version": "1.0.1",
+        "sha256": "1yss4m5k0rhy5hccakdm0di7z956mx2zp3gc2nmfq2pk3i75j5sh"
+    },
+    {
+        "author": "elm",
+        "package": "browser",
+        "version": "1.0.2",
+        "sha256": "0863nw2hhbpm3s03lm1imi5x28wwknzrwg2p79s5mydgvdvgwjf0"
+    },
+    {
+        "author": "elm",
+        "package": "bytes",
+        "version": "1.0.8",
+        "sha256": "0n411j2cyz9m241q6vszfzpq3fraradwal5m0gigp2505mdfpz3x"
+    },
+    {
+        "author": "elm",
+        "package": "core",
+        "version": "1.0.5",
+        "sha256": "0g3xbi8f9k5q45s95nx3jfvzwdf4b2n63a52wr4027d2xjx0pmvl"
+    },
+    {
+        "author": "elm",
+        "package": "file",
+        "version": "1.0.5",
+        "sha256": "0aimgicrdpys0v89m2wjx413561zil14cczjh6mkn9jcgckx6yng"
+    },
+    {
+        "author": "elm",
+        "package": "html",
+        "version": "1.0.0",
+        "sha256": "15k1679ja57vvlpinpv06znmrxy09lbhzfkzdc89i01qa8c4gb4a"
+    },
+    {
+        "author": "elm",
+        "package": "http",
+        "version": "2.0.0",
+        "sha256": "0mfbz0lkfidmq5xpv5csw8943q0yrpvj0rwd2vb0gc8rbsfc9dg8"
+    },
+    {
+        "author": "elm",
+        "package": "json",
+        "version": "1.1.3",
+        "sha256": "1hx986yqw1v2bpkrh6brszl8n8awwg1s8zi7v5qg0p1rqwvjlicz"
+    },
+    {
+        "author": "elm",
+        "package": "parser",
+        "version": "1.1.0",
+        "sha256": "06xx29rmagc5r45qfpvrd393lz83ylngidfp08432f1qc8y6r3lh"
+    },
+    {
+        "author": "elm",
+        "package": "random",
+        "version": "1.0.0",
+        "sha256": "0z0znkwfs35xiabk6pa9yqwsq03jssgd7jmsj1kk000mikfm7f39"
+    },
+    {
+        "author": "elm",
+        "package": "time",
+        "version": "1.0.0",
+        "sha256": "0wqa2vhl1zf8z0j2yd3yjwfhr0dydfns43bbzll3k4rhnjadxr1l"
+    },
+    {
+        "author": "elm",
+        "package": "url",
+        "version": "1.0.0",
+        "sha256": "1f2ij4i7zmijnj2i50qf19lpkr14bhms8dkq029inb5mydi9f8gs"
+    },
+    {
+        "author": "elm",
+        "package": "virtual-dom",
+        "version": "1.0.3",
+        "sha256": "1bjyyws7l0qvgp4ixzaimwriq86ncx5bvrzaksvjx3pv7bmkbx69"
+    },
+    {
+        "author": "elm-explorations",
+        "package": "markdown",
+        "version": "1.0.0",
+        "sha256": "1f57ikdpbbhchcpwj32216gxjxijrc3sdpg27s1cgzia9pnkqk6p"
+    },
+    {
+        "author": "elm-explorations",
+        "package": "test",
+        "version": "2.2.0",
+        "sha256": "0g781y2j4jz94qv3mvaay2zmlzqi0ag13v1k2q111iypfv0kyx8c"
+    },
+    {
+        "author": "justinmimbs",
+        "package": "date",
+        "version": "4.0.1",
+        "sha256": "13mf97137f0yb3gx1mxbya2y70qciah4hp5bcnpj8166vgzb7l3l"
+    },
+    {
+        "author": "rtfeldman",
+        "package": "elm-iso8601-date-strings",
+        "version": "1.1.4",
+        "sha256": "1zds3kvh13ghln42rhi799b8z2fghkbic3vxsy68inrzrvj0l0gq"
+    }
+]
