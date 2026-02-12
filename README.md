@@ -82,4 +82,4 @@ To deploy the production version of the application to [Netlify](https://www.net
 $ deploy-production
 ```
 
-[RealWorld]: https://github.com/gothinkster/realworld
+[RealWorld]: https://github.com/realworld-apps/realworld
