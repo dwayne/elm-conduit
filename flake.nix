@@ -84,6 +84,7 @@
 
           packages = [
             elm2nix.packages.${system}.default
+            pkgs.actionlint
             pkgs.elmPackages.elm
             pkgs.elmPackages.elm-format
             pkgs.elmPackages.elm-json
@@ -135,10 +136,14 @@
             }
             alias sp='serve-prod'
 
-            clean () {
-              rm -rf "$PROJECT_ROOT/"{elm-stuff,result}
+            check () {
+              nix flake check -L
+              actionlint
+              f --validate
+              t
+              r
             }
-            alias c='clean'
+            alias c='check'
 
             f () {
               elm-format "$PROJECT_ROOT/"{review/src,src,tests} "''${@:---yes}"
@@ -156,24 +161,29 @@
               nix run .#deploy "$@"
             }
 
+            clean () {
+              rm -rf "$PROJECT_ROOT/"{elm-stuff,result}
+            }
+
             echo "Development environment loaded"
             echo ""
-            echo "Type 'bw' to build the workshop"
-            echo "Type 'sw' to serve the workshop"
+            echo "Type 'build-workshop' or 'bw' to build the workshop"
+            echo "Type 'serve-workshop' or 'sw' to serve the workshop"
             echo ""
-            echo "Type 'bs' to build the sandbox"
-            echo "Type 'ss' to serve the sandbox"
+            echo "Type 'build-sandbox' or 'bs' to build the sandbox"
+            echo "Type 'serve-sandbox' or 'ss' to serve the sandbox"
             echo ""
-            echo "Type 'b' to build the development version of the application"
-            echo "Type 's' to serve the development version of the application"
+            echo "Type 'build' or 'b' to build the development version of the application"
+            echo "Type 'serve' or 's' to serve the development version of the application"
             echo ""
-            echo "Type 'bp' to build the production version of the application"
-            echo "Type 'sp' to serve the production version of the application"
+            echo "Type 'build-prod' or 'bp' to build the production version of the application"
+            echo "Type 'serve-prod' or 'sp' to serve the production version of the application"
             echo ""
-            echo "Type 'c' to remove build artifacts"
             echo "Type 'f' to run elm-format"
             echo "Type 'r' to run elm-review"
             echo "Type 't' to run elm-test"
+            echo "Type 'check' or 'c' to run all checks"
+            echo "Type 'clean' to remove build artifacts"
             echo ""
             echo "Type 'd' to deploy the production version of the application to Netlify"
             echo ""
