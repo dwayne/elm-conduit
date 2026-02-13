@@ -23,5 +23,5 @@ decoder =
         (JD.field "username" Username.decoder)
         (JD.field "email" Email.decoder)
         (JD.field "bio" JD.nullableString)
-        (JD.field "image" JD.url)
+        (JD.field "image" JD.imageUrl)
         (JD.field "token" Token.decoder)

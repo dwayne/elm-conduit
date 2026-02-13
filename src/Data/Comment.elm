@@ -31,7 +31,7 @@ decoder =
         (JD.field "author" <|
             JD.map2 Commenter
                 (JD.field "username" Username.decoder)
-                (JD.field "image" JD.url)
+                (JD.field "image" JD.imageUrl)
         )
 
 

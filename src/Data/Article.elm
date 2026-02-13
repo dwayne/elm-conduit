@@ -78,5 +78,5 @@ authorDecoder : JD.Decoder Author
 authorDecoder =
     JD.map3 Author
         (JD.field "username" Username.decoder)
-        (JD.field "image" JD.url)
+        (JD.field "image" JD.imageUrl)
         (JD.field "following" JD.bool)
