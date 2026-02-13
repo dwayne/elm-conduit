@@ -27,6 +27,8 @@ let
   };
 in
 runCommand "elm-conduit-workshop" {
+  nativeBuildInputs = [ dart-sass ];
+
   src = fs.toSource {
     root = ../.;
     fileset = fs.unions [
@@ -40,6 +42,6 @@ runCommand "elm-conduit-workshop" {
 
   cp -r "$src/images" "$out"
   cp "$src/sandbox/"*.html "$out"
-  ${dart-sass}/bin/sass --embed-sources "$src/sass/index.scss" "$out/index.css"
+  sass --embed-sources "$src/sass/index.scss" "$out/index.css"
   cp "${js}/app.js" "$out"
 ''
