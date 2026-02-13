@@ -132,6 +132,13 @@ check
 c
 ```
 
+### Chores
+
+- Type `'f'` to run `elm-format`
+- Type `'r'` to run `elm-review`
+- Type `'t'` to run `elm-test`
+- Type `'clean'` to remove build artifacts
+
 ### Deploy
 
 To deploy the production version of the application to [Netlify](https://www.netlify.com/):
@@ -149,13 +156,6 @@ nix run .#deploy -- -s
 # or
 d -- -s
 ```
-
-### Chores
-
-- Type `'f'` to run `elm-format`
-- Type `'r'` to run `elm-review`
-- Type `'t'` to run `elm-test`
-- Type `'clean'` to remove build artifacts
 
 ### CI
 
