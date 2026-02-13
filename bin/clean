@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-#
-# Usage: clean
-#
-
-set -euo pipefail
-
-cd "${project:?}" && rm -rf .build .devbox elm-stuff

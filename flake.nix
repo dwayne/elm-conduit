@@ -60,13 +60,40 @@
           packages = [
             elm2nix.packages.${system}.default
             pkgs.elmPackages.elm
+            pkgs.elmPackages.elm-format
             pkgs.elmPackages.elm-json
             pkgs.elmPackages.elm-review
+            pkgs.elmPackages.elm-test
           ];
 
           shellHook = ''
             export PROJECT_ROOT="$PWD"
             export PS1="($name)\n$PS1"
+
+            clean () {
+              rm -rf "$PROJECT_ROOT/"{elm-stuff,result}
+            }
+            alias c='clean'
+
+            f () {
+              elm-format "$PROJECT_ROOT/"{review/src,src,tests} "''${@:---yes}"
+            }
+
+            r () {
+              elm-review "$PROJECT_ROOT/"{review/src,src,tests} "$@"
+            }
+
+            t () {
+              elm-test "$@"
+            }
+
+            echo "Development environment loaded"
+            echo ""
+            echo "Type 'c' to remove build artifacts"
+            echo "Type 'f' to run elm-format"
+            echo "Type 'r' to run elm-review"
+            echo "Type 't' to run elm-test"
+            echo ""
           '';
         };
 
