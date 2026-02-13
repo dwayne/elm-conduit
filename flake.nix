@@ -31,6 +31,7 @@
           optimizeCss = true;
           optimizeJs = true;
           compress = true;
+          includeRedirects = true;
         };
 
         serve = pkgs.callPackage ./nix/serve.nix {};

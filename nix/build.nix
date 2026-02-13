@@ -14,6 +14,7 @@
 , optimizeCss ? false
 , optimizeJs ? false
 , compress ? false
+, includeRedirects ? false
 }:
 
 let
@@ -97,11 +98,14 @@ runCommand name {
 
   src = fs.toSource {
     root = ../.;
-    fileset = fs.unions [
-      ../html
-      ../images
-      ../sass
-    ];
+    fileset = fs.unions (
+      [
+        ../html
+        ../images
+        ../sass
+      ]
+      ++ lib.optional includeRedirects ../config/_redirects
+    );
   };
 } ''
   mkdir "$out"
@@ -113,5 +117,9 @@ runCommand name {
 
   ${lib.optionalString compress ''
     cd "$out" && find . \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec brotli "{}" \; -exec zopfli "{}" \;
+  ''}
+
+  ${lib.optionalString includeRedirects ''
+    cp "$src/config/_redirects" "$out"
   ''}
 ''
