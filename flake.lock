@@ -1,5 +1,28 @@
 {
   "nodes": {
+    "deploy": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1770080010,
+        "narHash": "sha256-tsFnDiddvQffkJ1JOquXEuc6+huI9Mu9BufCVf/+khw=",
+        "owner": "dwayne",
+        "repo": "deploy",
+        "rev": "67e3a927d272110878a6673ca372fa6e8b639601",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dwayne",
+        "repo": "deploy",
+        "type": "github"
+      }
+    },
     "elm2nix": {
       "inputs": {
         "flake-utils": [
@@ -56,6 +79,7 @@
     },
     "root": {
       "inputs": {
+        "deploy": "deploy",
         "elm2nix": "elm2nix",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"

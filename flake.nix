@@ -1,5 +1,11 @@
 {
   inputs = {
+    deploy = {
+      url = "github:dwayne/deploy";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
+
     elm2nix = {
       url = "github:dwayne/elm2nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -7,7 +13,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, elm2nix }:
+  outputs = { self, nixpkgs, flake-utils, deploy, elm2nix }:
     flake-utils.lib.eachDefaultSystem(system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -61,6 +67,10 @@
           port = 8001;
           config = ./config/Caddyfile;
         };
+
+        deployProd = pkgs.writeShellScript "deploy-elm-conduit-prod" ''
+          ${deploy.packages.${system}.default}/bin/deploy "$@" ${prod} production
+        '';
 
         mkApp = { drv, description }: {
           type = "app";
@@ -142,6 +152,10 @@
               elm-test "$@"
             }
 
+            d () {
+              nix run .#deploy "$@"
+            }
+
             echo "Development environment loaded"
             echo ""
             echo "Type 'bw' to build the workshop"
@@ -160,6 +174,8 @@
             echo "Type 'f' to run elm-format"
             echo "Type 'r' to run elm-review"
             echo "Type 't' to run elm-test"
+            echo ""
+            echo "Type 'd' to deploy the production version of the application to Netlify"
             echo ""
           '';
         };
@@ -191,6 +207,11 @@
             drv = serveProd;
             description = "Serve the production version of the Conduit web application";
           };
+
+          deploy = mkApp {
+            drv = deployProd;
+            description = "Deploy the production version of the Conduit web application";
+          };
         };
 
         checks = {
@@ -199,6 +220,7 @@
             sandbox serveSandbox
             dev serveDev
             prod serveProd
+            deployProd
             ;
         };
       }
