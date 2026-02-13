@@ -30,7 +30,7 @@ add comment (Comments comments) =
     Comments (comment :: comments)
 
 
-remove : Int -> Comments -> Comments
+remove : String -> Comments -> Comments
 remove id (Comments comments) =
     comments
         |> List.filter (.id >> (/=) id)

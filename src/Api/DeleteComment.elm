@@ -9,8 +9,8 @@ import Url exposing (Url)
 type alias Options msg =
     { token : Token
     , slug : Slug
-    , id : Int
-    , onResponse : Result (Api.Error ()) Int -> msg
+    , id : String
+    , onResponse : Result (Api.Error ()) String -> msg
     }
 
 
@@ -18,7 +18,7 @@ deleteComment : Url -> Options msg -> Cmd msg
 deleteComment baseUrl { token, slug, id, onResponse } =
     Api.delete
         { token = token
-        , url = Api.buildUrl baseUrl [ "articles", Slug.toString slug, "comments", String.fromInt id ] [] []
+        , url = Api.buildUrl baseUrl [ "articles", Slug.toString slug, "comments", id ] [] []
         , default = id
         , onResponse = onResponse
         }

@@ -119,8 +119,8 @@ type Msg
     | SubmittedComment Token Slug
     | GotCreateCommentResponse (Result (Api.Error ()) Comment)
     | FocusedCommentForm
-    | ClickedDeleteComment Token Slug Int
-    | GotDeleteCommentResponse (Result (Api.Error ()) Int)
+    | ClickedDeleteComment Token Slug String
+    | GotDeleteCommentResponse (Result (Api.Error ()) String)
 
 
 type alias UpdateOptions msg =

@@ -70,7 +70,7 @@ isReverseChronological comments =
 newComment : Int -> String -> JE.Value
 newComment id createdAt =
     JE.object
-        [ ( "id", JE.int id )
+        [ ( "id", JE.string (String.fromInt id) )
         , ( "createdAt", JE.string createdAt )
         , ( "body", JE.string "A comment." )
         , ( "author"

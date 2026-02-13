@@ -9,7 +9,7 @@ import Url exposing (Url)
 
 
 type alias Comment =
-    { id : Int
+    { id : String
     , createdAt : Timestamp
     , body : NonEmptyString
     , commenter : Commenter
@@ -25,7 +25,7 @@ type alias Commenter =
 decoder : JD.Decoder Comment
 decoder =
     JD.map4 Comment
-        (JD.field "id" JD.int)
+        (JD.field "id" JD.string)
         (JD.field "createdAt" Timestamp.decoder)
         (JD.field "body" NonEmptyString.decoder)
         (JD.field "author" <|
