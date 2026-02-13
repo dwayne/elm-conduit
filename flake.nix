@@ -85,6 +85,46 @@
             export PROJECT_ROOT="$PWD"
             export PS1="($name)\n$PS1"
 
+            build-workshop () {
+              nix build .#workshop "''${@:--L}"
+            }
+            alias bw='build-workshop'
+
+            serve-workshop () {
+              nix run .#workshop "$@"
+            }
+            alias sw='serve-workshop'
+
+            build-sandbox () {
+              nix build .#sandbox "''${@:--L}"
+            }
+            alias bs='build-sandbox'
+
+            serve-sandbox () {
+              nix run .#sandbox "$@"
+            }
+            alias ss='serve-sandbox'
+
+            build () {
+              nix build "''${@:--L}"
+            }
+            alias b='build'
+
+            serve () {
+              nix run "$@"
+            }
+            alias s='serve'
+
+            build-prod () {
+              nix build .#prod "''${@:--L}"
+            }
+            alias bp='build-prod'
+
+            serve-prod () {
+              nix run .#prod "$@"
+            }
+            alias sp='serve-prod'
+
             clean () {
               rm -rf "$PROJECT_ROOT/"{elm-stuff,result}
             }
@@ -103,6 +143,18 @@
             }
 
             echo "Development environment loaded"
+            echo ""
+            echo "Type 'bw' to build the workshop"
+            echo "Type 'sw' to serve the workshop"
+            echo ""
+            echo "Type 'bs' to build the sandbox"
+            echo "Type 'ss' to serve the sandbox"
+            echo ""
+            echo "Type 'b' to build the development version of the application"
+            echo "Type 's' to serve the development version of the application"
+            echo ""
+            echo "Type 'bp' to build the production version of the application"
+            echo "Type 'sp' to serve the production version of the application"
             echo ""
             echo "Type 'c' to remove build artifacts"
             echo "Type 'f' to run elm-format"
