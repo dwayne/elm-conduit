@@ -19,6 +19,20 @@
           name = "elm-conduit-sandbox";
         };
 
+        build = pkgs.callPackage ./nix/build.nix { inherit buildElmApplication; };
+
+        dev = build {
+          name = "elm-conduit-dev";
+        };
+
+        prod = build {
+          name = "elm-conduit-prod";
+          optimizeHtml = true;
+          optimizeCss = true;
+          optimizeJs = true;
+          compress = true;
+        };
+
         serve = pkgs.callPackage ./nix/serve.nix {};
 
         serveWorkshop = serve {
@@ -45,6 +59,9 @@
 
           packages = [
             elm2nix.packages.${system}.default
+            pkgs.elmPackages.elm
+            pkgs.elmPackages.elm-json
+            pkgs.elmPackages.elm-review
           ];
 
           shellHook = ''
@@ -54,7 +71,8 @@
         };
 
         packages = {
-          inherit workshop sandbox;
+          inherit workshop sandbox dev prod;
+          default = dev;
         };
 
         apps = {
@@ -67,6 +85,15 @@
             drv = serveSandbox;
             description = "Serve the Conduit sandbox";
           };
+        };
+
+        checks = {
+          inherit
+            workshop serveWorkshop
+            sandbox serveSandbox
+            dev
+            prod
+            ;
         };
       }
     );
