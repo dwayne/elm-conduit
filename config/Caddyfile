@@ -1,6 +1,6 @@
 :{$port}
 
-root * {$build}/application
+root * {$root}
 
 try_files {path} /
 

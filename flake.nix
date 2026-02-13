@@ -48,6 +48,20 @@
           port = 9001;
         };
 
+        serveDev = serve {
+          name = "serve-elm-conduit-dev";
+          root = dev;
+          port = 8000;
+          config = ./config/Caddyfile;
+        };
+
+        serveProd = serve {
+          name = "serve-elm-conduit-prod";
+          root = prod;
+          port = 8001;
+          config = ./config/Caddyfile;
+        };
+
         mkApp = { drv, description }: {
           type = "app";
           program = "${drv}";
@@ -104,6 +118,8 @@
         };
 
         apps = {
+          default = self.apps.${system}.dev;
+
           workshop = mkApp {
             drv = serveWorkshop;
             description = "Serve the Conduit workshop";
@@ -113,14 +129,24 @@
             drv = serveSandbox;
             description = "Serve the Conduit sandbox";
           };
+
+          dev = mkApp {
+            drv = serveDev;
+            description = "Serve the development version of the Conduit web application";
+          };
+
+          prod = mkApp {
+            drv = serveProd;
+            description = "Serve the production version of the Conduit web application";
+          };
         };
 
         checks = {
           inherit
             workshop serveWorkshop
             sandbox serveSandbox
-            dev
-            prod
+            dev serveDev
+            prod serveProd
             ;
         };
       }
