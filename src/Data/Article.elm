@@ -66,7 +66,7 @@ decoder =
         |> JD.required "slug" Slug.decoder
         |> JD.required "title" JD.string
         |> JD.required "description" JD.string
-        |> JD.required "body" JD.string
+        |> JD.optional "body" JD.string ""
         |> JD.required "tagList" (JD.list Tag.decoder)
         |> JD.required "createdAt" Timestamp.decoder
         |> JD.required "favorited" JD.bool
